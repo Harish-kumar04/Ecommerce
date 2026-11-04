@@ -100,7 +100,7 @@ export default function LeadDetailPage() {
     if (!confirm("Convert this lead to a customer?")) return;
     try {
       const res = await adminApi.convertLead(lead.id);
-      toast({ kind: "success", title: "Converted. New customer id: \" + (res?.customer_id || \"—" }));
+      toast({ kind: "success", title: "Converted. New customer id: " + (res?.customer_id || "—") });
       router.push("/leads");
     } catch (e: any) {
       toast({ kind: "error", title: "Something went wrong", description: e.message || "Convert failed" });

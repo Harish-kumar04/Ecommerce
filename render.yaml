@@ -1,0 +1,27 @@
+# Render.com Free-Tier Blueprint for Infalette API
+# Deploy at: https://dashboard.render.com/blueprints
+services:
+  - type: web
+    name: infalette-api
+    runtime: docker
+    dockerfilePath: ./infrastructure/docker/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: DEBUG
+        value: "false"
+      - key: RATE_LIMIT_FAIL_CLOSED
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["*"]'
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false

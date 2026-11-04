@@ -30,8 +30,9 @@ def _require_platform(user) -> None:
     tenant_id = getattr(user, "tenant_id", None)
     from infalette_database.context import PLATFORM_TENANT_ID
 
-    is_platform_tenant = tenant_id is not None and str(tenant_id) == PLATFORM_TENANT_ID
-    if role_value.lower() not in ("platform_owner", "admin") and not is_platform_tenant:
+    is_platform_tenant = tenant_id is None or str(tenant_id) == PLATFORM_TENANT_ID
+    role_lower = role_value.lower()
+    if role_lower != "platform_owner" and not (role_lower == "admin" and is_platform_tenant):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Platform owner access required",

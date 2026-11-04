@@ -68,6 +68,7 @@ class CartService:
             existing_item.quantity += quantity
             await session.commit()
             await session.refresh(existing_item)
+            await self.calculate_cart_total(cart.id, session)
             return existing_item
 
         # Get product price and check inventory
@@ -85,6 +86,7 @@ class CartService:
             raise ValueError("Insufficient inventory")
 
         cart_item = CartItem(
+            tenant_id=tenant_id,
             cart_id=cart.id,
             product_id=product_id,
             variant_id=variant_id,

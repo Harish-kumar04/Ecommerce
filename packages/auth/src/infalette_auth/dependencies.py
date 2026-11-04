@@ -100,6 +100,7 @@ async def get_current_user(
                         detail="Clerk user has no linked local account yet — sign up or wait for webhook sync",
                         headers={"WWW-Authenticate": "Bearer"},
                     )
+                request.state.user = user
                 return user
     except HTTPException:
         raise
@@ -139,6 +140,7 @@ async def get_current_user(
                 detail="MFA enrollment required before accessing this resource",
             )
 
+    request.state.user = user
     return user
 
 
@@ -156,7 +158,8 @@ async def get_current_active_user(
     Raises:
         HTTPException: If the user is not active.
     """
-    if current_user.status.value != "active":
+    status_val = getattr(current_user.status, "value", str(current_user.status or ""))
+    if status_val != "active":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active",
@@ -195,6 +198,7 @@ async def get_optional_user(
                         )
                         user = result.scalar_one_or_none()
                         if user is not None:
+                            request.state.user = user
                             return user
                 except Exception:
                     pass
@@ -208,15 +212,18 @@ async def get_optional_user(
         result = await session.execute(
             select(User).where(User.id == UUID(payload.sub))
         )
-        return result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
+        if user is not None:
+            request.state.user = user
+        return user
     except Exception:
         return None
 
 
-def require_role(required_role: "UserRole | str"):
+def require_role(*required_roles: "UserRole | str"):
     """FastAPI dependency for role checking.
 
-    Accepts a UserRole enum or plain string (users.role column values).
+    Accepts one or more UserRole enums or plain strings (users.role column values).
     Hierarchy-aware via RBACService.
     """
     from infalette_auth.rbac import RBACService
@@ -231,11 +238,11 @@ def require_role(required_role: "UserRole | str"):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="User has no role assigned",
             )
-        if not _svc.check_role(current_user, required_role):
-            req_value = getattr(required_role, "value", str(required_role))
+        if not any(_svc.check_role(current_user, r) for r in required_roles):
+            req_values = ", ".join(getattr(r, "value", str(r)) for r in required_roles)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required role: {req_value}",
+                detail=f"Insufficient permissions. Required role: {req_values}",
             )
         return current_user
 

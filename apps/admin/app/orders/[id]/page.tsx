@@ -87,7 +87,7 @@ export default function OrderDetailPage() {
         }
       }
     } catch (e: any) {
-      toast({ kind: "error", title: "Something went wrong", description: e.message || "Invoice not available yet (only for paid orders })");
+      toast({ kind: "error", title: "Something went wrong", description: e.message || "Invoice not available yet (only for paid orders)" });
     }
   };
 

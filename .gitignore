@@ -59,8 +59,10 @@ out/
 *.sqlite3
 
 # Media
-uploads/
-media/
+/uploads/
+/media/
+!apps/api/modules/media/
+!apps/admin/app/media/
 
 # Sentry
 .sentryclirc

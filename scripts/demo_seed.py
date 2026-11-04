@@ -161,6 +161,21 @@ async def main() -> None:
             await s.flush()
             created.append(f"user:{OWNER_EMAIL}")
 
+        # Platform super-admin user (for apps/platform-admin)
+        platform_email = os.environ.get("DEMO_PLATFORM_EMAIL", "admin@infalette.com")
+        platform_pw = os.environ.get("DEMO_PLATFORM_PASSWORD", "admin1234")
+        puser = (await s.execute(select(User).where(User.email == platform_email))).scalar_one_or_none()
+        if not puser:
+            puser = User(
+                tenant_id=None, email=platform_email,
+                password_hash=PasswordHasher().hash_password(platform_pw),
+                first_name="Platform", last_name="Admin",
+                role="platform_owner", status="active",
+            )
+            s.add(puser)
+            await s.flush()
+            created.append(f"user:{platform_email}")
+
         # Store
         store = (await s.execute(select(Store).where(Store.tenant_id == tenant.id))).scalar_one_or_none()
         if not store:

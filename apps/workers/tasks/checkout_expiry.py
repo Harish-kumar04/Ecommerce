@@ -29,13 +29,16 @@ async def release_expired_checkouts(
     from infalette_database.models.checkout_item import CheckoutItem
     from infalette_commerce.inventory import release_inventory
 
+    from infalette_database.models.order import Order
+
     now = datetime.utcnow()
     query = (
         select(Checkout)
         .where(
-            Checkout.status == CheckoutStatus.PENDING,
+            Checkout.status.in_((CheckoutStatus.PENDING, CheckoutStatus.PROCESSING)),
             Checkout.expires_at.isnot(None),
             Checkout.expires_at < now,
+            ~Checkout.id.in_(select(Order.checkout_id).where(Order.checkout_id.isnot(None))),
         )
         .limit(batch)
     )

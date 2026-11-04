@@ -61,7 +61,7 @@ export default function CouponsPage() {
       <div>
         <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
           Promotions
-        </h1>
+        </p>
         <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
           Coupons
         </h1>

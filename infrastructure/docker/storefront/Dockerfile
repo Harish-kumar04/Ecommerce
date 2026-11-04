@@ -6,7 +6,7 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Copy root files
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
 # Copy shared packages
 COPY packages/ui/ ./packages/ui/
@@ -33,7 +33,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 
 # Copy root files
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
 # Copy shared packages
 COPY packages/ui/ ./packages/ui/

@@ -452,9 +452,16 @@ async def create_variant(tenant_id: UUID, product_id: UUID, data: dict, session:
 
 async def update_variant(
     tenant_id: UUID, product_id: UUID, variant_id: UUID, data: dict, session: AsyncSession
-) -> ProductVariant | None:
+) -> dict | None:
     """Update a variant with a partial dict."""
-    variant = await get_variant(tenant_id, product_id, variant_id, session)
+    result = await session.execute(
+        select(ProductVariant).where(
+            ProductVariant.id == variant_id,
+            ProductVariant.product_id == product_id,
+            ProductVariant.tenant_id == tenant_id,
+        )
+    )
+    variant = result.scalar_one_or_none()
     if not variant:
         return None
 
@@ -477,7 +484,14 @@ async def update_variant(
 
 async def delete_variant(tenant_id: UUID, product_id: UUID, variant_id: UUID, session: AsyncSession) -> bool:
     """Delete a variant. Returns False if it was not found."""
-    variant = await get_variant(tenant_id, product_id, variant_id, session)
+    result = await session.execute(
+        select(ProductVariant).where(
+            ProductVariant.id == variant_id,
+            ProductVariant.product_id == product_id,
+            ProductVariant.tenant_id == tenant_id,
+        )
+    )
+    variant = result.scalar_one_or_none()
     if not variant:
         return False
     await session.delete(variant)

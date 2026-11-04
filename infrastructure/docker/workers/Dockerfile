@@ -10,24 +10,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
-# Copy root requirements
-COPY pyproject.toml ./
+# Copy shared packages and apps manifest
 COPY packages/ ./packages/
+COPY apps/ ./apps/
 
-# Install Python packages
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false
-
-# Install shared packages
-RUN for pkg in packages/*/; do \
-        if [ -f "$pkg/pyproject.toml" ]; then \
-            pip install -e "$pkg"; \
-        fi; \
-    done
-
-# Install workers app
-COPY apps/workers/ ./apps/workers/
-RUN pip install -e apps/workers/
+# Install shared packages in dependency order + apps
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        -e packages/config \
+        -e packages/database \
+        -e packages/auth \
+        -e packages/validation \
+        -e packages/commerce \
+        -e packages/automation \
+        -e packages/analytics \
+        -e packages/integrations \
+        -e packages/seo \
+        -e apps
 
 # Run the worker
 CMD ["celery", "-A", "apps.workers.main", "worker", "--loglevel=info"]

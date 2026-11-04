@@ -106,19 +106,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             <div className="flex items-center gap-1.5">
               <ThemeToggle />
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
-                  >
-                    Sign in
-                  </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton afterSignOutUrl="/login" />
-              </SignedIn>
+              {Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && (
+                <>
+                  <SignedOut>
+                    <SignInButton mode="modal">
+                      <button
+                        type="button"
+                        className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
+                      >
+                        Sign in
+                      </button>
+                    </SignInButton>
+                  </SignedOut>
+                  <SignedIn>
+                    <UserButton afterSignOutUrl="/login" />
+                  </SignedIn>
+                </>
+              )}
               {/* Legacy JWT sign-out — remove once Clerk fully replaces /login */}
               <button
                 type="button"

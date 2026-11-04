@@ -35,6 +35,9 @@ for pkg in ["config", "validation", "database", "auth", "commerce",
             "automation", "analytics", "seo", "integrations"]:
     sys.path.insert(0, str(REPO / "packages" / pkg / "src"))
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 PASS = []
 def ok(name: str, cond: bool, extra: str = ""):
     PASS.append((name, bool(cond)))

@@ -284,6 +284,56 @@ export const blockDefinitions: Record<BlockType, BlockDefinition> = {
       { name: "showPaymentIcons", label: "Show Payment Icons", type: "boolean", default: true },
     ],
   },
+  category_grid: {
+    type: "category_grid",
+    name: "Category Grid",
+    description: "Grid of store categories",
+    defaultProps: { title: "Shop by Category", columns: 3 },
+    propsSchema: [
+      { name: "title", label: "Title", type: "text" },
+      { name: "columns", label: "Columns", type: "number", default: 3 },
+    ],
+  },
+  featured_products: {
+    type: "featured_products",
+    name: "Featured Products",
+    description: "Curated featured product showcase",
+    defaultProps: { title: "Featured Products", limit: 4 },
+    propsSchema: [
+      { name: "title", label: "Title", type: "text" },
+      { name: "limit", label: "Limit", type: "number", default: 4 },
+    ],
+  },
+  influencer_story: {
+    type: "influencer_story",
+    name: "Influencer Story",
+    description: "Creator story highlight block",
+    defaultProps: { title: "Creator Picks", subtitle: "", videoUrl: "" },
+    propsSchema: [
+      { name: "title", label: "Title", type: "text" },
+      { name: "subtitle", label: "Subtitle", type: "textarea" },
+      { name: "videoUrl", label: "Video URL", type: "url" },
+    ],
+  },
+  faq: {
+    type: "faq",
+    name: "FAQ",
+    description: "Frequently asked questions accordion",
+    defaultProps: { title: "Frequently Asked Questions", items: [] },
+    propsSchema: [
+      { name: "title", label: "Title", type: "text" },
+    ],
+  },
+  bundles: {
+    type: "bundles",
+    name: "Product Bundles",
+    description: "Curated multi-product bundle offers",
+    defaultProps: { title: "Value Bundles", discountPercent: 10 },
+    propsSchema: [
+      { name: "title", label: "Title", type: "text" },
+      { name: "discountPercent", label: "Discount (%)", type: "number", default: 10 },
+    ],
+  },
 };
 
 // Block validators

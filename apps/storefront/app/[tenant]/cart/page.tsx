@@ -99,7 +99,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       {isEmpty ? (
         <div className="rounded-2xl border border-dashed border-gray-300 dark:border-neutral-800 py-20 px-6 text-center">
           <p className="text-[15px] text-gray-500 dark:text-neutral-400">
-            Once you add products, they'll appear here.
+            Once you add products, they&apos;ll appear here.
           </p>
           <Link
             href={`/${params.tenant}/products`}

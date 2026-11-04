@@ -89,8 +89,7 @@ export default function InventoryPage() {
 
   // Filter products by stock status — uses real-time in-memory state so
   // changes from the stepper are reflected without a refetch.
-  const filteredProducts = products
-((p) => {
+  const filteredProducts = products.filter((p) => {
     const matchesSearch = !search
       || p.name?.toLowerCase().includes(search.toLowerCase())
       || p.sku?.toLowerCase().includes(search.toLowerCase());

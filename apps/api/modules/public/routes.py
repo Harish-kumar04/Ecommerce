@@ -542,11 +542,11 @@ async def public_customer_register(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Storefront shopper signup — delegates to /auth/customer/register.
+    """Storefront shopper signup — delegates to auth.services.customer_register.
 
     Body: {"email": str, "password": str, "first_name"?: str, "last_name"?: str}
     """
-    from apps.api.modules.auth.routes import customer_register as _customer_register
+    from apps.api.modules.auth.services import customer_register as _customer_register
 
     tenant_id = await _public_tenant_id(request, session)
 
@@ -659,6 +659,44 @@ async def public_customer_me(
     }
 
 
+async def _resolve_shopper_customer_id(payload, session: AsyncSession) -> tuple[UUID, UUID]:
+    """Resolve (tenant_id, Customer.id) from a JWT payload whose sub may be User.id or Customer.id."""
+    from sqlalchemy import select as _select
+    from infalette_database.models.customer import Customer
+    from infalette_database.models.user import User as _User
+
+    tenant_id = UUID(payload.tenant_id or "00000000-0000-0000-0000-000000000000")
+    sub_uuid = UUID(payload.sub)
+
+    # 1. Direct Customer.id match
+    cust = (
+        await session.execute(
+            _select(Customer).where(Customer.id == sub_uuid, Customer.tenant_id == tenant_id)
+        )
+    ).scalar_one_or_none()
+    if cust is not None:
+        return tenant_id, cust.id
+
+    # 2. Resolve User -> Customer by (tenant_id, email)
+    user = (
+        await session.execute(_select(_User).where(_User.id == sub_uuid))
+    ).scalar_one_or_none()
+    if user is not None:
+        eff_tenant = user.tenant_id or tenant_id
+        cust = (
+            await session.execute(
+                _select(Customer).where(
+                    Customer.tenant_id == eff_tenant,
+                    Customer.email == user.email.lower().strip(),
+                )
+            )
+        ).scalars().first()
+        if cust is not None:
+            return eff_tenant, cust.id
+
+    return tenant_id, sub_uuid
+
+
 @router.post("/customer/consent")
 async def public_customer_consent(
     request: Request,
@@ -692,9 +730,10 @@ async def public_customer_consent(
 
     from apps.api.modules.customer.services import update_customer_consent
 
+    tenant_id, customer_id = await _resolve_shopper_customer_id(payload, session)
     customer = await update_customer_consent(
-        UUID(payload.tenant_id or "00000000-0000-0000-0000-000000000000"),
-        UUID(payload.sub),
+        tenant_id,
+        customer_id,
         consent,
         session,
     )
@@ -727,9 +766,10 @@ async def public_customer_export(
 
     from apps.api.modules.customer.services import export_customer_data
 
+    tenant_id, customer_id = await _resolve_shopper_customer_id(payload, session)
     data = await export_customer_data(
-        UUID(payload.tenant_id or "00000000-0000-0000-0000-000000000000"),
-        UUID(payload.sub),
+        tenant_id,
+        customer_id,
         session,
     )
     if data is None:
@@ -761,9 +801,10 @@ async def public_customer_erase(
 
     from apps.api.modules.customer.services import erase_customer_data
 
+    tenant_id, customer_id = await _resolve_shopper_customer_id(payload, session)
     result = await erase_customer_data(
-        UUID(payload.tenant_id or "00000000-0000-0000-0000-000000000000"),
-        UUID(payload.sub),
+        tenant_id,
+        customer_id,
         session,
     )
     if result is None:

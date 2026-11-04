@@ -127,27 +127,31 @@ export default function StorefrontHeader({
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
-              >
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button
-                type="button"
-                className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
-              >
-                Sign up
-              </button>
-            </SignUpButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl={`/${tenant}`} />
-          </SignedIn>
+          {Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && (
+            <>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+                  >
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button
+                    type="button"
+                    className="inline-flex h-9 px-4 items-center justify-center rounded-full text-[13px] font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
+                  >
+                    Sign up
+                  </button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl={`/${tenant}`} />
+              </SignedIn>
+            </>
+          )}
           <Link
             href={`/${tenant}/cart`}
             aria-label="Cart"

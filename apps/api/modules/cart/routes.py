@@ -85,13 +85,22 @@ async def update_cart_item(
     session: AsyncSession = Depends(get_async_session),
     user=Depends(get_optional_user),
 ):
-    """Update a cart item quantity – tenant isolated."""
+    """Update a cart item quantity – tenant and owner isolated."""
     from apps.api.modules.cart.services import update_cart_item as svc_update
 
-    tenant_id, _ = await _context(request, user, session)
-    cart_item = await svc_update(item_id, quantity, session, tenant_id=tenant_id)
+    tenant_id, session_key = await _context(request, user, session)
+    if user is None and not session_key:
+        raise HTTPException(status_code=400, detail="X-Cart-Session-ID header required for guest carts")
+    cart_item = await svc_update(
+        item_id,
+        quantity,
+        session,
+        tenant_id=tenant_id,
+        customer_id=user.id if user else None,
+        session_key=session_key if user is None else None,
+    )
     if not cart_item:
-        raise HTTPException(status_code=404, detail="Cart item not found")
+        return {"id": str(item_id), "quantity": 0}
     return {"id": str(cart_item.id), "quantity": cart_item.quantity}
 
 
@@ -102,11 +111,19 @@ async def remove_from_cart(
     session: AsyncSession = Depends(get_async_session),
     user=Depends(get_optional_user),
 ):
-    """Remove an item from the cart – tenant isolated."""
+    """Remove an item from the cart – tenant and owner isolated."""
     from apps.api.modules.cart.services import remove_from_cart as svc_remove
 
-    tenant_id, _ = await _context(request, user, session)
-    await svc_remove(item_id, session, tenant_id=tenant_id)
+    tenant_id, session_key = await _context(request, user, session)
+    if user is None and not session_key:
+        raise HTTPException(status_code=400, detail="X-Cart-Session-ID header required for guest carts")
+    await svc_remove(
+        item_id,
+        session,
+        tenant_id=tenant_id,
+        customer_id=user.id if user else None,
+        session_key=session_key if user is None else None,
+    )
 
 
 @router.delete("/", response_model=dict)

@@ -26,15 +26,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const content = (
+    <ThemeProvider>
+      <AttributionCapture />
+      <CartRefreshBridge />
+      {children}
+      <Toaster />
+    </ThemeProvider>
+  );
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/*
-          Inline pre-hydration script: applies the saved theme class on
-          first paint so the page never flashes the wrong colors while
-          React is still booting. The value comes from the same
-          localStorage key the ThemeProvider writes.
-        */}
         <script
           dangerouslySetInnerHTML={{
             __html: "(function(){try{var t=localStorage.getItem('infalette-theme');var e=(t==='dark'||t==='light')?t:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(e==='dark'){document.documentElement.classList.add('dark');}document.documentElement.setAttribute('data-theme',e);}catch(e){}})();",
@@ -45,14 +49,7 @@ export default function RootLayout({
         className={`${inter.className} font-sans antialiased`}
         style={{ fontFeatureSettings: '"ss01", "cv11"' }}
       >
-        <ClerkProvider>
-          <ThemeProvider>
-            <AttributionCapture />
-            <CartRefreshBridge />
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </ClerkProvider>
+        {clerkKey ? <ClerkProvider publishableKey={clerkKey}>{content}</ClerkProvider> : content}
       </body>
     </html>
   );

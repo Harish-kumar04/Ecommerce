@@ -258,6 +258,20 @@ async def create_tenant_user(
     if role not in valid_roles:
         raise _HTTPException(status_code=422, detail=f"role must be one of {valid_roles}")
 
+    # Prevent horizontal/vertical privilege escalation:
+    # - Only platform_owner can assign platform_owner
+    # - store_manager can only assign store_manager or customer (cannot create tenant_owner or admin)
+    if role == "platform_owner" and caller_role != "platform_owner":
+        raise _HTTPException(
+            status_code=403,
+            detail="Only platform owners can assign the platform_owner role",
+        )
+    if caller_role == "store_manager" and role in ("tenant_owner", "admin", "platform_owner"):
+        raise _HTTPException(
+            status_code=403,
+            detail="Store managers cannot create owner or admin accounts",
+        )
+
     # Admin accounts MUST have MFA enabled. We refuse to create the user
     # without it; the caller must tick the MFA box and we'll mark
     # mfa_enabled=False at create time and force enrollment on first

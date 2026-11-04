@@ -132,11 +132,12 @@ class AuditMiddleware(BaseHTTPMiddleware):
             resource_type, resource_id = _infer_resource(request)
             action = request.method.lower()  # post/put/patch/delete
 
-            # Attempt to get DB session via dependency – we create one manually
+            # Attempt to get DB session via get_session_factory()
             # This is best-effort; if DB not configured, skip
             try:
-                from infalette_database.session import async_session_factory  # type: ignore
-                async with async_session_factory() as session:  # type: ignore
+                from infalette_database.session import get_session_factory  # type: ignore
+                factory = get_session_factory()
+                async with factory() as session:  # type: ignore
                     await log_audit(
                         tenant_id=tenant_id,
                         actor_id=actor_id,
@@ -148,7 +149,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
                         session=session,
                     )
             except Exception as inner:
-                # Fallback: try get_async_session generator
                 logger.debug("audit session fallback failed: %s", inner)
         except Exception as e:
             logger.debug("audit middleware error: %s", e)

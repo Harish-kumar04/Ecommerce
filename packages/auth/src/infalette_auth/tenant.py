@@ -76,52 +76,94 @@ class TenantResolver:
         """Get tenant context from request.
 
         Resolution order:
-        1. JWT token (for authenticated requests)
-        2. Custom domain
-        3. Subdomain
-
-        Args:
-            request: The FastAPI request.
-
-        Returns:
-            The tenant context.
+        1. JWT token (legacy HS256 or Clerk RS256)
+        2. Explicit X-Tenant header (UUID or slug)
+        3. Custom domain (port-stripped)
+        4. Subdomain (port-stripped)
         """
-        # Try JWT token first
+        from infalette_database.context import PLATFORM_TENANT_ID
+
+        # 1. Try JWT token first
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
             try:
                 payload = self._token_manager.decode_token(token)
+                tid = UUID(payload.tenant_id)
                 return TenantContext(
-                    tenant_id=UUID(payload.tenant_id),
-                    is_platform=payload.sub == "platform",
+                    tenant_id=tid,
+                    is_platform=(payload.sub == "platform" or str(tid) == PLATFORM_TENANT_ID),
                 )
+            except Exception:
+                # Try Clerk token if configured
+                try:
+                    from infalette_auth.clerk import resolve_jwks_url, verify_clerk_token
+                    from infalette_database.models.user import User
+                    from infalette_database.session import get_session_factory
+                    from sqlalchemy import select
+
+                    if resolve_jwks_url():
+                        claims = verify_clerk_token(token)
+                        clerk_sub = claims.get("sub")
+                        if clerk_sub:
+                            async with get_session_factory()() as session:
+                                user = (
+                                    await session.execute(
+                                        select(User).where(User.clerk_user_id == clerk_sub)
+                                    )
+                                ).scalar_one_or_none()
+                                if user and user.tenant_id:
+                                    return TenantContext(
+                                        tenant_id=user.tenant_id,
+                                        is_platform=(str(user.tenant_id) == PLATFORM_TENANT_ID),
+                                    )
+                except Exception:
+                    pass
+
+        # 2. Try explicit X-Tenant header
+        x_tenant = (request.headers.get("X-Tenant") or request.headers.get("x-tenant") or "").strip()
+        if x_tenant:
+            try:
+                tid = UUID(x_tenant)
+                return TenantContext(
+                    tenant_id=tid,
+                    is_platform=(str(tid) == PLATFORM_TENANT_ID),
+                )
+            except ValueError:
+                try:
+                    tenant = await self.resolve_tenant_from_subdomain(x_tenant)
+                    if tenant:
+                        return TenantContext(tenant_id=tenant.id, tenant=tenant)
+                except Exception:
+                    pass
+
+        # 3. Try domain / subdomain resolution (strip :port first)
+        raw_host = request.headers.get("Host", "")
+        host = raw_host.split(":")[0].strip().lower() if raw_host else ""
+        if host and host not in ("localhost", "127.0.0.1", "testserver"):
+            try:
+                tenant = await self.resolve_tenant_from_domain(host)
+                if tenant:
+                    return TenantContext(
+                        tenant_id=tenant.id,
+                        tenant=tenant,
+                        domain=host,
+                    )
+
+                subdomain = host.split(".")[0] if "." in host else host
+                if subdomain not in ("www", "api", "admin", "platform"):
+                    tenant = await self.resolve_tenant_from_subdomain(subdomain)
+                    if tenant:
+                        return TenantContext(
+                            tenant_id=tenant.id,
+                            tenant=tenant,
+                            domain=host,
+                        )
             except Exception:
                 pass
 
-        # Try domain resolution
-        host = request.headers.get("Host", "")
-        if host:
-            tenant = await self.resolve_tenant_from_domain(host)
-            if tenant:
-                return TenantContext(
-                    tenant_id=tenant.id,
-                    tenant=tenant,
-                    domain=host,
-                )
-
-            # Try subdomain
-            subdomain = host.split(".")[0] if "." in host else host
-            tenant = await self.resolve_tenant_from_subdomain(subdomain)
-            if tenant:
-                return TenantContext(
-                    tenant_id=tenant.id,
-                    tenant=tenant,
-                    domain=host,
-                )
-
-        # Platform admin
+        # Fallback: unresolved / platform context
         return TenantContext(
-            tenant_id=UUID("00000000-0000-0000-0000-000000000000"),
+            tenant_id=UUID(PLATFORM_TENANT_ID),
             is_platform=True,
         )

@@ -60,11 +60,11 @@ async function resolveHost(host: string): Promise<ResolveResult | null> {
   }
 }
 
-export const middleware = clerkMiddleware(async (auth, request: NextRequest) => {
+async function handleTenantRouting(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
   const pathname = request.nextUrl.pathname;
 
-  // Skip tenant mapping for static/API/Clerk internals — Clerk auth still runs.
+  // Skip tenant mapping for static/API/Clerk internals.
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
@@ -115,7 +115,15 @@ export const middleware = clerkMiddleware(async (auth, request: NextRequest) => 
   const res = NextResponse.rewrite(url);
   res.headers.set("x-rewrote-tenant", resolved.tenant);
   return res;
-});
+}
+
+const hasClerk = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+);
+
+export const middleware = hasClerk
+  ? clerkMiddleware(async (_auth, request: NextRequest) => handleTenantRouting(request))
+  : (request: NextRequest) => handleTenantRouting(request);
 
 export const config = {
   matcher: [

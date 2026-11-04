@@ -9,17 +9,21 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.models.tenant import Tenant
 
 
+from infalette_auth.dependencies import get_optional_user
+from infalette_database.session import get_async_session
+
+
 async def resolve_tenant_id(
     request: Request,
-    user,
-    session: AsyncSession,
+    user=Depends(get_optional_user),
+    session: AsyncSession = Depends(get_async_session),
 ) -> UUID:
     """Return tenant_id from authenticated user or X-Tenant header.
 

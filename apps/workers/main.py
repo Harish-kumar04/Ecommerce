@@ -23,6 +23,8 @@ celery_app = Celery(
         "apps.workers.tasks.abandoned",
         "apps.workers.tasks.exports",
         "apps.workers.tasks.sitemap",
+        "apps.workers.tasks.checkout_unpaid",
+        "apps.workers.tasks.checkout_expiry",
     ],
 )
 

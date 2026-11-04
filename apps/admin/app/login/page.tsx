@@ -66,35 +66,39 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 flex items-center gap-3">
-          <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-800" />
-          <span className="text-[12px] text-gray-500">or continue with Clerk</span>
-          <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-800" />
-        </div>
+        {Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && (
+          <>
+            <div className="mt-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-800" />
+              <span className="text-[12px] text-gray-500">or continue with Clerk</span>
+              <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-800" />
+            </div>
 
-        <div className="mt-4 flex items-center justify-center gap-3">
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className="h-11 px-6 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[14px] font-medium hover:opacity-90"
-              >
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button
-                type="button"
-                className="h-11 px-6 rounded-full border border-gray-200 dark:border-neutral-800 text-[14px] font-medium hover:bg-gray-50 dark:hover:bg-neutral-950"
-              >
-                Sign up
-              </button>
-            </SignUpButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/login" />
-          </SignedIn>
-        </div>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="h-11 px-6 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[14px] font-medium hover:opacity-90"
+                  >
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button
+                    type="button"
+                    className="h-11 px-6 rounded-full border border-gray-200 dark:border-neutral-800 text-[14px] font-medium hover:bg-gray-50 dark:hover:bg-neutral-950"
+                  >
+                    Sign up
+                  </button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/login" />
+              </SignedIn>
+            </div>
+          </>
+        )}
 
         <p className="mt-6 text-center text-[12px] text-gray-500 dark:text-neutral-500">
           Default: owner@demo.test / demo1234

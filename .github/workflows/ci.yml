@@ -74,8 +74,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pnpm install --no-frozen-lockfile
-      - run: pip install -e packages/database -e packages/config -e packages/validation -e packages/auth -e packages/commerce -e packages/automation -e packages/analytics -e packages/seo -e packages/integrations -e apps/api -e apps/workers
-      - run: pip install pytest pytest-asyncio httpx aiosqlite
+      - run: pip install -e packages/config -e packages/database -e packages/validation -e packages/auth -e packages/commerce -e packages/automation -e packages/analytics -e packages/seo -e packages/integrations -e "apps[dev]"
+      - run: pip install pytest pytest-asyncio httpx aiosqlite greenlet
       - name: Python unit tests
         run: python -m pytest tests/unit -q
       - name: Python integration tests (Postgres)

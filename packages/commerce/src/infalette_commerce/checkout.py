@@ -432,6 +432,23 @@ class CheckoutService:
         if checkout.status != CheckoutStatus.PENDING:
             raise ValueError(f"Checkout is not in pending status (current: {checkout.status})")
 
+        # Enforce plan quota BEFORE initiating payment so a customer is never
+        # charged for an order the tenant's plan cannot accept.
+        try:
+            from apps.api.core.feature_flags import check_quota as _check_quota
+
+            quota = await _check_quota(tenant_id, session, "orders_per_month")
+            if not quota.get("allowed", True):
+                from fastapi import HTTPException
+
+                raise HTTPException(
+                    status_code=402,
+                    detail="Order quota exceeded for current billing period",
+                )
+        except Exception as e:
+            if e.__class__.__name__ == "HTTPException":
+                raise
+
         # Normalize provider string
         provider_normalized = payment_provider.lower().strip() if isinstance(payment_provider, str) else str(payment_provider).lower()
 
@@ -665,7 +682,12 @@ class CheckoutService:
             # Record event — carries lead/customer so the abandoned-social
             # segment and CRM stage progression can join on it.
             def _coalesce(row, attr):
-                value = getattr(row, attr, None) if row is not None else None
+                if row is None:
+                    return None
+                if isinstance(row, dict):
+                    value = row.get(attr)
+                else:
+                    value = getattr(row, attr, None)
                 return str(value) if value else None
 
             await record_event(
@@ -753,20 +775,24 @@ class CheckoutService:
             pass
 
         # Create order
-        # Enforce plan quota: orders_per_month — block creation if the
-        # tenant has exhausted their plan's monthly order limit. Without
-        # this check the platform would happily create orders that the
-        # plan does not allow (and break billing integrity).
-        from apps.api.core.feature_flags import check_quota as _check_quota
+        # Enforce plan quota: orders_per_month — block unpaid/COD creation if the
+        # tenant has exhausted their plan's monthly order limit, but NEVER drop
+        # an order when an external payment has already succeeded (capture).
+        is_already_paid = (
+            getattr(payment, "status", None) == PaymentStatus.SUCCEEDED
+            and getattr(payment, "provider", None) != PaymentProvider.COD
+        )
+        if not is_already_paid:
+            from apps.api.core.feature_flags import check_quota as _check_quota
 
-        quota = await _check_quota(checkout.tenant_id, session, "orders_per_month")
-        if not quota.get("allowed", True):
-            from fastapi import HTTPException
+            quota = await _check_quota(checkout.tenant_id, session, "orders_per_month")
+            if not quota.get("allowed", True):
+                from fastapi import HTTPException
 
-            raise HTTPException(
-                status_code=402,
-                detail="Order quota exceeded for current billing period",
-            )
+                raise HTTPException(
+                    status_code=402,
+                    detail="Order quota exceeded for current billing period",
+                )
 
         order = Order(
             tenant_id=checkout.tenant_id,
@@ -859,14 +885,14 @@ class CheckoutService:
         if not checkout:
             raise ValueError("Checkout not found")
 
-        # Release inventory for each checkout item
+        # Release inventory for each checkout item (including variant stock)
         result = await session.execute(
             select(CheckoutItem).where(CheckoutItem.checkout_id == checkout_id)
         )
         checkout_items = list(result.scalars().all())
 
         for ci in checkout_items:
-            await release_inventory(ci.product_id, ci.quantity, session)
+            await release_inventory(ci.product_id, ci.quantity, session, variant_id=ci.variant_id)
 
         # Update checkout status
         await session.execute(

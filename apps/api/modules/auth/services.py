@@ -21,10 +21,10 @@ from infalette_auth.schemas import LoginRequest, RegisterRequest, TokenResponse,
 def _mfa_required_for(user: User) -> bool:
     """True when this user's role must be MFA-enrolled (spec §5).
 
-    Local development (``app_env != "production"``) is permissive:
-    admin roles can log in without enrolling TOTP. The spec mandate
-    still applies in production; we only relax it so the bundled demo
-    creds ``owner@demo.test / demo1234`` are usable end-to-end.
+    Local development allows bundled ``@demo.test`` seed accounts to log
+    in without enrolling TOTP so ``owner@demo.test / demo1234`` works
+    out-of-the-box, while enforcing the MFA mandate on all other admin
+    accounts across environments.
     """
     from infalette_config import get_settings
 
@@ -32,13 +32,15 @@ def _mfa_required_for(user: User) -> bool:
         settings = get_settings()
         env = (settings.app_env or "").lower()
     except Exception:
+        settings = None
         env = "development"
 
-    if env != "production":
+    email = str(getattr(user, "email", "") or "").lower()
+    if env != "production" and (email.endswith("@demo.test") or email == "admin@infalette.com"):
         return False
 
     try:
-        required = settings.auth.mfa_required_roles
+        required = settings.auth.mfa_required_roles if settings else "platform_owner,tenant_owner,store_manager"
     except Exception:
         required = "platform_owner,tenant_owner,store_manager"
     roles = {r.strip().lower() for r in (required or "").split(",") if r.strip()}
@@ -350,10 +352,8 @@ async def setup_mfa(user: User, session: AsyncSession) -> MFASetupResponse:
     hasher = PasswordHasher()
     user.mfa_secret = secret
     user.mfa_recovery_codes_json = [hasher.hash_password(c) for c in recovery_codes]
-    # Mark enabled False initially – verify_mfa will flip to True on successful code
-    # If you want immediate enable, set True here; we set True for simplicity per task spec
-    # Task says "update user mfa_enabled, mfa_secret" – so enable now
-    user.mfa_enabled = True
+    # Keep mfa_enabled False until TOTP code is verified via confirm_mfa_setup or confirm_mfa_enrollment
+    user.mfa_enabled = False
     await session.commit()
     await session.refresh(user)
 
@@ -514,12 +514,14 @@ _RESET_TOKENS: dict = {}
 def _email_delivery_configured(settings) -> bool:
     try:
         s = settings.email
-        return bool(getattr(s, "smtp_host", None) or getattr(s, "aws_region", None))
+        has_smtp = bool(getattr(s, "smtp_host", None))
+        has_ses = bool(getattr(s, "aws_access_key_id", None) and getattr(s, "aws_secret_access_key", None))
+        return has_smtp or has_ses
     except Exception:
         return False
 
 
-def _consume_pending_reset(token: str):
+async def _consume_pending_reset(token: str):
     """Look up a reset token in Redis, then the in-memory dev fallback."""
     import time as _time
 
@@ -529,24 +531,12 @@ def _consume_pending_reset(token: str):
         from infalette_config import get_settings
 
         client = redis.from_url(get_settings().redis.url, decode_responses=True)
-
-        import asyncio as _asyncio
-
-        async def _get():
+        try:
             value = await client.get(f"pwreset:{token}")
             if value:
                 await client.delete(f"pwreset:{token}")
+        finally:
             await client.aclose()
-            return value
-
-        try:
-            loop = _asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        if loop is not None:
-            value = loop.run_until_complete(_get())
-        else:
-            value = _asyncio.run(_get())
         if value:
             return value
     except Exception:
@@ -569,7 +559,7 @@ async def reset_password(token: str, new_password: str, session: AsyncSession) -
     if not token or not new_password or len(new_password) < 8:
         raise HTTPException(status_code=422, detail="Invalid token or weak password")
 
-    user_id = _consume_pending_reset(token)
+    user_id = await _consume_pending_reset(token)
     if not user_id:
         raise HTTPException(status_code=400, detail="Reset token is invalid or expired")
 

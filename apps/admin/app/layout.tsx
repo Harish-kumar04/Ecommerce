@@ -21,6 +21,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const content = (
+    <ThemeProvider>
+      <AppShell>{children}</AppShell>
+    </ThemeProvider>
+  );
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -34,11 +41,7 @@ export default function RootLayout({
         className={`${inter.className} font-sans antialiased`}
         style={{ fontFeatureSettings: '"ss01", "cv11"' }}
       >
-        <ClerkProvider>
-          <ThemeProvider>
-            <AppShell>{children}</AppShell>
-          </ThemeProvider>
-        </ClerkProvider>
+        {clerkKey ? <ClerkProvider publishableKey={clerkKey}>{content}</ClerkProvider> : content}
       </body>
     </html>
   );
