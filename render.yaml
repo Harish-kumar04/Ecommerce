@@ -1,6 +1,24 @@
-# Render.com Free-Tier Blueprint for Muthamilarignar Pathipagam API
-# Deploy at: https://dashboard.render.com/blueprints
+# Render.com Free-Tier Blueprint for Muthamilarignar Pathipagam Bookstore + API
+# One-Click Deploy URL: https://dashboard.render.com/blueprint/new?repo=https://github.com/Harish-kumar04/Ecommerce
 services:
+  - type: web
+    name: muthamilarignar-pathipagam-storefront
+    runtime: node
+    rootDir: apps/storefront
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NEXT_PUBLIC_DEMO_TENANT
+        value: demo-store
+      - key: API_URL
+        fromService:
+          type: web
+          name: muthamilarignar-pathipagam-api
+          envVarKey: RENDER_EXTERNAL_URL
+
   - type: web
     name: muthamilarignar-pathipagam-api
     runtime: docker
