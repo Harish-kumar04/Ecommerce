@@ -30,12 +30,18 @@ RUN pip install --no-cache-dir --upgrade pip && \
         -e packages/seo \
         -e apps
 
+# Default production-ready environment variables (can be overridden in cloud dashboard)
+ENV DATABASE_URL="sqlite+aiosqlite:///./bookstore.db" \
+    CORS_ORIGINS='["*"]' \
+    RATE_LIMIT_FAIL_CLOSED="false" \
+    PORT="8000"
+
 # Expose port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Seed the 27 Muthamilarignar Pathipagam books (idempotent) and start the API server
+CMD ["sh", "-c", "python scripts/demo_seed.py && uvicorn apps.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

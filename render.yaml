@@ -1,6 +1,31 @@
-# Render.com Free-Tier Blueprint for Muthamilarignar Pathipagam Bookstore + API
+# Render.com Free-Tier Blueprint for Muthamilarignar Pathipagam (Backend + Storefront + Admin)
 # One-Click Deploy URL: https://dashboard.render.com/blueprint/new?repo=https://github.com/Harish-kumar04/Ecommerce
 services:
+  # 1. FastAPI Backend + SQLite Database (auto-seeds all 27 books on startup)
+  - type: web
+    name: muthamilarignar-pathipagam-api
+    runtime: docker
+    dockerfilePath: ./infrastructure/docker/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: DEBUG
+        value: "false"
+      - key: RATE_LIMIT_FAIL_CLOSED
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["*"]'
+      - key: DATABASE_URL
+        value: "sqlite+aiosqlite:///./bookstore.db"
+
+  # 2. Next.js Customer Bookstore Frontend (connected to Backend API)
   - type: web
     name: muthamilarignar-pathipagam-storefront
     runtime: node
@@ -19,26 +44,19 @@ services:
           name: muthamilarignar-pathipagam-api
           envVarKey: RENDER_EXTERNAL_URL
 
+  # 3. Next.js Merchant Admin Dashboard (connected to Backend API)
   - type: web
-    name: muthamilarignar-pathipagam-api
-    runtime: docker
-    dockerfilePath: ./infrastructure/docker/api/Dockerfile
-    dockerContext: .
+    name: muthamilarignar-pathipagam-admin
+    runtime: node
+    rootDir: apps/admin
     plan: free
-    healthCheckPath: /health
-    dockerCommand: sh -c "python scripts/demo_seed.py && uvicorn apps.api.main:app --host 0.0.0.0 --port 8000"
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     envVars:
-      - key: APP_ENV
-        value: staging
-      - key: DEBUG
-        value: "false"
-      - key: RATE_LIMIT_FAIL_CLOSED
-        value: "false"
-      - key: SECRET_KEY
-        generateValue: true
-      - key: JWT_SECRET_KEY
-        generateValue: true
-      - key: CORS_ORIGINS
-        value: '["*"]'
-      - key: DATABASE_URL
-        value: "sqlite+aiosqlite:///./bookstore.db"
+      - key: NODE_VERSION
+        value: "20"
+      - key: API_URL
+        fromService:
+          type: web
+          name: muthamilarignar-pathipagam-api
+          envVarKey: RENDER_EXTERNAL_URL
