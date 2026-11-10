@@ -14,7 +14,8 @@ function resolveAdminApiUrl(): string {
     return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
   }
   if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return "/api/v1";
+    const prefix = window.location.pathname.startsWith("/admin") ? "/admin" : "";
+    return `${prefix}/api/v1`;
   }
   return "http://localhost:8000/api/v1";
 }

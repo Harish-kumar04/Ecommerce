@@ -1,22 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "api": {
+    "apps": {
       "root": "apps",
       "framework": "fastapi",
       "entrypoint": "api/main.py"
-    },
-    "storefront": {
-      "root": "apps/storefront",
-      "framework": "nextjs",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "api",
-          "format": "url",
-          "env": "API_URL"
-        }
-      ]
     },
     "admin": {
       "root": "apps/admin",
@@ -24,7 +12,7 @@
       "bindings": [
         {
           "type": "service",
-          "service": "api",
+          "service": "apps",
           "format": "url",
           "env": "API_URL"
         }
@@ -36,7 +24,19 @@
       "bindings": [
         {
           "type": "service",
-          "service": "api",
+          "service": "apps",
+          "format": "url",
+          "env": "API_URL"
+        }
+      ]
+    },
+    "storefront": {
+      "root": "apps/storefront",
+      "framework": "nextjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "apps",
           "format": "url",
           "env": "API_URL"
         }
@@ -44,36 +44,6 @@
     }
   },
   "rewrites": [
-    {
-      "source": "/api/v1/(.*)",
-      "destination": {
-        "service": "api"
-      }
-    },
-    {
-      "source": "/health",
-      "destination": {
-        "service": "api"
-      }
-    },
-    {
-      "source": "/health/(.*)",
-      "destination": {
-        "service": "api"
-      }
-    },
-    {
-      "source": "/platform-admin",
-      "destination": {
-        "service": "platform-admin"
-      }
-    },
-    {
-      "source": "/platform-admin/(.*)",
-      "destination": {
-        "service": "platform-admin"
-      }
-    },
     {
       "source": "/admin",
       "destination": {
