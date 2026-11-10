@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 title="Clear legacy API token"
                 onClick={() => {
                   AuthManager.clearToken();
-                  window.location.href = "/login";
+                  router.push("/login");
                 }}
                 className="inline-flex h-9 px-3 items-center justify-center rounded-full text-[12px] text-gray-500 dark:text-neutral-500 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
               >

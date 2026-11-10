@@ -1,4 +1,5 @@
 import "./globals.css";
+import Link from "next/link";
 import { Inter } from "next/font/google";
 import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import AuthGuard from "@/components/auth-guard";
@@ -49,12 +50,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ul className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
             {NAV.map((n) => (
               <li key={n.href}>
-                <a
+                <Link
                   href={n.href}
                   className="block px-3 h-9 leading-9 rounded-lg text-[13.5px] text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors"
                 >
                   {n.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
