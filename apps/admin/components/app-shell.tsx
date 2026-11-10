@@ -53,12 +53,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-white text-gray-900 dark:bg-black dark:text-neutral-100">
       {showChrome && (
         <nav className="w-64 flex-shrink-0 border-r border-gray-100 dark:border-neutral-900 bg-white dark:bg-black flex flex-col">
-          <div className="px-5 py-5 border-b border-gray-100 dark:border-neutral-900">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 dark:bg-white text-white dark:text-black font-semibold">
-                I
-              </span>
-              <span className="text-[15px] font-semibold tracking-tight">Infalette Admin</span>
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-neutral-900">
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.jpg"
+                alt="Muthamilarignar Pathipagam"
+                className="h-9 w-9 rounded-lg object-contain bg-white border border-gray-200 dark:border-neutral-800 p-0.5 flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-bold tracking-tight truncate">
+                  முத்தமிழறிஞர் பதிப்பகம்
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-neutral-400 truncate">
+                  Bookstore Admin
+                </p>
+              </div>
             </Link>
           </div>
           <ul className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">

@@ -1,43 +1,108 @@
+"use client";
+
 import Link from "next/link";
+import { useLanguage } from "./language-provider";
 
 /**
- * Storefront footer. Matches the layout-wide Apple-style minimal chrome:
- * muted text on the page background, hairline rule on top.
+ * Storefront footer — Muthamilarignar Pathipagam Bookstore Footer.
  */
 export default function StorefrontFooter({ tenant }: { tenant: string }) {
   const year = new Date().getFullYear();
+  const { t } = useLanguage();
+
   return (
-    <footer className="border-t border-gray-200 dark:border-neutral-900 bg-white dark:bg-black mt-16">
+    <footer className="border-t border-gray-200 dark:border-neutral-900 bg-neutral-950 text-neutral-200 mt-16">
+      <div className="h-1 w-full bg-gradient-to-r from-black via-red-600 to-black" />
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 text-gray-900 dark:text-neutral-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
-            <p className="text-base font-semibold tracking-tight">Infalette</p>
-            <p className="mt-2 text-sm text-gray-500 dark:text-neutral-500 max-w-md">
-              Trusted products for every stage. Curated essentials with full
-              ingredient lists, age suitability and manufacturer transparency.
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.jpg"
+                alt="Muthamilarignar Pathipagam"
+                className="h-12 w-12 rounded-lg object-contain bg-white p-0.5"
+              />
+              <div>
+                <p className="text-base font-bold tracking-tight text-white">
+                  {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
+                </p>
+                <p className="text-xs text-red-400 font-medium">
+                  {t("Muthamilarignar Pathipagam", "முத்தமிழறிஞர் பதிப்பகம்")}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-neutral-400 max-w-md leading-relaxed">
+              {t(
+                "திராவிட இயக்க வரலாறு, சமூகநீதி, மாநில சுயாட்சி மற்றும் முத்தமிழறிஞர் கலைஞர் அவர்களின் படைப்புகளைத் தாங்கி வரும் அதிகாரப்பூர்வப் பதிப்பகம்.",
+                "The official publishing house dedicated to Dravidian movement history, social justice, state autonomy, Dravidian Model governance, and the works of Muthamilarignar Kalaignar.",
+              )}
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-neutral-500 mb-3">Shop</p>
-            <ul className="space-y-2 text-sm">
-              <li><Link href={`/${tenant}/products`} className="hover:underline">All products</Link></li>
-              <li><Link href={`/${tenant}/cart`} className="hover:underline">Cart</Link></li>
-              <li><Link href={`/${tenant}/orders`} className="hover:underline">Orders</Link></li>
-              <li><Link href={`/${tenant}/returns`} className="hover:underline">Returns</Link></li>
+            <p className="text-xs uppercase tracking-wider text-red-400 font-semibold mb-3">
+              {t("நூலகம்", "Bookstore")}
+            </p>
+            <ul className="space-y-2 text-sm text-neutral-300">
+              <li>
+                <Link href={`/${tenant}/products`} className="hover:text-white hover:underline">
+                  {t("அனைத்து நூல்கள் (27)", "All Books (27)")}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${tenant}/cart`} className="hover:text-white hover:underline">
+                  {t("கூடை (Cart)", "Shopping Cart")}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${tenant}/orders`} className="hover:text-white hover:underline">
+                  {t("எனது ஆர்டர்கள்", "My Orders")}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${tenant}/returns`} className="hover:text-white hover:underline">
+                  {t("மாற்று / திரும்பப் பெறுதல்", "Returns & Support")}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-neutral-500 mb-3">Account</p>
-            <ul className="space-y-2 text-sm">
-              <li><Link href={`/${tenant}/account`} className="hover:underline">Profile</Link></li>
-              <li><Link href={`/${tenant}/account/consent`} className="hover:underline">Consent</Link></li>
-              <li><Link href={`/${tenant}/track`} className="hover:underline">Track order</Link></li>
+            <p className="text-xs uppercase tracking-wider text-red-400 font-semibold mb-3">
+              {t("வாசகர் கணக்கு", "Reader Account")}
+            </p>
+            <ul className="space-y-2 text-sm text-neutral-300">
+              <li>
+                <Link href={`/${tenant}/account`} className="hover:text-white hover:underline">
+                  {t("சுயவிவரம்", "Profile")}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${tenant}/track`} className="hover:text-white hover:underline">
+                  {t("ஆர்டர் நிலையை அறிய", "Track Order")}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${tenant}/account/consent`} className="hover:text-white hover:underline">
+                  {t("தனியுரிமை அமைப்புகள்", "Privacy & Consent")}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="mt-10 pt-6 border-t border-gray-100 dark:border-neutral-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-gray-500 dark:text-neutral-500">
-          <p>© {year} Infalette. All rights reserved.</p>
-          <p>Pregnancy & baby product claims require evidence. See product pages for ingredients, age suitability and manufacturer.</p>
+        <div className="mt-10 pt-6 border-t border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-neutral-400">
+          <p>
+            © {year}{" "}
+            {t(
+              "முத்தமிழறிஞர் பதிப்பகம் (Muthamilarignar Pathipagam). அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
+              "Muthamilarignar Pathipagam (முத்தமிழறிஞர் பதிப்பகம்). All rights reserved.",
+            )}
+          </p>
+          <p>
+            {t(
+              "இந்தியா முழுவதும் விரைவான அஞ்சல் / கூரியர் விநியோகம்.",
+              "Pan-India fast book delivery • Secure checkout via Razorpay, Stripe & COD.",
+            )}
+          </p>
         </div>
       </div>
     </footer>

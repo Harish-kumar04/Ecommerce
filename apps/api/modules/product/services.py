@@ -29,6 +29,7 @@ def serialize_product(product: Product) -> dict:
     return {
         "id": str(product.id),
         "tenant_id": str(product.tenant_id),
+        "category_id": str(product.category_id) if getattr(product, "category_id", None) else None,
         "name": product.name,
         "slug": product.slug,
         "sku": product.sku,

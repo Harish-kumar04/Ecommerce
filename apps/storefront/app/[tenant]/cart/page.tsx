@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
+import { useLanguage } from "@/components/language-provider";
 
 export default function CartPage({ params }: { params: { tenant: string } }) {
+  const { t, localizeName } = useLanguage();
   const [cart, setCart] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,11 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       await fetchCart();
       notifyCartChanged(params.tenant);
     } catch (e: any) {
-      toast({ kind: "error", title: "Something went wrong", description: e.message });
+      toast({
+        kind: "error",
+        title: t("பிழை ஏற்பட்டது", "Something went wrong"),
+        description: e.message,
+      });
     } finally {
       setUpdating(null);
     }
@@ -55,7 +61,11 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       await fetchCart();
       notifyCartChanged(params.tenant);
     } catch (e: any) {
-      toast({ kind: "error", title: "Something went wrong", description: e.message });
+      toast({
+        kind: "error",
+        title: t("பிழை ஏற்பட்டது", "Something went wrong"),
+        description: e.message,
+      });
     } finally {
       setUpdating(null);
     }
@@ -64,7 +74,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   if (loading)
     return (
       <div className="max-w-5xl mx-auto px-6 py-24 text-center text-[15px] text-gray-500 dark:text-neutral-400">
-        Loading your cart…
+        {t("உங்கள் கூடை ஏற்றப்படுகிறது…", "Loading your cart…")}
       </div>
     );
   if (error)
@@ -77,21 +87,35 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   const isEmpty = !cart || items.length === 0;
   const total =
     cart?.total_cents ??
-    items.reduce((sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1), 0);
-  const itemCount = items.reduce((sum: number, it: any) => sum + (it.quantity ?? 1), 0);
+    items.reduce(
+      (sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1),
+      0,
+    );
+  const itemCount = items.reduce(
+    (sum: number, it: any) => sum + (it.quantity ?? 1),
+    0,
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <header className="mb-10">
-        <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
-          Your bag
+        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600 dark:text-red-400">
+          {t("உங்கள் புத்தகக் கூடை", "Your Book Cart")}
         </p>
-        <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
-          {isEmpty ? "Your cart is empty." : `Cart — ${itemCount} item${itemCount === 1 ? "" : "s"}.`}
+        <h1 className="mt-2 text-[32px] sm:text-[42px] font-extrabold tracking-tight text-gray-900 dark:text-neutral-100">
+          {isEmpty
+            ? t("உங்கள் கூடை காலியாக உள்ளது.", "Your cart is empty.")
+            : t(
+                `கூடை — ${itemCount} நூல்கள்`,
+                `Cart — ${itemCount} book${itemCount === 1 ? "" : "s"}.`,
+              )}
         </h1>
         {!isEmpty && (
           <p className="mt-2 text-[15px] text-gray-500 dark:text-neutral-400">
-            Review your selections before checkout.
+            {t(
+              "ஆர்டரை உறுதி செய்யும் முன் தேர்ந்தெடுத்த நூல்களைச் சரிபார்க்கவும்.",
+              "Review your selected books before checkout.",
+            )}
           </p>
         )}
       </header>
@@ -99,108 +123,131 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       {isEmpty ? (
         <div className="rounded-2xl border border-dashed border-gray-300 dark:border-neutral-800 py-20 px-6 text-center">
           <p className="text-[15px] text-gray-500 dark:text-neutral-400">
-            Once you add products, they&apos;ll appear here.
+            {t(
+              "நீங்கள் தேர்ந்தெடுக்கும் நூல்கள் இங்கே தோன்றும்.",
+              "Once you add books, they'll appear here.",
+            )}
           </p>
           <Link
             href={`/${params.tenant}/products`}
-            className="mt-6 inline-flex h-10 px-6 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[14px] font-medium hover:opacity-90 transition-opacity"
+            className="mt-6 inline-flex h-11 px-6 items-center justify-center rounded-full bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition-colors"
           >
-            Continue shopping
+            {t("நூல்களைப் பார்வையிடுக", "Browse Books")}
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Items */}
           <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-neutral-950 divide-y divide-gray-100 dark:divide-neutral-900">
-            {items.map((it: any) => (
-              <div key={it.id} className="flex gap-4 py-6 first:pt-0">
-                <Link
-                  href={`/${params.tenant}/products/${it.product_id}`}
-                  className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-gray-100 dark:bg-neutral-900 overflow-hidden"
-                >
-                  {it.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={it.image_url} alt={it.name || it.product?.name || "Product"} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </Link>
-                <div className="flex-1 min-w-0">
+            {items.map((it: any) => {
+              const rawName =
+                it.product?.name || it.name || it.product_name || "Book";
+              return (
+                <div key={it.id} className="flex gap-4 py-6 first:pt-0">
                   <Link
                     href={`/${params.tenant}/products/${it.product_id}`}
-                    className="text-[15px] font-medium text-gray-900 dark:text-neutral-100 hover:underline truncate block"
+                    className="flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-gray-100 dark:bg-neutral-900 p-1.5 overflow-hidden border border-gray-200/70 dark:border-neutral-800"
                   >
-                    {it.product?.name || it.name || it.product_name || "Product"}
+                    {it.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={it.image_url}
+                        alt={localizeName(rawName)}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                        {t("படம் இல்லை", "No cover")}
+                      </div>
+                    )}
                   </Link>
-                  <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
-                    ₹{((it.price_cents ?? 0) / 100).toFixed(2)} each
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      disabled={!!updating}
-                      onClick={() => updateQty(it.id, (it.quantity || 1) - 1)}
-                      className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/${params.tenant}/products/${it.product_id}`}
+                      className="text-[15px] font-bold text-gray-900 dark:text-neutral-100 hover:text-red-600 hover:underline block"
                     >
-                      −
-                    </button>
-                    <span className="text-[14px] w-6 text-center">{it.quantity}</span>
-                    <button
-                      disabled={!!updating}
-                      onClick={() => updateQty(it.id, (it.quantity || 1) + 1)}
-                      className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => removeItem(it.id)}
-                      className="ml-3 text-[12px] text-gray-500 dark:text-neutral-400 hover:text-red-600 hover:underline"
-                    >
-                      Remove
-                    </button>
+                      {localizeName(rawName)}
+                    </Link>
+                    <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
+                      ₹{((it.price_cents ?? 0) / 100).toFixed(2)}{" "}
+                      {t("/ பிரதி", "each")}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        disabled={!!updating}
+                        onClick={() => updateQty(it.id, (it.quantity || 1) - 1)}
+                        className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                      >
+                        −
+                      </button>
+                      <span className="text-[14px] font-semibold w-6 text-center">
+                        {it.quantity}
+                      </span>
+                      <button
+                        disabled={!!updating}
+                        onClick={() => updateQty(it.id, (it.quantity || 1) + 1)}
+                        className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => removeItem(it.id)}
+                        className="ml-3 text-[12px] text-gray-500 dark:text-neutral-400 hover:text-red-600 hover:underline"
+                      >
+                        {t("நீக்குக", "Remove")}
+                      </button>
+                    </div>
                   </div>
+                  <p className="text-[15px] font-bold text-gray-900 dark:text-neutral-100 whitespace-nowrap">
+                    ₹
+                    {(
+                      ((it.price_cents ?? 0) * (it.quantity ?? 1)) /
+                      100
+                    ).toFixed(2)}
+                  </p>
                 </div>
-                <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100 whitespace-nowrap">
-                  ₹{(((it.price_cents ?? 0) * (it.quantity ?? 1)) / 100).toFixed(2)}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Summary */}
-          <aside className="rounded-2xl bg-gray-50 dark:bg-neutral-950 p-6 h-fit lg:sticky lg:top-20">
-            <h2 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-              Order summary
+          <aside className="rounded-2xl bg-gray-50 dark:bg-neutral-950 border border-gray-200/70 dark:border-neutral-900 p-6 h-fit lg:sticky lg:top-24">
+            <h2 className="text-[16px] font-bold text-gray-900 dark:text-neutral-100">
+              {t("ஆர்டர் சுருக்கம்", "Order Summary")}
             </h2>
             <div className="mt-4 space-y-2 text-[14px]">
               <div className="flex justify-between text-gray-600 dark:text-neutral-400">
-                <span>Subtotal</span>
+                <span>{t("நூல்களின் விலை", "Subtotal")}</span>
                 <span>₹{(total / 100).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-neutral-400">
-                <span>Shipping</span>
-                <span className="text-gray-500 dark:text-neutral-500">Calculated at checkout</span>
+                <span>{t("அஞ்சல் / கூரியர் கட்டணம்", "Shipping")}</span>
+                <span className="text-gray-500 dark:text-neutral-500">
+                  {t("அடுத்தப் பக்கத்தில்", "Calculated at checkout")}
+                </span>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800 flex justify-between text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-              <span>Total</span>
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800 flex justify-between text-[16px] font-extrabold text-gray-900 dark:text-neutral-100">
+              <span>{t("மொத்தத் தொகை", "Total")}</span>
               <span>₹{(total / 100).toFixed(2)}</span>
             </div>
             <Link
               href={`/${params.tenant}/checkout`}
-              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-blue-600 text-white text-[14px] font-medium hover:bg-blue-700 transition-colors"
+              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition-colors"
             >
-              Proceed to checkout
+              {t("ஆர்டர் செய்யத் தொடர்க →", "Proceed to Checkout →")}
             </Link>
             <Link
               href={`/${params.tenant}/products`}
               className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-[14px] font-medium text-gray-900 dark:text-neutral-100 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
             >
-              Continue shopping
+              {t("மேலும் நூல்களைத் தேர்ந்தெடுக்க", "Continue Shopping")}
             </Link>
             <p className="mt-4 text-[12px] text-gray-500 dark:text-neutral-500 text-center">
-              Secure checkout · Razorpay, Stripe or COD · Inventory reserved on checkout.
+              {t(
+                "பாதுகாப்பான கட்டணம் · Razorpay, Stripe அல்லது COD வசதி.",
+                "Secure checkout · Razorpay, Stripe or COD.",
+              )}
             </p>
           </aside>
         </div>

@@ -29,14 +29,20 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-6">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-black text-[18px] font-semibold">
-            I
-          </div>
-          <h1 className="mt-6 text-[28px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
-            Infalette Admin
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.jpg"
+            alt="Muthamilarignar Pathipagam"
+            className="mx-auto h-20 w-20 rounded-2xl object-contain bg-white border border-gray-200 dark:border-neutral-800 p-1 shadow-sm"
+          />
+          <h1 className="mt-5 text-[24px] font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+            முத்தமிழறிஞர் பதிப்பகம்
           </h1>
-          <p className="mt-2 text-[14px] text-gray-500 dark:text-neutral-500">
-            Sign in to manage your storefront.
+          <p className="mt-1 text-[14px] font-medium text-red-600 dark:text-red-400">
+            Muthamilarignar Pathipagam — Admin
+          </p>
+          <p className="mt-1.5 text-[13px] text-gray-500 dark:text-neutral-500">
+            Sign in to manage books, inventory, and orders.
           </p>
         </div>
 

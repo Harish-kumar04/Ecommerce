@@ -1,11 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useLanguage } from "@/components/language-provider";
 
 /**
- * Product card — Apple-inspired minimalist tile.
+ * Product card — Muthamilarignar Pathipagam Book Card.
  *
- *  - Large product image (1:1) with subtle hover scale.
- *  - Wordmark-like product name, smaller muted price.
- *  - No badges, no decoration — the photo is the hero.
+ *  - Book cover ratio (3:4) with clean border and hover elevation.
+ *  - Bilingual title rendering (primary title in active language, secondary subtitle below).
+ *  - Publisher badge and INR price with sale strikethrough.
  */
 export default function ProductCard({
   product,
@@ -14,50 +17,70 @@ export default function ProductCard({
   product: any;
   tenant: string;
 }) {
+  const { t, localizeName, localizeSubName } = useLanguage();
   const price = product.sale_price_cents
     ? product.sale_price_cents / 100
     : product.price_cents / 100;
   const onSale = Boolean(product.sale_price_cents);
   const imgSrc = product.images?.[0] || product.image_url;
 
+  const primaryTitle = localizeName(product.name);
+  const secondaryTitle = localizeSubName(product.name);
+
   return (
     <Link
       href={`/${tenant}/products/${product.id}`}
-      className="group block rounded-2xl bg-white dark:bg-neutral-950 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.04)]"
+      className="group flex flex-col rounded-2xl border border-gray-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-[0_12px_32px_rgba(220,38,38,0.10)] overflow-hidden"
     >
-      <div className="aspect-square w-full overflow-hidden rounded-t-2xl bg-gray-100 dark:bg-neutral-900">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 p-3 flex items-center justify-center">
+        {onSale && (
+          <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            {t("சிறப்புத் தள்ளுபடி", "SALE")}
+          </span>
+        )}
         {imgSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imgSrc}
-            alt={product.name}
+            alt={primaryTitle}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-            No image
+            {t("படம் இல்லை", "No cover")}
           </div>
         )}
       </div>
-      <div className="px-4 pt-3 pb-5">
-        <p className="text-[15px] font-medium text-gray-900 dark:text-neutral-100 line-clamp-1">
-          {product.name}
-        </p>
-        {product.sku && (
-          <p className="mt-0.5 text-[12px] text-gray-400 dark:text-neutral-500">
-            {product.sku}
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+            {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
           </p>
-        )}
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-            ₹{price.toFixed(2)}
-          </span>
-          {onSale && (
-            <span className="text-[13px] text-gray-400 line-through">
-              ₹{(product.price_cents / 100).toFixed(2)}
-            </span>
+          <h3 className="mt-1 text-[15px] font-bold leading-snug text-gray-900 dark:text-neutral-100 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+            {primaryTitle}
+          </h3>
+          {secondaryTitle && (
+            <p className="mt-0.5 text-[12px] text-gray-500 dark:text-neutral-400 line-clamp-1">
+              {secondaryTitle}
+            </p>
           )}
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-900 flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[16px] font-bold text-gray-900 dark:text-neutral-100">
+              ₹{price.toFixed(0)}
+            </span>
+            {onSale && (
+              <span className="text-[12px] text-gray-400 line-through">
+                ₹{(product.price_cents / 100).toFixed(0)}
+              </span>
+            )}
+          </div>
+          <span className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/60 px-2.5 py-1 text-[11px] font-semibold text-red-600 dark:text-red-400 group-hover:bg-red-600 group-hover:text-white transition-colors">
+            {t("வாங்க →", "Buy →")}
+          </span>
         </div>
       </div>
     </Link>

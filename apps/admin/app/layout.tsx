@@ -12,8 +12,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Infalette Admin",
-  description: "Manage your Infalette storefront",
+  title: "Muthamilarignar Pathipagam — Admin | முத்தமிழறிஞர் பதிப்பகம்",
+  description: "Manage Muthamilarignar Pathipagam bookstore, catalog, and orders",
+  icons: {
+    icon: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
