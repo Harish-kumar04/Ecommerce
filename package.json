@@ -4,8 +4,10 @@
   "private": true,
   "description": "Muthamilarignar Pathipagam — Multi-service E-Commerce Bookstore",
   "scripts": {
+    "postinstall": "npm --prefix apps/storefront install",
     "dev": "npm --prefix apps/storefront run dev",
-    "build": "npm --prefix apps/storefront run build",
+    "build": "npm --prefix apps/storefront install && npm --prefix apps/storefront run build",
+    "start": "npm --prefix apps/storefront run start",
     "build:all": "npm --prefix apps/storefront run build && npm --prefix apps/admin run build && npm --prefix apps/platform-admin run build",
     "lint": "npm --prefix apps/storefront run lint",
     "type-check": "npm --prefix apps/storefront run type-check"
