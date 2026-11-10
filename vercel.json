@@ -9,6 +9,8 @@
     "admin": {
       "root": "apps/admin",
       "framework": "nextjs",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
       "bindings": [
         {
           "type": "service",
@@ -21,6 +23,8 @@
     "platform-admin": {
       "root": "apps/platform-admin",
       "framework": "nextjs",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
       "bindings": [
         {
           "type": "service",
@@ -33,6 +37,8 @@
     "storefront": {
       "root": "apps/storefront",
       "framework": "nextjs",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
       "bindings": [
         {
           "type": "service",
