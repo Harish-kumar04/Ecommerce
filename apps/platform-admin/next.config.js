@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? (process.env.VERCEL ? "/platform-admin" : ""),
   images: {
     domains: ["localhost", "*.infalette.com", "img.clerk.com"],
     remotePatterns: [
@@ -26,7 +27,7 @@ module.exports = {
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' data: https://fonts.gstatic.com",
-          "connect-src 'self' http://localhost:8000 ws: wss: https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+          "connect-src 'self' http://localhost:8000 https: ws: wss: https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
           "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
           "worker-src 'self' blob:",
           "frame-ancestors 'none'",

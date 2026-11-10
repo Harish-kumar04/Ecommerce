@@ -1,5 +1,8 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export function getServerApiUrl(): string {
+  const bound = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const trimmed = bound.replace(/\/$/, "");
+  return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+}
 
 export const FALLBACK_CATEGORIES = [
   {
@@ -422,7 +425,7 @@ export const FALLBACK_BOOKS: CatalogBook[] = RAW_BOOKS.map((b) => ({
 
 export async function getBooksWithFallback(tenant: string) {
   try {
-    const res = await fetch(`${API_URL}/public/products`, {
+    const res = await fetch(`${getServerApiUrl()}/public/products`, {
       headers: { "X-Tenant": tenant },
       next: { revalidate: 15 },
       signal: AbortSignal.timeout(3500),
@@ -440,7 +443,7 @@ export async function getBooksWithFallback(tenant: string) {
 
 export async function getCategoriesWithFallback(tenant: string) {
   try {
-    const res = await fetch(`${API_URL}/public/categories`, {
+    const res = await fetch(`${getServerApiUrl()}/public/categories`, {
       headers: { "X-Tenant": tenant },
       next: { revalidate: 30 },
       signal: AbortSignal.timeout(3500),
@@ -458,7 +461,7 @@ export async function getCategoriesWithFallback(tenant: string) {
 
 export async function getStoreWithFallback(tenant: string) {
   try {
-    const res = await fetch(`${API_URL}/public/store`, {
+    const res = await fetch(`${getServerApiUrl()}/public/store`, {
       headers: { "X-Tenant": tenant },
       next: { revalidate: 30 },
       signal: AbortSignal.timeout(3500),
@@ -479,7 +482,7 @@ export async function getBookByIdWithFallback(
   productIdOrSlug: string,
 ) {
   try {
-    const res = await fetch(`${API_URL}/public/products/${productIdOrSlug}`, {
+    const res = await fetch(`${getServerApiUrl()}/public/products/${productIdOrSlug}`, {
       headers: { "X-Tenant": tenant },
       next: { revalidate: 15 },
       signal: AbortSignal.timeout(3500),

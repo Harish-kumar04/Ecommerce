@@ -1,9 +1,6 @@
 import { notFound } from "next/navigation";
 import BookDetailClient from "@/components/product/book-detail-client";
-import { getBookByIdWithFallback } from "@/lib/catalog-fallback";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { getBookByIdWithFallback, getServerApiUrl } from "@/lib/catalog-fallback";
 
 export async function generateMetadata({
   params,
@@ -41,7 +38,7 @@ export default async function ProductDetailPage({
 
   const price = product.sale_price_cents || product.price_cents;
 
-  void fetch(`${API_URL}/public/track`, {
+  void fetch(`${getServerApiUrl()}/public/track`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Tenant": params.tenant },
     body: JSON.stringify({

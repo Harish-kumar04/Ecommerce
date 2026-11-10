@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerApiUrl } from "@/lib/catalog-fallback";
 
 /**
  * GET /api/cart-summary?tenant=demo-store
@@ -9,8 +10,6 @@ import { NextRequest, NextResponse } from "next/server";
  * carts work the same as on the cart page.
  */
 export const dynamic = "force-dynamic";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export async function GET(req: NextRequest) {
   const tenant = req.nextUrl.searchParams.get("tenant") || "";
@@ -26,7 +25,7 @@ export async function GET(req: NextRequest) {
   if (sessionKey) headers["X-Cart-Session-ID"] = sessionKey;
 
   try {
-    const res = await fetch(`${API_URL}/cart/`, {
+    const res = await fetch(`${getServerApiUrl()}/cart/`, {
       headers,
       cache: "no-store",
     });

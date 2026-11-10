@@ -1,5 +1,0 @@
-{
-  "framework": "nextjs",
-  "installCommand": "npx --yes pnpm@9 install",
-  "buildCommand": "npx --yes pnpm@9 --filter admin build"
-}

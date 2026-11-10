@@ -142,8 +142,24 @@ export function getStoredFirstAttribution(): Attribution | Record<string, never>
 
 import axios from "axios";
 
+function resolveApiBaseUrl(): string {
+  if (typeof window === "undefined") {
+    const raw = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const trimmed = raw.replace(/\/$/, "");
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/api/v1";
+  }
+  return "http://localhost:8000/api/v1";
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: resolveApiBaseUrl(),
 });
 
 // Guest cart identity: opaque uuid kept client-side (requirement: guest checkout)

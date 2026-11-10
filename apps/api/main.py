@@ -3,6 +3,19 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
+import sys
+
+# Ensure repo root and internal packages/*/src are importable in serverless & local environments
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+for _candidate in (_REPO_ROOT, _REPO_ROOT.parent):
+    if (_candidate / "packages").is_dir():
+        if str(_candidate) not in sys.path:
+            sys.path.insert(0, str(_candidate))
+        for _pkg_src in sorted((_candidate / "packages").glob("*/src")):
+            if str(_pkg_src) not in sys.path:
+                sys.path.insert(0, str(_pkg_src))
+        break
 
 import sentry_sdk
 from fastapi import FastAPI, Request

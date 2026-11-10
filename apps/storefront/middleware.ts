@@ -12,9 +12,6 @@ import { NextRequest, NextResponse } from "next/server";
  * Path-prefixed URLs (/{tenant}/...) pass through untouched.
  */
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
 // Hosts that never map to a tenant (local dev, platform surfaces).
 const RESERVED_HOSTS = new Set([
   "localhost",
@@ -34,13 +31,14 @@ type ResolveResult = {
   redirects: { old_path: string; new_path: string; status_code: number }[];
 };
 
-async function resolveHost(host: string): Promise<ResolveResult | null> {
+async function resolveHost(host: string, origin: string): Promise<ResolveResult | null> {
   const cached = resolveCache.get(host);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
     return { tenant: cached.tenant, redirects: cached.redirects };
   }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || `${origin}/api/v1`;
   try {
-    const res = await fetch(`${API_URL}/public/resolve?host=${encodeURIComponent(host)}`, {
+    const res = await fetch(`${apiBase.replace(/\/$/, "")}/public/resolve?host=${encodeURIComponent(host)}`, {
       headers: { accept: "application/json" },
       cache: "no-store",
       signal: AbortSignal.timeout(2500),
@@ -74,12 +72,12 @@ async function handleTenantRouting(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Local/dev hosts use the /[tenant] path convention — no mapping.
-  if (RESERVED_HOSTS.has(host)) {
+  // Local/dev and default Vercel preview/prod hosts use the /[tenant] path convention — no mapping.
+  if (RESERVED_HOSTS.has(host) || host.endsWith(".vercel.app")) {
     return NextResponse.next();
   }
 
-  const resolved = await resolveHost(host);
+  const resolved = await resolveHost(host, request.nextUrl.origin);
   if (!resolved) {
     return NextResponse.next();
   }

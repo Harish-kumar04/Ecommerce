@@ -1,7 +1,20 @@
 import axios from "axios";
 
+function resolvePlatformApiOrigin(): string {
+  if (typeof window === "undefined") {
+    return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
+  }
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "";
+  }
+  return "http://localhost:8000";
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: `${resolvePlatformApiOrigin()}/api/v1`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -18,8 +31,11 @@ api.interceptors.request.use((config) => {
 // Plain bearer-aware fetch helper for routes that aren't auth-bearer-only
 // (e.g. health endpoints that live outside /api/v1).
 async function fetchJson(path: string, options: RequestInit = {}): Promise<any> {
-  const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
-  const url = path.startsWith("http") ? path : `${base}${path.startsWith("/api/v1") ? "" : "/api/v1"}${path}`;
+  const base = resolvePlatformApiOrigin();
+  const isHealthRoute = path === "/health" || path.startsWith("/health/");
+  const url = path.startsWith("http")
+    ? path
+    : `${base}${path.startsWith("/api/v1") || isHealthRoute ? "" : "/api/v1"}${path}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),

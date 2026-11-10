@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { getServerApiUrl } from "@/lib/catalog-fallback";
 
 export const dynamic = "force-dynamic";
 
 type Tenant = { slug: string; name: string };
 
 async function fetchTenants(): Promise<Tenant[]> {
-  const endpoints = [`${API_URL}/public/tenants`, `${API_URL}/public/store`];
+  const apiUrl = getServerApiUrl();
+  const endpoints = [`${apiUrl}/public/tenants`, `${apiUrl}/public/store`];
   for (const url of endpoints) {
     try {
       const res = await fetch(url, {

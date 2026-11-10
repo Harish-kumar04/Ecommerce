@@ -3,8 +3,23 @@
  * Connects to the FastAPI backend with proper authentication and tenant isolation.
  */
 
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_URL = RAW_API_URL.endsWith("/api/v1") ? RAW_API_URL : `${RAW_API_URL.replace(/\/$/, "")}/api/v1`;
+function resolveAdminApiUrl(): string {
+  if (typeof window === "undefined") {
+    const raw = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const trimmed = raw.replace(/\/$/, "");
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/api/v1";
+  }
+  return "http://localhost:8000/api/v1";
+}
+
+const API_URL = resolveAdminApiUrl();
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -583,8 +598,8 @@ class AdminApiExtensions {
   }
 
   private async req(path: string, options: RequestInit = {}): Promise<any> {
-    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
-    const url = path.startsWith("http") ? path : `${base}/api/v1${path}`;
+    const base = resolveAdminApiUrl();
+    const url = path.startsWith("http") ? path : `${base}${path}`;
     const headers: Record<string, string> = {
       "content-type": "application/json",
       ...((options.headers as Record<string, string>) || {}),
@@ -672,8 +687,8 @@ class AdminApiExtensions {
   }
 
   async exportCsv(reportType: "orders" | "customers" | "leads"): Promise<Blob> {
-    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
-    const res = await fetch(`${base}/api/v1/reports/export/${reportType}`, {
+    const base = resolveAdminApiUrl();
+    const res = await fetch(`${base}/reports/export/${reportType}`, {
       headers: this.token ? { Authorization: `Bearer ${this.token}` } : {},
     });
     if (!res.ok) throw new Error(`Export failed (${res.status})`);
