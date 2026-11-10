@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import AttributionCapture from "@/components/attribution-capture";
@@ -7,12 +6,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { Toaster } from "@/components/toaster";
 import { CartRefreshBridge } from "@/components/cart-refresh-bridge";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Muthamilarignar Pathipagam | முத்தமிழறிஞர் பதிப்பகம்",
@@ -43,6 +36,12 @@ export default function RootLayout({
   return (
     <html lang="ta" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -51,7 +50,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} font-sans antialiased`}
+        className="font-sans antialiased"
         style={{ fontFeatureSettings: '"ss01", "cv11"' }}
       >
         {clerkKey ? (
