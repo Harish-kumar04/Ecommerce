@@ -11,9 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
-# Copy shared packages and apps manifest
+# Copy shared packages, apps manifest, and seed scripts
 COPY packages/ ./packages/
 COPY apps/ ./apps/
+COPY scripts/ ./scripts/
 
 # Install shared packages in dependency order + apps
 RUN pip install --no-cache-dir --upgrade pip && \

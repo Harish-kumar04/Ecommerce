@@ -1,45 +1,18 @@
 import { notFound } from "next/navigation";
 import HomeClient from "../../components/home-client";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import {
+  getBooksWithFallback,
+  getCategoriesWithFallback,
+  getStoreWithFallback,
+} from "@/lib/catalog-fallback";
 
 async function fetchTenantData(tenant: string) {
-  try {
-    const headers: Record<string, string> = { "X-Tenant": tenant };
-    const [productsRes, storeRes, categoriesRes] = await Promise.all([
-      fetch(`${API_URL}/public/products`, {
-        headers,
-        next: { revalidate: 10 },
-      })
-        .then((r) => r.json())
-        .catch(() => null),
-      fetch(`${API_URL}/public/store`, {
-        headers,
-        next: { revalidate: 10 },
-      })
-        .then((r) => r.json())
-        .catch(() => null),
-      fetch(`${API_URL}/public/categories`, {
-        headers,
-        next: { revalidate: 10 },
-      })
-        .then((r) => r.json())
-        .catch(() => null),
-    ]);
-    const products = Array.isArray(productsRes)
-      ? productsRes
-      : productsRes?.data || productsRes?.items || [];
-    const store = Array.isArray(storeRes)
-      ? storeRes[0]
-      : storeRes?.data?.[0] || storeRes;
-    const categories = Array.isArray(categoriesRes)
-      ? categoriesRes
-      : categoriesRes?.data || [];
-    return { products, store, categories };
-  } catch {
-    return { products: [], store: null, categories: [] };
-  }
+  const [products, store, categories] = await Promise.all([
+    getBooksWithFallback(tenant),
+    getStoreWithFallback(tenant),
+    getCategoriesWithFallback(tenant),
+  ]);
+  return { products, store, categories };
 }
 
 export async function generateMetadata({

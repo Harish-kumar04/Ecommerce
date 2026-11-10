@@ -1,30 +1,17 @@
 import { notFound } from "next/navigation";
 import BookDetailClient from "@/components/product/book-detail-client";
+import { getBookByIdWithFallback } from "@/lib/catalog-fallback";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
-async function fetchProduct(tenant: string, productId: string) {
-  try {
-    const res = await fetch(`${API_URL}/public/products/${productId}`, {
-      headers: { "X-Tenant": tenant },
-      next: { revalidate: 10 },
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
 
 export async function generateMetadata({
   params,
 }: {
   params: { tenant: string; id: string };
 }) {
-  const product = await fetchProduct(params.tenant, params.id);
-  if (!product)
-    return { title: `Book | Muthamilarignar Pathipagam` };
+  const product = await getBookByIdWithFallback(params.tenant, params.id);
+  if (!product) return { title: `Book | Muthamilarignar Pathipagam` };
   const title =
     product.meta_title ||
     `${product.name} | Muthamilarignar Pathipagam | முத்தமிழறிஞர் பதிப்பகம்`;
@@ -49,7 +36,7 @@ export default async function ProductDetailPage({
 }: {
   params: { tenant: string; id: string };
 }) {
-  const product = await fetchProduct(params.tenant, params.id);
+  const product = await getBookByIdWithFallback(params.tenant, params.id);
   if (!product) notFound();
 
   const price = product.sale_price_cents || product.price_cents;

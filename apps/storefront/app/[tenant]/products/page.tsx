@@ -1,32 +1,8 @@
 import BooksCatalogClient from "@/components/product/books-catalog-client";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
-async function fetchCatalogData(tenant: string) {
-  try {
-    const headers = { "X-Tenant": tenant };
-    const [prodRes, catRes] = await Promise.all([
-      fetch(`${API_URL}/public/products`, {
-        headers,
-        next: { revalidate: 10 },
-      })
-        .then((r) => (r.ok ? r.json() : []))
-        .catch(() => []),
-      fetch(`${API_URL}/public/categories`, {
-        headers,
-        next: { revalidate: 30 },
-      })
-        .then((r) => (r.ok ? r.json() : []))
-        .catch(() => []),
-    ]);
-    const products = Array.isArray(prodRes) ? prodRes : prodRes?.data || [];
-    const categories = Array.isArray(catRes) ? catRes : catRes?.data || [];
-    return { products, categories };
-  } catch {
-    return { products: [], categories: [] };
-  }
-}
+import {
+  getBooksWithFallback,
+  getCategoriesWithFallback,
+} from "@/lib/catalog-fallback";
 
 export async function generateMetadata({
   params,
@@ -47,7 +23,10 @@ export default async function ProductsPage({
 }: {
   params: { tenant: string };
 }) {
-  const { products, categories } = await fetchCatalogData(params.tenant);
+  const [products, categories] = await Promise.all([
+    getBooksWithFallback(params.tenant),
+    getCategoriesWithFallback(params.tenant),
+  ]);
 
   return (
     <BooksCatalogClient

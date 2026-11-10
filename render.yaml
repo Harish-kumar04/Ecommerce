@@ -1,13 +1,14 @@
-# Render.com Free-Tier Blueprint for Infalette API
+# Render.com Free-Tier Blueprint for Muthamilarignar Pathipagam API
 # Deploy at: https://dashboard.render.com/blueprints
 services:
   - type: web
-    name: infalette-api
+    name: muthamilarignar-pathipagam-api
     runtime: docker
     dockerfilePath: ./infrastructure/docker/api/Dockerfile
     dockerContext: .
     plan: free
     healthCheckPath: /health
+    dockerCommand: sh -c "python scripts/demo_seed.py && uvicorn apps.api.main:app --host 0.0.0.0 --port 8000"
     envVars:
       - key: APP_ENV
         value: staging
@@ -22,6 +23,4 @@ services:
       - key: CORS_ORIGINS
         value: '["*"]'
       - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
+        value: "sqlite+aiosqlite:///./bookstore.db"
