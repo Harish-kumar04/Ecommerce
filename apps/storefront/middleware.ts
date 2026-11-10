@@ -72,8 +72,14 @@ async function handleTenantRouting(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Local/dev and default Vercel preview/prod hosts use the /[tenant] path convention — no mapping.
-  if (RESERVED_HOSTS.has(host) || host.endsWith(".vercel.app")) {
+  // Local/dev and default hosting preview/prod hosts use the /[tenant] path convention — no mapping.
+  if (
+    RESERVED_HOSTS.has(host) ||
+    host.endsWith(".vercel.app") ||
+    host.endsWith(".onrender.com") ||
+    host.endsWith(".netlify.app") ||
+    host.endsWith(".lhr.life")
+  ) {
     return NextResponse.next();
   }
 
