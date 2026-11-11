@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminApi } from "@/lib/api";
 import ImageUploader from "@/components/image-uploader";
-import Image from "next/image";
+import { adminApi } from "@/lib/api";
 
 interface Slide {
   id: string;
@@ -13,12 +12,10 @@ interface Slide {
   alt_en: string;
   link?: string;
   active: boolean;
-  starts_at?: string;
-  ends_at?: string;
 }
 
-interface NotificationItem {
-  id: string;
+interface NotificationConfig {
+  enabled: boolean;
   type: "popup" | "bar";
   image_url?: string;
   title_ta: string;
@@ -28,13 +25,38 @@ interface NotificationItem {
   button_ta?: string;
   button_en?: string;
   link?: string;
-  active: boolean;
-  starts_at?: string;
-  ends_at?: string;
   delay_seconds: number;
-  frequency: "once" | "daily" | "every_visit";
-  pages: "home" | "all";
 }
+
+const DEFAULT_SLIDES: Slide[] = [
+  {
+    id: "default-slide-1",
+    image_url: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1920&q=80",
+    mobile_image_url: "",
+    alt_ta: "முத்தமிழறிஞர் பதிப்பகம் — அரிய நூல்கள்",
+    alt_en: "Muthamilarignar Pathipagam — Rare Books",
+    link: "/products",
+    active: true,
+  },
+  {
+    id: "default-slide-2",
+    image_url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1920&q=80",
+    mobile_image_url: "",
+    alt_ta: "கலைஞர் நூற்றாண்டு விழா நூல்கள்",
+    alt_en: "Kalaignar Centenary Collection",
+    link: "/products",
+    active: true,
+  },
+  {
+    id: "default-slide-3",
+    image_url: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1920&q=80",
+    mobile_image_url: "",
+    alt_ta: "திராவிட இயக்க வரலாற்றுத் தொகுப்புகள்",
+    alt_en: "Dravidian Movement Historical Volumes",
+    link: "/products",
+    active: true,
+  },
+];
 
 export default function HomepageOffersPage() {
   const [tab, setTab] = useState<"slides" | "notifications">("slides");
@@ -42,42 +64,74 @@ export default function HomepageOffersPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authExpired, setAuthExpired] = useState(false);
 
   const [settings, setSettings] = useState<any>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [popup, setPopup] = useState<NotificationConfig>({
+    enabled: false,
+    type: "popup",
+    image_url: "",
+    title_ta: "சிறப்புச் சலுகை!",
+    title_en: "Special Offer!",
+    text_ta: "இன்றைய ஆர்டர்களுக்கு இலவச விநியோகம்.",
+    text_en: "Free delivery on today's book orders.",
+    button_ta: "நூல்களைப் பார்க்க",
+    button_en: "Shop Books",
+    link: "/products",
+    delay_seconds: 4,
+  });
 
-  // Slide modal / edit state
-  const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
-  const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
-
-  // Notification modal / edit state
-  const [editingNotification, setEditingNotification] = useState<NotificationItem | null>(null);
-  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
-
+  // Load current settings with public fallback if token is expired
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
+      setError(null);
+      setAuthExpired(false);
+
+      let loadedSettings = null;
       try {
-        setLoading(true);
-        const res = await adminApi.getStoreSettings();
-        setSettings(res);
-        const tc = res?.theme_config || res?.store?.theme_config || {};
-        if (Array.isArray(tc.home_slides)) {
-          setSlides(tc.home_slides);
-        }
-        if (Array.isArray(tc.notifications)) {
-          setNotifications(tc.notifications);
-        }
+        loadedSettings = await adminApi.getStoreSettings();
       } catch (err: any) {
-        setError(err.message || "Failed to load store settings");
-      } finally {
-        setLoading(false);
+        const msg = String(err?.message || "");
+        if (msg.includes("expired") || msg.includes("401") || msg.includes("Unauthorized")) {
+          setAuthExpired(true);
+        }
+
+        // Try public store fallback
+        try {
+          const rawApi = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+          const base = rawApi.replace(/\/$/, "");
+          const publicRes = await fetch(`${base}/api/v1/public/store`).catch(() => null);
+          if (publicRes && publicRes.ok) {
+            loadedSettings = await publicRes.json();
+          }
+        } catch {}
       }
+
+      if (loadedSettings) {
+        setSettings(loadedSettings);
+        const tc = loadedSettings.theme_config || loadedSettings.store?.theme_config || {};
+        if (Array.isArray(tc.home_slides) && tc.home_slides.length > 0) {
+          setSlides(tc.home_slides);
+        } else {
+          setSlides(DEFAULT_SLIDES);
+        }
+
+        if (tc.popup && typeof tc.popup === "object") {
+          setPopup((prev) => ({ ...prev, ...tc.popup }));
+        }
+      } else {
+        setSlides(DEFAULT_SLIDES);
+      }
+
+      setLoading(false);
     }
+
     void loadData();
   }, []);
 
-  const handleSaveAll = async (newSlides = slides, newNotifs = notifications) => {
+  const handleSaveAll = async () => {
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -85,714 +139,536 @@ export default function HomepageOffersPage() {
       const currentTc = settings?.theme_config || settings?.store?.theme_config || {};
       const updatedTc = {
         ...currentTc,
-        home_slides: newSlides,
-        notifications: newNotifs,
+        home_slides: slides,
+        popup: popup,
       };
 
       await adminApi.updateStoreSettings({
         theme_config: updatedTc,
       });
 
-      setSlides(newSlides);
-      setNotifications(newNotifs);
-      setMessage("Homepage & offers settings saved successfully!");
-      setTimeout(() => setMessage(null), 4000);
+      setMessage("Homepage slides and offers updated successfully!");
+      setTimeout(() => setMessage(null), 5000);
     } catch (err: any) {
-      setError(err.message || "Failed to save settings");
+      const msg = err.message || "Failed to save settings.";
+      if (msg.includes("expired") || msg.includes("401") || msg.includes("Unauthorized")) {
+        setAuthExpired(true);
+        setError("Your admin session has expired. Please sign in again to save your changes.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  // Reorder slides
-  const moveSlide = (index: number, direction: "up" | "down") => {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= slides.length) return;
-    const next = [...slides];
-    const [moved] = next.splice(index, 1);
-    next.splice(targetIndex, 0, moved);
-    setSlides(next);
-    void handleSaveAll(next, notifications);
+  // Slide helpers
+  const updateSlide = (idx: number, patch: Partial<Slide>) => {
+    setSlides((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], ...patch };
+      return copy;
+    });
   };
 
-  const deleteSlide = (id: string) => {
-    if (!confirm("Are you sure you want to delete this offer slide?")) return;
-    const next = slides.filter((s) => s.id !== id);
-    setSlides(next);
-    void handleSaveAll(next, notifications);
-  };
-
-  const toggleSlideActive = (id: string) => {
-    const next = slides.map((s) => (s.id === id ? { ...s, active: !s.active } : s));
-    setSlides(next);
-    void handleSaveAll(next, notifications);
-  };
-
-  const saveSlideModal = () => {
-    if (!editingSlide) return;
-    if (!editingSlide.image_url) {
-      alert("Desktop image is required for an offer slide.");
+  const addSlide = () => {
+    if (slides.length >= 6) {
+      alert("Maximum 6 slides allowed.");
       return;
     }
+    const newSlide: Slide = {
+      id: `slide-${Date.now()}`,
+      image_url: "",
+      mobile_image_url: "",
+      alt_ta: "சிறப்புச் சலுகை",
+      alt_en: "Special Offer",
+      link: "/products",
+      active: true,
+    };
+    setSlides((prev) => [...prev, newSlide]);
+  };
 
-    let next: Slide[];
-    const exists = slides.some((s) => s.id === editingSlide.id);
-    if (exists) {
-      next = slides.map((s) => (s.id === editingSlide.id ? editingSlide : s));
-    } else {
-      if (slides.length >= 6) {
-        alert("Maximum of 6 offer slides allowed. Please delete or disable an existing slide.");
-        return;
-      }
-      next = [...slides, editingSlide];
+  const removeSlide = (idx: number) => {
+    if (confirm("Remove this slide?")) {
+      setSlides((prev) => prev.filter((_, i) => i !== idx));
     }
-
-    setSlides(next);
-    setIsSlideModalOpen(false);
-    setEditingSlide(null);
-    void handleSaveAll(next, notifications);
   };
 
-  // Notification actions
-  const toggleNotifActive = (id: string) => {
-    const next = notifications.map((n) => (n.id === id ? { ...n, active: !n.active } : n));
-    setNotifications(next);
-    void handleSaveAll(slides, next);
+  const moveSlide = (idx: number, direction: "up" | "down") => {
+    setSlides((prev) => {
+      const copy = [...prev];
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= copy.length) return prev;
+      const temp = copy[idx];
+      copy[idx] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
   };
-
-  const deleteNotification = (id: string) => {
-    if (!confirm("Are you sure you want to delete this notification?")) return;
-    const next = notifications.filter((n) => n.id !== id);
-    setNotifications(next);
-    void handleSaveAll(slides, next);
-  };
-
-  const saveNotifModal = () => {
-    if (!editingNotification) return;
-    let next: NotificationItem[];
-    const exists = notifications.some((n) => n.id === editingNotification.id);
-    if (exists) {
-      next = notifications.map((n) => (n.id === editingNotification.id ? editingNotification : n));
-    } else {
-      next = [...notifications, editingNotification];
-    }
-    setNotifications(next);
-    setIsNotifModalOpen(false);
-    setEditingNotification(null);
-    void handleSaveAll(slides, next);
-  };
-
-  const activeNotifsCount = notifications.filter((n) => n.active).length;
-
-  if (loading) {
-    return <div className="p-12 text-center text-gray-500 font-medium">Loading Homepage & Offers settings…</div>;
-  }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-5">
+    <div className="max-w-5xl mx-auto space-y-6 pb-24">
+      {/* Top Header & Save Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Homepage & Offers</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage scrolling hero offer images and promotional popups / top notification bars.
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+            Homepage & Offers
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">
+            Manage scrolling hero banner slides and promotional announcement popups.
           </p>
         </div>
+
         <button
-          onClick={() => handleSaveAll()}
+          type="button"
+          onClick={handleSaveAll}
           disabled={saving}
-          className="rounded-xl bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold bg-[#E52320] text-white hover:bg-[#c91e1b] transition-colors shadow-sm disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? "Saving Changes..." : "Save Changes"}
         </button>
       </div>
 
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-      {message && <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div>}
+      {/* Prominent Session Expiry Alert with Re-login */}
+      {authExpired && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-4 text-sm text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div>
+            <p className="font-bold flex items-center gap-1.5">
+              <span>⚠️</span> Admin Login Session Expired
+            </p>
+            <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+              Your login token has expired. Please sign in again in a new tab so you can save your changes.
+            </p>
+          </div>
+          <a
+            href="/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold whitespace-nowrap"
+          >
+            Sign In Again &rarr;
+          </a>
+        </div>
+      )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-6">
+      {/* Status Messages */}
+      {message && (
+        <div className="rounded-2xl border border-green-200 bg-green-50 dark:bg-green-950/40 p-4 text-sm text-green-800 dark:text-green-300 shadow-sm">
+          &check; {message}
+        </div>
+      )}
+
+      {error && !authExpired && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/40 p-4 text-sm text-red-800 dark:text-red-300 shadow-sm flex items-center justify-between">
+          <p>{error}</p>
+          <button type="button" onClick={() => setError(null)} className="text-xs font-bold underline">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-neutral-800 pb-2">
         <button
+          type="button"
           onClick={() => setTab("slides")}
-          className={`pb-3 text-sm font-bold transition-colors border-b-2 -mb-px ${
-            tab === "slides" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-900"
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            tab === "slides"
+              ? "bg-[#E52320] text-white shadow-sm"
+              : "text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
           }`}
         >
-          Scrolling Images ({slides.length}/6)
+          Hero Banner Slides ({slides.length}/6)
         </button>
+
         <button
+          type="button"
           onClick={() => setTab("notifications")}
-          className={`pb-3 text-sm font-bold transition-colors border-b-2 -mb-px ${
-            tab === "notifications" ? "border-red-600 text-red-600" : "border-transparent text-gray-500 hover:text-gray-900"
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            tab === "notifications"
+              ? "bg-[#E52320] text-white shadow-sm"
+              : "text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-900"
           }`}
         >
-          Notifications & Popups ({notifications.length})
+          Promotional Popup {popup.enabled ? "(Active)" : "(Disabled)"}
         </button>
       </div>
 
-      {/* TAB 1: SCROLLING IMAGES */}
-      {tab === "slides" && (
+      {loading ? (
+        <div className="py-16 text-center text-sm text-gray-400">Loading settings...</div>
+      ) : tab === "slides" ? (
+        /* TAB 1: HERO BANNER SLIDES */
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <div>
-              <p className="text-sm font-bold text-gray-800">Scrolling Hero Offers</p>
-              <p className="text-xs text-gray-500">
-                Displays 1920×720 (8:3) banner slides on the storefront. Up to 6 active slides supported.
-              </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              Desktop banners display at 1920&times;720 (8:3). Mobile banners optionally display at 1080&times;1350 (4:5).
+            </p>
+            <div className="flex items-center gap-2">
+              {slides.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSlides(DEFAULT_SLIDES)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 hover:bg-gray-50"
+                >
+                  Load 3 Brand Defaults
+                </button>
+              )}
+              {slides.length < 6 && (
+                <button
+                  type="button"
+                  onClick={addSlide}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gray-900 dark:bg-white text-white dark:text-black hover:opacity-90"
+                >
+                  <span>+</span> Add New Slide
+                </button>
+              )}
             </div>
-            <button
-              onClick={() => {
-                if (slides.length >= 6) {
-                  alert("Maximum 6 slides reached. Please delete or disable an existing slide first.");
-                  return;
-                }
-                setEditingSlide({
-                  id: "slide_" + Date.now(),
-                  image_url: "",
-                  alt_ta: "சிறப்புச் சலுகை",
-                  alt_en: "Special Offer",
-                  link: "/products",
-                  active: true,
-                });
-                setIsSlideModalOpen(true);
-              }}
-              disabled={slides.length >= 6}
-              className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              + Add Offer Image
-            </button>
           </div>
 
-          {slides.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-              <p className="text-sm font-medium text-gray-600">No custom offer slides added yet.</p>
-              <p className="text-xs text-gray-400 mt-1">The storefront is currently displaying the 3 built-in brand slides.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {slides.map((s, idx) => (
-                <div
-                  key={s.id}
-                  className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border bg-white shadow-sm transition-all ${
-                    s.active ? "border-gray-200" : "border-gray-200 opacity-60 bg-gray-50/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <span className="font-mono text-xs font-bold text-gray-400 w-5">{idx + 1}</span>
-                    <div className="relative h-16 w-36 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
-                      {s.image_url ? (
-                        <Image src={s.image_url} alt={s.alt_en} fill sizes="144px" className="object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] text-gray-400">No Image</div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-gray-900">{s.alt_en || s.alt_ta || "Slide"}</p>
-                      <p className="truncate text-xs text-gray-500 font-mono">{s.link || "No link"}</p>
-                      {(s.starts_at || s.ends_at) && (
-                        <p className="text-[11px] text-amber-700 font-medium mt-0.5">
-                          Schedule: {s.starts_at ? new Date(s.starts_at).toLocaleDateString() : "Now"} –{" "}
-                          {s.ends_at ? new Date(s.ends_at).toLocaleDateString() : "Forever"}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {/* Active toggle */}
-                    <button
-                      type="button"
-                      onClick={() => toggleSlideActive(s.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                        s.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+          {/* List of Slide Cards */}
+          <div className="space-y-5">
+            {slides.map((slide, idx) => (
+              <div
+                key={slide.id || idx}
+                className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm space-y-4"
+              >
+                {/* Slide Card Header */}
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                      {idx + 1}
+                    </span>
+                    <h2 className="text-sm font-bold text-gray-900 dark:text-neutral-100">
+                      Slide {idx + 1} {slide.alt_en ? `— ${slide.alt_en}` : ""}
+                    </h2>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                        slide.active
+                          ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                          : "bg-gray-100 text-gray-600 dark:bg-neutral-800 dark:text-neutral-400"
                       }`}
                     >
-                      {s.active ? "Active" : "Disabled"}
+                      {slide.active ? "Active" : "Paused"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Active Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => updateSlide(idx, { active: !slide.active })}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium border ${
+                        slide.active
+                          ? "border-green-300 text-green-700 hover:bg-green-50"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {slide.active ? "Pause" : "Activate"}
                     </button>
 
-                    {/* Up / Down reorder */}
+                    {/* Move Up */}
                     <button
                       type="button"
                       disabled={idx === 0}
                       onClick={() => moveSlide(idx, "up")}
-                      className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+                      className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
                       title="Move Up"
                     >
-                      ▲
+                      &uarr;
                     </button>
+
+                    {/* Move Down */}
                     <button
                       type="button"
                       disabled={idx === slides.length - 1}
                       onClick={() => moveSlide(idx, "down")}
-                      className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+                      className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
                       title="Move Down"
                     >
-                      ▼
-                    </button>
-
-                    {/* Edit */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingSlide({ ...s });
-                        setIsSlideModalOpen(true);
-                      }}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                      Edit
+                      &darr;
                     </button>
 
                     {/* Delete */}
                     <button
                       type="button"
-                      onClick={() => deleteSlide(s.id)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                      onClick={() => removeSlide(idx)}
+                      className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                      title="Delete Slide"
                     >
-                      Delete
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* TAB 2: NOTIFICATIONS */}
-      {tab === "notifications" && (
-        <div className="space-y-6">
-          {activeNotifsCount > 3 && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
-              ⚠️ Warning: You have {activeNotifsCount} active notifications. To ensure a fast and uncluttered experience, we recommend having no more than 3 active notifications at the same time.
-            </div>
-          )}
+                {/* Banner Images: Desktop & Mobile */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Desktop Banner */}
+                  <div className="rounded-xl border border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30 p-3.5 space-y-2">
+                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
+                      Desktop Banner Image <span className="text-red-600">*</span>
+                    </p>
+                    <ImageUploader
+                      label="Desktop Banner"
+                      ratio={[8, 3]}
+                      targetWidth={1920}
+                      value={slide.image_url}
+                      onChange={(url) => updateSlide(idx, { image_url: url })}
+                      kind="home-hero"
+                      required
+                    />
+                  </div>
 
-          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <div>
-              <p className="text-sm font-bold text-gray-800">Store Notifications & Promotional Popups</p>
-              <p className="text-xs text-gray-500">Configure promotional popups or announcement bars with scheduling and frequency controls.</p>
-            </div>
-            <button
-              onClick={() => {
-                setEditingNotification({
-                  id: "notif_" + Date.now(),
-                  type: "popup",
-                  title_ta: "புதிய வெளியீடுகள்!",
-                  title_en: "Special Announcement!",
-                  text_ta: "முத்தமிழறிஞர் பதிப்பகத்தின் புதிய நூல்கள் இப்போது கிடைக்கின்றன.",
-                  text_en: "Explore new titles from Muthamilarignar Pathipagam.",
-                  button_ta: "நூல்களைக் காண்க",
-                  button_en: "Explore Books",
-                  link: "/products",
-                  active: true,
-                  delay_seconds: 4,
-                  frequency: "daily",
-                  pages: "home",
-                });
-                setIsNotifModalOpen(true);
-              }}
-              className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
-            >
-              + Add Notification
-            </button>
+                  {/* Mobile Banner (Optional) */}
+                  <div className="rounded-xl border border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30 p-3.5 space-y-2">
+                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
+                      Mobile Banner Image (Optional)
+                    </p>
+                    <ImageUploader
+                      label="Mobile Banner"
+                      ratio={[4, 5]}
+                      targetWidth={1080}
+                      value={slide.mobile_image_url || ""}
+                      onChange={(url) => updateSlide(idx, { mobile_image_url: url })}
+                      kind="home-hero-mobile"
+                    />
+                  </div>
+                </div>
+
+                {/* Titles & Destination Link */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                      Alt Text / Heading (Tamil)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="எ.கா. சிறப்புச் சலுகை"
+                      value={slide.alt_ta}
+                      onChange={(e) => updateSlide(idx, { alt_ta: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                      Alt Text / Heading (English)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Special Offer"
+                      value={slide.alt_en}
+                      onChange={(e) => updateSlide(idx, { alt_en: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                      Click Destination Link
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="/products or /products?category=..."
+                      value={slide.link || ""}
+                      onChange={(e) => updateSlide(idx, { link: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs font-mono bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {notifications.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-              <p className="text-sm font-medium text-gray-600">No notifications configured.</p>
-              <p className="text-xs text-gray-400 mt-1">Add a top announcement bar or promotional popup to engage readers.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border bg-white shadow-sm transition-all ${
-                    n.active ? "border-gray-200" : "border-gray-200 opacity-60 bg-gray-50/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <span
-                      className={`rounded px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${
-                        n.type === "bar" ? "bg-black text-white" : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {n.type}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">
-                        {n.title_en || n.title_ta || "Notification"}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate max-w-md">{n.text_en || n.text_ta}</p>
-                      <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
-                        <span>Frequency: <strong className="text-gray-700">{n.frequency}</strong></span>
-                        <span>•</span>
-                        <span>Pages: <strong className="text-gray-700">{n.pages}</strong></span>
-                        {n.delay_seconds > 0 && (
-                          <>
-                            <span>•</span>
-                            <span>Delay: <strong className="text-gray-700">{n.delay_seconds}s</strong></span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleNotifActive(n.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                        n.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {n.active ? "Active" : "Disabled"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingNotification({ ...n });
-                        setIsNotifModalOpen(true);
-                      }}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteNotification(n.id)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {slides.length < 6 && (
+            <button
+              type="button"
+              onClick={addSlide}
+              className="w-full py-3.5 rounded-2xl border-2 border-dashed border-gray-200 dark:border-neutral-800 hover:border-red-500 hover:bg-red-50/20 text-xs font-bold text-gray-700 dark:text-neutral-300 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>+ Add Another Banner Slide</span>
+            </button>
           )}
         </div>
-      )}
-
-      {/* SLIDE EDIT MODAL */}
-      {isSlideModalOpen && editingSlide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl space-y-5 my-8">
-            <h2 className="text-lg font-bold text-gray-900 border-b pb-3">Edit Offer Slide</h2>
-
-            {/* Desktop Image */}
-            <ImageUploader
-              label="Desktop Banner Image"
-              ratio={[8, 3]}
-              targetWidth={1920}
-              value={editingSlide.image_url}
-              onChange={(url) => setEditingSlide({ ...editingSlide, image_url: url })}
-              kind="slides"
-              required
-            />
-
-            {/* Mobile Image (Optional) */}
-            <ImageUploader
-              label="Mobile Banner Image (Optional, 4:5)"
-              ratio={[4, 5]}
-              targetWidth={1080}
-              value={editingSlide.mobile_image_url || ""}
-              onChange={(url) => setEditingSlide({ ...editingSlide, mobile_image_url: url })}
-              kind="slides"
-            />
-
-            {/* Alt Texts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Alt Text (Tamil)</label>
-                <input
-                  type="text"
-                  value={editingSlide.alt_ta}
-                  onChange={(e) => setEditingSlide({ ...editingSlide, alt_ta: e.target.value })}
-                  placeholder="சிறப்பு வெளியீடு"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Alt Text (English)</label>
-                <input
-                  type="text"
-                  value={editingSlide.alt_en}
-                  onChange={(e) => setEditingSlide({ ...editingSlide, alt_en: e.target.value })}
-                  placeholder="Special Publication"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Link */}
+      ) : (
+        /* TAB 2: PROMOTIONAL POPUP */
+        <div className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-6 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Button / Destination Link</label>
-              <input
-                type="text"
-                value={editingSlide.link || ""}
-                onChange={(e) => setEditingSlide({ ...editingSlide, link: e.target.value })}
-                placeholder="/products?category=kalaignar-works"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
+              <h2 className="text-base font-bold text-gray-900 dark:text-neutral-100">
+                Storefront Promotional Popup
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Shows once per day to visitors with an attractive offer or announcement.
+              </p>
             </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Start Date (Optional)</label>
-                <input
-                  type="datetime-local"
-                  value={editingSlide.starts_at ? editingSlide.starts_at.slice(0, 16) : ""}
-                  onChange={(e) => setEditingSlide({ ...editingSlide, starts_at: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">End Date (Optional)</label>
-                <input
-                  type="datetime-local"
-                  value={editingSlide.ends_at ? editingSlide.ends_at.slice(0, 16) : ""}
-                  onChange={(e) => setEditingSlide({ ...editingSlide, ends_at: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Active Switch */}
-            <label className="flex items-center gap-2 cursor-pointer pt-1">
+            <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
-                checked={editingSlide.active}
-                onChange={(e) => setEditingSlide({ ...editingSlide, active: e.target.checked })}
-                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                checked={popup.enabled}
+                onChange={(e) => setPopup((p) => ({ ...p, enabled: e.target.checked }))}
+                className="h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
               />
-              <span className="text-sm font-semibold text-gray-800">Slide is Active</span>
+              <span className="text-sm font-bold text-gray-800 dark:text-neutral-200">
+                {popup.enabled ? "Popup Enabled" : "Popup Disabled"}
+              </span>
             </label>
-
-            <div className="flex items-center justify-end gap-3 border-t pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSlideModalOpen(false);
-                  setEditingSlide(null);
-                }}
-                className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveSlideModal}
-                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-bold text-white hover:bg-red-700"
-              >
-                Save Slide
-              </button>
-            </div>
           </div>
-        </div>
-      )}
 
-      {/* NOTIFICATION EDIT MODAL & LIVE PREVIEW */}
-      {isNotifModalOpen && editingNotification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 border-b pb-3">Edit Notification / Popup</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Form Controls */}
-              <div className="space-y-4">
-                {/* Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Notification Type</label>
-                  <select
-                    value={editingNotification.type}
-                    onChange={(e) => setEditingNotification({ ...editingNotification, type: e.target.value as any })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
-                  >
-                    <option value="popup">Promotional Popup (Modal)</option>
-                    <option value="bar">Top Announcement Bar</option>
-                  </select>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                    Title (Tamil)
+                  </label>
+                  <input
+                    type="text"
+                    value={popup.title_ta}
+                    onChange={(e) => setPopup((p) => ({ ...p, title_ta: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
                 </div>
 
-                {/* Optional Image for Popup */}
-                {editingNotification.type === "popup" && (
-                  <ImageUploader
-                    label="Popup Image (4:5)"
-                    ratio={[4, 5]}
-                    targetWidth={800}
-                    value={editingNotification.image_url || ""}
-                    onChange={(url) => setEditingNotification({ ...editingNotification, image_url: url })}
-                    kind="notifications"
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                    Title (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={popup.title_en}
+                    onChange={(e) => setPopup((p) => ({ ...p, title_en: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                  Message Text (Tamil)
+                </label>
+                <textarea
+                  rows={2}
+                  value={popup.text_ta}
+                  onChange={(e) => setPopup((p) => ({ ...p, text_ta: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 p-2.5 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                  Message Text (English)
+                </label>
+                <textarea
+                  rows={2}
+                  value={popup.text_en}
+                  onChange={(e) => setPopup((p) => ({ ...p, text_en: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 p-2.5 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                    Button Text (Tamil)
+                  </label>
+                  <input
+                    type="text"
+                    value={popup.button_ta || ""}
+                    onChange={(e) => setPopup((p) => ({ ...p, button_ta: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                    Button Text (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={popup.button_en || ""}
+                    onChange={(e) => setPopup((p) => ({ ...p, button_en: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                  Button Link Destination
+                </label>
+                <input
+                  type="text"
+                  placeholder="/products"
+                  value={popup.link || ""}
+                  onChange={(e) => setPopup((p) => ({ ...p, link: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs font-mono bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            {/* Popup Image & Live Preview */}
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30 p-3.5 space-y-2">
+                <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
+                  Optional Popup Artwork
+                </p>
+                <ImageUploader
+                  label="Popup Image"
+                  ratio={[16, 9]}
+                  targetWidth={800}
+                  value={popup.image_url || ""}
+                  onChange={(url) => setPopup((p) => ({ ...p, image_url: url }))}
+                  kind="popup"
+                />
+              </div>
+
+              {/* Mini Preview Box */}
+              <div className="rounded-2xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 p-4 shadow-md text-center space-y-2">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  Live Preview
+                </p>
+                {popup.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={popup.image_url}
+                    alt="Preview"
+                    className="h-28 w-full object-cover rounded-xl"
                   />
                 )}
-
-                {/* Titles */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Title (Tamil)</label>
-                    <input
-                      type="text"
-                      value={editingNotification.title_ta}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, title_ta: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Title (English)</label>
-                    <input
-                      type="text"
-                      value={editingNotification.title_en}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, title_en: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Text */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Text (Tamil)</label>
-                    <textarea
-                      rows={2}
-                      value={editingNotification.text_ta}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, text_ta: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Text (English)</label>
-                    <textarea
-                      rows={2}
-                      value={editingNotification.text_en}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, text_en: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Button & Link */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Button Text</label>
-                    <input
-                      type="text"
-                      value={editingNotification.button_en || ""}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, button_en: e.target.value })}
-                      placeholder="Shop now"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Destination Link</label>
-                    <input
-                      type="text"
-                      value={editingNotification.link || ""}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, link: e.target.value })}
-                      placeholder="/products"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Frequency & Pages */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Frequency</label>
-                    <select
-                      value={editingNotification.frequency}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, frequency: e.target.value as any })}
-                      className="w-full border rounded-lg px-2 py-2 text-xs bg-white"
-                    >
-                      <option value="daily">Once a day</option>
-                      <option value="once">Once only</option>
-                      <option value="every_visit">Every visit</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Target Pages</label>
-                    <select
-                      value={editingNotification.pages}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, pages: e.target.value as any })}
-                      className="w-full border rounded-lg px-2 py-2 text-xs bg-white"
-                    >
-                      <option value="home">Home only</option>
-                      <option value="all">All pages</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Delay (sec)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={editingNotification.delay_seconds}
-                      onChange={(e) => setEditingNotification({ ...editingNotification, delay_seconds: Number(e.target.value) })}
-                      className="w-full border rounded-lg px-2 py-2 text-xs"
-                    />
-                  </div>
-                </div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-neutral-100">
+                  {popup.title_ta}
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-neutral-400">
+                  {popup.text_ta}
+                </p>
+                <span className="inline-block px-4 py-1.5 rounded-xl bg-[#E52320] text-white text-xs font-semibold">
+                  {popup.button_ta || "பார்க்க"}
+                </span>
               </div>
-
-              {/* Live Preview Panel */}
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Live Preview</p>
-                {editingNotification.type === "bar" ? (
-                  <div className="rounded-lg bg-red-600 text-white p-3 text-xs flex items-center justify-between shadow-sm">
-                    <div className="truncate">
-                      <strong>{editingNotification.title_en || editingNotification.title_ta}:</strong>{" "}
-                      <span>{editingNotification.text_en || editingNotification.text_ta}</span>
-                      {editingNotification.button_en && (
-                        <span className="ml-2 font-bold underline cursor-pointer">{editingNotification.button_en} →</span>
-                      )}
-                    </div>
-                    <span className="text-white/80 text-sm font-bold">×</span>
-                  </div>
-                ) : (
-                  <div className="max-w-xs mx-auto rounded-xl bg-white border shadow-md overflow-hidden text-center">
-                    {editingNotification.image_url ? (
-                      <div className="relative aspect-[4/5] w-full bg-gray-100">
-                        <Image src={editingNotification.image_url} alt="Preview" fill sizes="320px" className="object-cover" />
-                      </div>
-                    ) : (
-                      <div className="h-32 w-full bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                        Optional Image (4:5)
-                      </div>
-                    )}
-                    <div className="p-4 space-y-2">
-                      <p className="font-bold text-sm text-gray-900">{editingNotification.title_en || editingNotification.title_ta}</p>
-                      <p className="text-xs text-gray-600 leading-snug">{editingNotification.text_en || editingNotification.text_ta}</p>
-                      {editingNotification.button_en && (
-                        <button className="w-full rounded-lg bg-red-600 py-1.5 text-xs font-bold text-white mt-2">
-                          {editingNotification.button_en}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 border-t pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNotifModalOpen(false);
-                  setEditingNotification(null);
-                }}
-                className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveNotifModal}
-                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-bold text-white hover:bg-red-700"
-              >
-                Save Notification
-              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Sticky Bottom Save Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md px-6 py-3.5">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <p className="text-xs text-gray-500">
+            {slides.filter((s) => s.active).length} of {slides.length} slides active on storefront
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={saving}
+            className="px-6 py-2 rounded-xl text-sm font-semibold bg-[#E52320] text-white hover:bg-[#c91e1b] transition-colors shadow-sm disabled:opacity-50"
+          >
+            {saving ? "Saving Changes..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
