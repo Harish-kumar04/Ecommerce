@@ -7,6 +7,7 @@ import HeroCarousel from "./hero-carousel";
 
 export interface SlideView {
   image_url?: string | null;
+  mobile_image_url?: string | null;
   title_ta: string;
   title_en: string;
   subtitle_ta: string;
@@ -106,16 +107,32 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
 /** Admin slide: full-bleed image with an optional white text panel for legibility. */
 function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
   const hasText = Boolean(slide.title_ta || slide.title_en || slide.subtitle_ta || slide.subtitle_en);
+  const alt = hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam";
+  const mobileImg = slide.mobile_image_url || slide.image_url;
   return (
     <div className="relative h-full w-full bg-brand-red-light">
-      <Img
-        src={slide.image_url as string}
-        alt={hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam"}
-        fill
-        sizes="100vw"
-        priority={first}
-        className="object-cover"
-      />
+      {/* Desktop (8:3) */}
+      <div className="hidden md:block absolute inset-0">
+        <Img
+          src={slide.image_url as string}
+          alt={alt}
+          fill
+          sizes="100vw"
+          priority={first}
+          className="object-cover"
+        />
+      </div>
+      {/* Mobile (4:5) */}
+      <div className="block md:hidden absolute inset-0">
+        <Img
+          src={mobileImg as string}
+          alt={alt}
+          fill
+          sizes="100vw"
+          priority={first}
+          className="object-cover"
+        />
+      </div>
       {hasText ? (
         <>
           <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-transparent lg:via-white/50" aria-hidden="true" />

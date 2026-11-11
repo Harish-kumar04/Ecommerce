@@ -80,10 +80,23 @@ export default async function ProductDetailPage({ params }: { params: { tenant: 
     },
   };
 
+  const allBooks = (await getBooksWithFallback(params.tenant)) as any[];
+  const relatedBooks = allBooks
+    .filter(
+      (b) =>
+        b.id !== product.id &&
+        (b.category_id === product.category_id || b.category === product.category)
+    )
+    .slice(0, 4);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <BookDetailClient tenant={params.tenant} product={product} />
+      <BookDetailClient
+        tenant={params.tenant}
+        product={product}
+        relatedBooks={relatedBooks}
+      />
     </>
   );
 }

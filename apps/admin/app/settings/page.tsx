@@ -101,7 +101,10 @@ export default function SettingsPage() {
         description: form.description,
         custom_domain: form.custom_domain,
         logo: form.logo,
-        theme_config: { primary_color: form.primary_color },
+        theme_config: {
+          ...((settings?.theme_config as any) || (settings as any)?.store?.theme_config || {}),
+          primary_color: form.primary_color,
+        },
         currency: form.currency,
         tax_rate: parseFloat(form.tax_rate),
         ...(shippingRules.trim() && parseJsonField(shippingRules, "Shipping rules") ? { shipping_rules: JSON.parse(shippingRules) } : {}),

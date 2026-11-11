@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { storefrontApi, getCartSessionId } from "@/lib/api";
-import { notifyCartChanged } from "@/lib/cart-events";
+import { notifyCartChanged, openMiniCart } from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import { useLanguage } from "@/components/language-provider";
 
@@ -68,6 +68,7 @@ export default function AddToCart({
       );
       setAdded(true);
       notifyCartChanged(tenant);
+      openMiniCart();
       toast({
         kind: "success",
         title: t("கூடையில் சேர்க்கப்பட்டது", "Added to cart"),

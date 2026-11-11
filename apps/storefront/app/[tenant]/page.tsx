@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import HeroSlider, { type SlideView } from "@/components/home/hero-slider";
 import { CategoryStrip, TrustBar } from "@/components/home/highlights";
 import BookGridSection from "@/components/home/book-grid-section";
-import { NewsletterSection, WhySection } from "@/components/home/why-newsletter";
+import OffersBand from "@/components/home/offers-band";
+import { NewsletterSection } from "@/components/home/why-newsletter";
 import { toCardProduct } from "@/components/product/product-card";
 import {
   getBooksWithFallback,
@@ -26,9 +27,6 @@ export const revalidate = 60;
 export function generateStaticParams() {
   return [{ tenant: DEFAULT_TENANT }];
 }
-
-const FEATURED_COUNT = 4;
-const COLLECTION_COUNT = 12;
 
 async function fetchTenantData(tenant: string) {
   const [products, store, categories] = await Promise.all([
@@ -75,6 +73,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
     const href = resolveLink(tenant, s.link);
     return {
       image_url: s.image_url || null,
+      mobile_image_url: s.mobile_image_url || null,
       title_ta: s.title_ta || "",
       title_en: s.title_en || "",
       subtitle_ta: s.subtitle_ta || "",
@@ -92,9 +91,12 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
     };
   });
 
-  const prices = cards.map((c) => c.sale_price_cents || c.price_cents).filter((p) => p > 0);
-  const featured = cards.slice(0, FEATURED_COUNT);
-  const collection = cards.slice(FEATURED_COUNT, FEATURED_COUNT + COLLECTION_COUNT);
+  // Section division
+  const featured = cards.slice(0, 8); // 8 featured books
+  const saleBooks = cards.filter((c) => c.sale_price_cents && c.sale_price_cents < c.price_cents);
+  const offersList = saleBooks.length > 0 ? saleBooks.slice(0, 4) : cards.slice(0, 4);
+  const newArrivals = cards.slice(8, 12);
+  const collection = cards.slice(0, 12); // 12 books for complete collection preview
   const total = cards.length;
 
   const jsonLd = {
@@ -108,17 +110,37 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
 
   return (
     <>
+      {/* 1. Offer Slider (reads theme_config.home_slides) */}
       <HeroSlider slides={slideViews} />
-      {prices.length > 0 && (
-        <TrustBar count={total} minCents={Math.min(...prices)} maxCents={Math.max(...prices)} />
-      )}
+
+      {/* 2. Trust Strip (real features: COD, Secure payment) */}
+      <TrustBar />
+
+      {/* 3. Category Chips (horizontal scroll) */}
       <CategoryStrip tenant={tenant} categories={categories} />
+
+      {/* 4. Featured (8 Books) */}
       <BookGridSection
         tenant={tenant}
         books={featured}
         eyebrow={{ ta: BRAND.nameTa, en: BRAND.nameEn }}
-        title={{ ta: "முதன்மை வெளியீடுகள்", en: "Featured publications" }}
+        title={{ ta: "முதன்மை வெளியீடுகள்", en: "Featured Publications" }}
       />
+
+      {/* 5. Black Offers Band (books on sale) */}
+      <OffersBand tenant={tenant} books={offersList} />
+
+      {/* 6. New Arrivals */}
+      {newArrivals.length > 0 && (
+        <BookGridSection
+          tenant={tenant}
+          books={newArrivals}
+          eyebrow={{ ta: "புதிய வெளியீடுகள்", en: "Fresh Off the Press" }}
+          title={{ ta: "புதிய வரவுகள்", en: "New Arrivals" }}
+        />
+      )}
+
+      {/* 7. Complete Collection (12 + Show all, #complete-collection anchor) */}
       <BookGridSection
         id="complete-collection"
         tenant={tenant}
@@ -126,15 +148,18 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
         columns="dense"
         divider
         eyebrow={{ ta: "முழு நூல் பட்டியல்", en: "Complete Collection" }}
-        title={{ ta: "திராவிட இயக்க & கலைஞர் நூல்கள்", en: "Dravidian movement & Kalaignar titles" }}
+        title={{ ta: "திராவிட இயக்க & கலைஞர் நூல்கள்", en: "Dravidian Movement & Kalaignar Titles" }}
         cta={{
           href: `/${tenant}/products`,
           ta: `அனைத்து ${total} நூல்களையும் காண்க`,
           en: `Show all ${total} books`,
         }}
       />
-      <WhySection />
+
+      {/* 8. Newsletter */}
       <NewsletterSection storeId={store?.id} />
+
+      {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </>
   );

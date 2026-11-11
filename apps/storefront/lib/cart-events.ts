@@ -43,6 +43,16 @@ export function notifyCartChanged(tenant?: string) {
   emit(tenant);
 }
 
+export function openMiniCart() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("infalette-open-mini-cart"));
+}
+
+export function closeMiniCart() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("infalette-close-mini-cart"));
+}
+
 /**
  * Fetch the current cart and update the count + total in localStorage.
  * Safe to call repeatedly; concurrent calls coalesce into one request.

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { T } from "../i18n/t";
 import { CartIcon } from "../brand/icons";
 import { useLanguage } from "../language-provider";
-import { CART_COUNT_KEY, readFromStorage } from "@/lib/cart-events";
+import { CART_COUNT_KEY, readFromStorage, openMiniCart } from "@/lib/cart-events";
 
 export interface NavItem {
   path: string;
@@ -85,10 +85,10 @@ export function CartButton({ tenant }: { tenant: string }) {
   const active = isActive("/cart");
   const label = count > 99 ? "99+" : String(count);
   return (
-    <Link
-      href={`/${tenant}/cart`}
+    <button
+      type="button"
+      onClick={() => openMiniCart()}
       aria-label={count > 0 ? t(`கூடை — ${label} பொருட்கள்`, `Cart — ${label} items`) : t("கூடை", "Cart")}
-      aria-current={active ? "page" : undefined}
       className={`relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
         active ? "border-brand-red bg-brand-red-light text-brand-red" : "border-black/10 text-black hover:border-brand-red hover:text-brand-red"
       }`}
@@ -102,6 +102,6 @@ export function CartButton({ tenant }: { tenant: string }) {
           {label}
         </span>
       )}
-    </Link>
+    </button>
   );
 }

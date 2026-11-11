@@ -5,7 +5,7 @@ import PageLines from "./brand/page-lines";
 import Sunburst from "./brand/sunburst";
 import { FacebookIcon, MailIcon, WhatsAppIcon } from "./brand/icons";
 import { type SocialConfig, whatsappHref } from "@/lib/site-defaults";
-import logo from "@/public/brand/logo-96.webp";
+import footerLogo from "@/public/brand/logo-192.webp";
 
 /**
  * Storefront footer (Server Component, zero client JS): solid black with red accents,
@@ -41,12 +41,17 @@ export default function StorefrontFooter({
         <div className="container-site relative py-14 lg:py-16">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <Link href={home} className="inline-flex items-center gap-3">
-                <Image src={logo} alt="" width={48} height={48} sizes="48px" className="h-12 w-12 rounded-lg bg-white" />
-                <span className="leading-tight">
-                  <span className="block text-[18px] font-bold text-white">முத்தமிழறிஞர் பதிப்பகம்</span>
-                  <span className="block text-[12px] font-medium tracking-wide text-brand-red">Muthamilarignar Pathipagam</span>
-                </span>
+              <Link href={home} className="inline-block" aria-label="முத்தமிழறிஞர் பதிப்பகம்">
+                <div className="inline-flex items-center justify-center rounded-2xl bg-white p-3 shadow-md">
+                  <Image
+                    src={footerLogo}
+                    alt="முத்தமிழறிஞர் பதிப்பகம்"
+                    width={96}
+                    height={96}
+                    sizes="96px"
+                    className="h-24 w-24 object-contain"
+                  />
+                </div>
               </Link>
               <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-white/70">
                 <T

@@ -26,13 +26,20 @@ export default function BooksCatalogClient({
   const { t, localizeName } = useLanguage();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc">("default");
+  const [sortBy, setSortBy] = useState<"default" | "newest" | "price-asc" | "price-desc">("default");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [saleOnly, setSaleOnly] = useState(false);
 
-  // Sync the category filter with the URL (?category=<slug>) without making the page dynamic.
+  // Sync category, sale, and search from URL params without making the page dynamic
   useEffect(() => {
     const apply = () => {
-      const key = new URLSearchParams(window.location.search).get("category");
-      setSelectedCategory(findCategory(categories, key)?.id ?? "all");
+      const params = new URLSearchParams(window.location.search);
+      const catKey = params.get("category");
+      setSelectedCategory(findCategory(categories, catKey)?.id ?? "all");
+
+      if (params.get("sale") === "1") setSaleOnly(true);
+      const q = params.get("search");
+      if (q && q !== "1") setSearch(q);
     };
     apply();
     window.addEventListener("popstate", apply);
@@ -51,24 +58,46 @@ export default function BooksCatalogClient({
     [categories],
   );
 
+  const toggleSale = () => {
+    const next = !saleOnly;
+    setSaleOnly(next);
+    const url = new URL(window.location.href);
+    if (next) url.searchParams.set("sale", "1");
+    else url.searchParams.delete("sale");
+    window.history.replaceState(window.history.state, "", url.toString());
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = products.filter((p) => {
       if (selectedCategory !== "all" && p.category_id !== selectedCategory) return false;
+      if (inStockOnly && (p.inventory !== undefined ? p.inventory <= 0 : p.inventory_quantity <= 0)) {
+        return false;
+      }
+      if (saleOnly && !(p.sale_price_cents && p.sale_price_cents < p.price_cents)) {
+        return false;
+      }
       if (!q) return true;
       const name = String(p.name || "").toLowerCase();
       const desc = String(p.description || "").toLowerCase();
       const sku = String(p.sku || "").toLowerCase();
-      return name.includes(q) || desc.includes(q) || sku.includes(q);
+      const author = String(p.author || p.dimensions_json?.book?.author || "").toLowerCase();
+      return name.includes(q) || desc.includes(q) || sku.includes(q) || author.includes(q);
     });
+
     const priceOf = (p: any) => p.sale_price_cents ?? p.price_cents;
-    if (sortBy === "price-asc") list = [...list].sort((a, b) => priceOf(a) - priceOf(b));
-    else if (sortBy === "price-desc") list = [...list].sort((a, b) => priceOf(b) - priceOf(a));
+    if (sortBy === "price-asc") {
+      list = [...list].sort((a, b) => priceOf(a) - priceOf(b));
+    } else if (sortBy === "price-desc") {
+      list = [...list].sort((a, b) => priceOf(b) - priceOf(a));
+    } else if (sortBy === "newest") {
+      list = [...list].reverse();
+    }
     return list;
-  }, [products, search, selectedCategory, sortBy]);
+  }, [products, search, selectedCategory, sortBy, inStockOnly, saleOnly]);
 
   const pill = (active: boolean) =>
-    `whitespace-nowrap rounded-full px-4 py-2 text-[14px] font-semibold transition-colors ${
+    `whitespace-nowrap rounded-full px-4 py-2 text-[13.5px] font-semibold transition-all ${
       active
         ? "bg-brand-red text-white shadow-glow"
         : "border border-black/10 bg-white text-black hover:border-brand-red hover:text-brand-red"
@@ -91,8 +120,9 @@ export default function BooksCatalogClient({
         </p>
       </header>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+      {/* Search and Sort Row */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row items-center">
+        <div className="relative flex-1 w-full">
           <label htmlFor="catalog-search" className="sr-only">
             {t("நூல்களைத் தேடுக", "Search books")}
           </label>
@@ -102,10 +132,10 @@ export default function BooksCatalogClient({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t(
-              "நூல் பெயர் (தமிழ் / English) அல்லது குறியீடு மூலம் தேடுக…",
-              "Search in Tamil or English (e.g. Kalaignar, கலைஞர்)…",
+              "நூல் பெயர் அல்லது ஆசிரியர் மூலம் தேடுக…",
+              "Search in Tamil or English by title or author…",
             )}
-            className="h-12 w-full rounded-full border border-black/15 bg-white pl-11 pr-4 text-[15px] focus:border-brand-red focus:outline-none"
+            className="h-12 w-full rounded-full border border-black/15 bg-white pl-11 pr-4 text-[14.5px] text-black placeholder:text-black/45 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
           />
           <svg
             viewBox="0 0 24 24"
@@ -120,53 +150,101 @@ export default function BooksCatalogClient({
             <path d="M21 21l-4.35-4.35" />
           </svg>
         </div>
+
+        {/* Sort selector */}
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
           aria-label={t("வரிசைப்படுத்து", "Sort books")}
-          className="h-12 rounded-full border border-black/15 bg-white px-5 text-[14px] font-medium text-black focus:border-brand-red focus:outline-none"
+          className="h-12 w-full sm:w-auto rounded-full border border-black/15 bg-white px-5 text-[14px] font-semibold text-black focus:border-brand-red focus:outline-none"
         >
-          <option value="default">{t("வரிசை: சிறப்பு வெளியீடுகள்", "Sort: Featured")}</option>
+          <option value="default">{t("வரிசை: பரிந்துரை", "Sort: Featured")}</option>
+          <option value="newest">{t("வரிசை: புதிய வரவுகள்", "Sort: Newest First")}</option>
           <option value="price-asc">{t("விலை: குறைந்தது முதல்", "Price: Low to High")}</option>
           <option value="price-desc">{t("விலை: அதிகம் முதல்", "Price: High to Low")}</option>
         </select>
       </div>
 
-      {categories.length > 0 && (
-        <div role="group" aria-label={t("நூல் வகைகள்", "Categories")} className="no-scrollbar mb-8 flex items-center gap-2 overflow-x-auto pb-2">
-          <button type="button" onClick={() => selectCategory("all")} aria-pressed={selectedCategory === "all"} className={pill(selectedCategory === "all")}>
-            {t(`அனைத்தும் (${products.length})`, `All (${products.length})`)}
-          </button>
-          {categories.map((cat) => (
+      {/* Category Chips and Toggles Row */}
+      <div className="mb-8 space-y-3">
+        {/* Category Pills */}
+        {categories.length > 0 && (
+          <div
+            role="group"
+            aria-label={t("நூல் வகைகள்", "Categories")}
+            className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1"
+          >
             <button
-              key={cat.id}
               type="button"
-              onClick={() => selectCategory(cat.id)}
-              aria-pressed={selectedCategory === cat.id}
-              className={pill(selectedCategory === cat.id)}
+              onClick={() => selectCategory("all")}
+              aria-pressed={selectedCategory === "all"}
+              className={pill(selectedCategory === "all")}
             >
-              {localizeName(cat.name)}
+              {t(`அனைத்தும் (${products.length})`, `All (${products.length})`)}
             </button>
-          ))}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => selectCategory(cat.id)}
+                aria-pressed={selectedCategory === cat.id}
+                className={pill(selectedCategory === cat.id)}
+              >
+                {localizeName(cat.name)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Filters: In-stock and Sale */}
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={toggleSale}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-all ${
+              saleOnly
+                ? "bg-brand-red text-white shadow-glow"
+                : "border border-black/15 bg-white text-black/75 hover:border-brand-red hover:text-brand-red"
+            }`}
+          >
+            <span>🏷️</span>
+            {t("சலுகை நூல்கள் மட்டும்", "On Sale Only")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setInStockOnly(!inStockOnly)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-all ${
+              inStockOnly
+                ? "bg-black text-white"
+                : "border border-black/15 bg-white text-black/75 hover:border-black/50"
+            }`}
+          >
+            <span>●</span>
+            {t("கையிருப்பில் உள்ளவை மட்டும்", "In Stock Only")}
+          </button>
         </div>
-      )}
+      </div>
 
       <p className="sr-only" role="status" aria-live="polite">
         {t(`${filtered.length} நூல்கள்`, `${filtered.length} books`)}
       </p>
 
+      {/* Book Grid or Empty State */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-black/15 px-6 py-20 text-center">
-          <p className="text-black/60">
+          <p className="text-black/60 text-[16px]">
             {t("உங்கள் தேடலுக்குப் பொருந்தும் நூல்கள் எதுவும் கிடைக்கவில்லை.", "No books matched your search or filter.")}
           </p>
           <button
             type="button"
             onClick={() => {
               setSearch("");
-              selectCategory("all");
+              setSelectedCategory("all");
+              setSaleOnly(false);
+              setInStockOnly(false);
             }}
-            className="btn-red mt-5 h-10 text-[14px]"
+            className="btn-red mt-5 h-11 text-[14px]"
           >
             {t("அனைத்து நூல்களையும் காட்டு", "Show all books")}
           </button>

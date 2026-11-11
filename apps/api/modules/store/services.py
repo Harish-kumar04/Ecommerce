@@ -180,15 +180,33 @@ async def update_store_settings(tenant_id: UUID, data: dict, session: AsyncSessi
     # Update fields
     for key in [
         "name", "slug", "description", "theme_id", "custom_domain", "logo",
-        "logo_url", "currency", "tax_rate", "theme_config", "config_json",
+        "logo_url", "currency", "tax_rate",
         # Tenant-configurable commerce settings (spec §3)
         "shipping_rules_json", "menus_json", "social_links_json", "legal_pages_json",
     ]:
         if key in data and data[key] is not None:
             if hasattr(store, key):
                 setattr(store, key, data[key])
-            elif key == "theme_config" and hasattr(store, "config_json"):
-                store.config_json = data[key]
+
+    # Merge theme_config if provided (prevent overwriting other theme_config keys)
+    new_theme_config = data.get("theme_config") if "theme_config" in data else data.get("config_json")
+    if new_theme_config is not None:
+        if isinstance(new_theme_config, dict):
+            existing_tc = {}
+            if hasattr(store, "theme_config") and isinstance(store.theme_config, dict):
+                existing_tc = dict(store.theme_config)
+            elif hasattr(store, "config_json") and isinstance(store.config_json, dict):
+                existing_tc = dict(store.config_json)
+            merged_tc = {**existing_tc, **new_theme_config}
+            if hasattr(store, "theme_config"):
+                store.theme_config = merged_tc
+            if hasattr(store, "config_json"):
+                store.config_json = merged_tc
+        else:
+            if hasattr(store, "theme_config"):
+                store.theme_config = new_theme_config
+            if hasattr(store, "config_json"):
+                store.config_json = new_theme_config
 
     # Accept camel-friendly aliases from the admin UI
     alias_map = {
@@ -200,11 +218,6 @@ async def update_store_settings(tenant_id: UUID, data: dict, session: AsyncSessi
     for src_key, dest_key in alias_map.items():
         if src_key in data and hasattr(store, dest_key):
             setattr(store, dest_key, data[src_key])
-
-    # Handle theme_config generic
-    if "theme_config" in data and not hasattr(store, "theme_config"):
-        if hasattr(store, "config_json"):
-            store.config_json = data["theme_config"]
 
     await session.commit()
     await session.refresh(store)
