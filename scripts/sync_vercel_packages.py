@@ -1,11 +1,11 @@
-"""Synchronize internal monorepo Python packages into ``apps/api/_vendor/`` for Vercel Serverless.
+"""Synchronize internal monorepo Python packages into ``apps/api/_packages/`` for Vercel Serverless.
 
 When Vercel builds the ``api`` service with ``"root": "apps/api"`` and ``"entrypoint": "main:app"``,
 only files inside ``apps/api/`` are included in the ``/var/task`` serverless function bundle
 (completely isolating it from sibling Next.js apps ``apps/storefront``, ``apps/admin``, and
-``apps/platform-admin``). Running this script vendors all ``packages/*/src/infalette_*`` modules
-and ``scripts/demo_seed.py`` into ``apps/api/_vendor/`` (~520 KB) so ``apps/api/`` is 100%
-self-contained while local development and Docker continue resolving ``packages/*/src`` first.
+``apps/platform-admin``). Notably, ``@vercel/python`` uses ``/var/task/_vendor`` internally for
+installed PyPI wheels, so we vendor ``packages/*/src/infalette_*`` and ``scripts/demo_seed.py``
+into ``apps/api/_packages/`` (~520 KB) with zero directory overlap.
 """
 
 from __future__ import annotations
@@ -15,21 +15,20 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKAGES_DIR = REPO_ROOT / "packages"
-LEGACY_VENDOR_DIR = REPO_ROOT / "apps" / "_vendor"
-VENDOR_DIR = REPO_ROOT / "apps" / "api" / "_vendor"
+LEGACY_VENDOR_DIRS = (
+    REPO_ROOT / "apps" / "_vendor",
+    REPO_ROOT / "apps" / "api" / "_vendor",
+)
+VENDOR_DIR = REPO_ROOT / "apps" / "api" / "_packages"
 
 
 def sync() -> None:
-    if LEGACY_VENDOR_DIR.exists():
-        shutil.rmtree(LEGACY_VENDOR_DIR)
+    for legacy_dir in LEGACY_VENDOR_DIRS:
+        if legacy_dir.exists():
+            shutil.rmtree(legacy_dir)
     if VENDOR_DIR.exists():
         shutil.rmtree(VENDOR_DIR)
     VENDOR_DIR.mkdir(parents=True, exist_ok=True)
-
-    (VENDOR_DIR / "__init__.py").write_text(
-        '"""Vendored internal monorepo packages for Vercel Serverless packaging."""\n',
-        encoding="utf-8",
-    )
 
     copied_packages: list[str] = []
     for pkg_src in sorted(PACKAGES_DIR.glob("*/src/infalette_*")):

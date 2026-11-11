@@ -183,9 +183,11 @@ async def init_db() -> None:
     from infalette_database.base import Base
     from sqlalchemy.exc import OperationalError
 
+    import os
+
     logger = logging.getLogger(__name__)
     engine = get_engine()
-    max_attempts = 5
+    max_attempts = 2 if os.environ.get("VERCEL") else 5
     base_delay = 1.0
     cap_delay = 30.0
 

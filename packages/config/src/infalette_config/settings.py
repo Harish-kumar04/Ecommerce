@@ -32,6 +32,9 @@ def _find_env_file() -> str | None:
     if override is not None:
         return override.strip() or None
 
+    if os.environ.get("VERCEL"):
+        return None
+
     cwd = Path.cwd()
     # 1. cwd-relative .env (works when launched from a directory that
     #    has one, e.g. repo root or apps/api/).
@@ -107,17 +110,22 @@ class DatabaseSettings(BaseSettings):
 
         Prefers ``DATABASE_URL_POOLED`` (Neon pooled), then explicit
         ``DATABASE_URL``. On Vercel Serverless (``VERCEL=1``), if no external
-        database URL was configured in the environment, falls back to an
-        ephemeral writable SQLite staging database in ``/tmp`` instead of
-        unreachable ``localhost:5432``.
+        cloud database URL was configured (or if a local/Docker hostname such
+        as ``localhost`` or ``postgres`` was left over), falls back to an
+        ephemeral writable SQLite staging database in ``/tmp``.
         """
         import os
 
-        if self.pooled_url:
+        is_vercel = bool(os.environ.get("VERCEL"))
+        local_hosts = ("@localhost", "@127.0.0.1", "@postgres:", "@postgres/", "@db:")
+
+        if self.pooled_url and not (is_vercel and any(h in self.pooled_url for h in local_hosts)):
             return self.pooled_url
-        if os.environ.get("DATABASE_URL") or _ENV_FILE:
+        if (os.environ.get("DATABASE_URL") or _ENV_FILE) and not (
+            is_vercel and any(h in self.url for h in local_hosts)
+        ):
             return self.url
-        if os.environ.get("VERCEL"):
+        if is_vercel:
             import tempfile
 
             tmp_db = (Path(tempfile.gettempdir()) / "muthamilarignar_staging.db").as_posix()

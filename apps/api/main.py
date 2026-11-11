@@ -44,9 +44,13 @@ for _candidate in (_REPO_ROOT, _APPS_DIR):
                 sys.path.insert(0, str(_pkg_src))
         break
 
-for _vendor_candidate in (_API_DIR / "_vendor", _APPS_DIR / "_vendor"):
+for _vendor_candidate in (
+    _API_DIR / "_packages",
+    _APPS_DIR / "_packages",
+    _API_DIR / "_vendor",
+):
     if _vendor_candidate.is_dir() and str(_vendor_candidate) not in sys.path:
-        sys.path.append(str(_vendor_candidate))
+        sys.path.insert(0, str(_vendor_candidate))
 
 try:
     import sentry_sdk
@@ -101,7 +105,7 @@ async def _auto_seed_if_empty() -> None:
         if existing is not None:
             return
 
-        log.info("Empty staging database detected — seeding 27 Muthamilarignar Pathipagam books...")
+        log.info("Empty staging database detected - seeding 27 Muthamilarignar Pathipagam books...")
         try:
             import demo_seed  # type: ignore[import-not-found]
         except ImportError:
@@ -127,11 +131,32 @@ async def _ensure_runtime_ready() -> None:
             return
 
         settings = get_settings()
-        configure_logging(debug=settings.debug)
+        if not os.getenv("VERCEL"):
+            configure_logging(debug=settings.debug)
 
-        from infalette_database.session import init_db
+        from infalette_database import session as _db_session
 
-        await init_db()
+        try:
+            await _db_session.init_db()
+        except Exception as db_exc:
+            if not os.getenv("VERCEL"):
+                raise
+            import logging
+            import tempfile
+
+            logging.getLogger(__name__).warning(
+                "Primary DATABASE_URL unreachable on Vercel (%s); falling back to /tmp SQLite staging DB",
+                db_exc.__class__.__name__,
+            )
+            tmp_db = (Path(tempfile.gettempdir()) / "muthamilarignar_staging.db").as_posix()
+            os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tmp_db}"
+            os.environ.pop("DATABASE_URL_POOLED", None)
+            get_settings.cache_clear()
+            settings = get_settings()
+            _db_session._engine = None
+            _db_session._session_factory = None
+            await _db_session.init_db()
+
         await _auto_seed_if_empty()
 
         if settings.sentry_dsn and sentry_sdk is not None:
@@ -181,14 +206,19 @@ async def _ensure_runtime_ready() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
-    await _ensure_runtime_ready()
+    # On Vercel Serverless / Fluid Compute, defer DB + catalog initialization
+    # to the outermost HTTP middleware so container Init completes immediately
+    # (<1s) instead of risking a cold-start lifespan timeout.
+    if not os.getenv("VERCEL"):
+        await _ensure_runtime_ready()
 
     yield
 
     # Cleanup
-    from infalette_database.session import get_engine
-    engine = get_engine()
-    await engine.dispose()
+    from infalette_database import session as _db_session
+
+    if _db_session._engine is not None:
+        await _db_session._engine.dispose()
 
 
 def create_app() -> FastAPI:
@@ -208,13 +238,6 @@ def create_app() -> FastAPI:
         redoc_url=f"{API_PREFIX}/redoc",
         openapi_url=f"{API_PREFIX}/openapi.json",
     )
-
-    if os.getenv("VERCEL"):
-        @app.middleware("http")
-        async def _vercel_cold_start_guard(request: Request, call_next):
-            if not _RUNTIME_READY:
-                await _ensure_runtime_ready()
-            return await call_next(request)
 
     # Middleware - order matters (last added is outermost)
     # AuthMiddleware MUST run before IdempotencyMiddleware so tenant scoping
@@ -240,7 +263,21 @@ def create_app() -> FastAPI:
     app.add_middleware(AuditMiddleware)  # logs POST/PATCH/DELETE after auth
     app.add_middleware(AuthMiddleware)  # must wrap Idempotency for tenant scoping
     if SentryAsgiMiddleware is not None:
-        app.add_middleware(SentryAsgiMiddleware)  # outermost
+        app.add_middleware(SentryAsgiMiddleware)
+
+    if os.getenv("VERCEL"):
+        class _VercelColdStartMiddleware:
+            def __init__(self, inner_app):
+                self.app = inner_app
+
+            async def __call__(self, scope, receive, send):
+                if scope.get("type") == "http" and not _RUNTIME_READY:
+                    path = scope.get("path", "")
+                    if path not in ("/health", "/_vercel/ping"):
+                        await _ensure_runtime_ready()
+                await self.app(scope, receive, send)
+
+        app.add_middleware(_VercelColdStartMiddleware)  # outermost on Vercel
 
     # Register exception handlers
     from apps.api.core.exceptions import register_exception_handlers
@@ -381,4 +418,41 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+def _build_asgi_app():
+    try:
+        return create_app()
+    except Exception as _boot_exc:
+        if not os.getenv("VERCEL"):
+            raise
+        import json as _json
+        import traceback as _tb
+
+        _boot_tb = _tb.format_exc()
+
+        async def _fallback_app(scope, receive, send):
+            if scope.get("type") == "lifespan":
+                while True:
+                    msg = await receive()
+                    if msg["type"] == "lifespan.startup":
+                        await send({"type": "lifespan.startup.complete"})
+                    elif msg["type"] == "lifespan.shutdown":
+                        await send({"type": "lifespan.shutdown.complete"})
+                        return
+            body = _json.dumps(
+                {"status": "boot_error", "error": repr(_boot_exc), "traceback": _boot_tb}
+            ).encode("utf-8")
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 503,
+                    "headers": [(b"content-type", b"application/json")],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
+
+        return _fallback_app
+
+
+app = _build_asgi_app()
+
+

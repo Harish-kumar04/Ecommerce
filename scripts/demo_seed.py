@@ -887,7 +887,7 @@ async def main() -> None:
 
         await s.commit()
 
-    print("Seed complete — Muthamilarignar Pathipagam Bookstore (27 books).")
+    print("Seed complete - Muthamilarignar Pathipagam Bookstore (27 books).")
     print(
         "  created :",
         ", ".join(created) if created else "(updated existing records)",

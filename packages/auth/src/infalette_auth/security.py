@@ -16,7 +16,11 @@ from infalette_config import get_settings
 class PasswordHasher:
     """Password hashing using bcrypt with configurable rounds."""
 
-    def __init__(self, rounds: int = 12) -> None:
+    def __init__(self, rounds: int | None = None) -> None:
+        import os
+
+        if rounds is None:
+            rounds = 8 if os.environ.get("VERCEL") else 12
         self._rounds = rounds
 
     def hash_password(self, password: str) -> str:
