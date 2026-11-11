@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? (process.env.VERCEL ? "/platform-admin" : ""),
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? "",
   images: {
     domains: ["localhost", "*.infalette.com", "img.clerk.com"],
     remotePatterns: [

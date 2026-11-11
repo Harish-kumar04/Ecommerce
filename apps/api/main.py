@@ -517,6 +517,13 @@ def _build_asgi_app():
         import traceback as _tb
 
         _boot_tb = _tb.format_exc()
+        _boot_err = repr(_boot_exc)
+        for _k, _v in os.environ.items():
+            if _v and len(_v) >= 6 and any(
+                s in _k.upper() for s in ("SECRET", "PASSWORD", "TOKEN", "KEY", "DSN", "DATABASE_URL", "REDIS_URL")
+            ):
+                _boot_tb = _boot_tb.replace(_v, "***")
+                _boot_err = _boot_err.replace(_v, "***")
 
         async def _fallback_app(scope, receive, send):
             if scope.get("type") == "lifespan":
@@ -528,7 +535,7 @@ def _build_asgi_app():
                         await send({"type": "lifespan.shutdown.complete"})
                         return
             body = _json.dumps(
-                {"status": "boot_error", "error": repr(_boot_exc), "traceback": _boot_tb}
+                {"status": "boot_error", "error": _boot_err, "traceback": _boot_tb}
             ).encode("utf-8")
             await send(
                 {
