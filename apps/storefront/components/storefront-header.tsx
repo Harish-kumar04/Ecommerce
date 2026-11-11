@@ -1,258 +1,149 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import LanguageToggle from "./language-toggle";
 import { useLanguage } from "./language-provider";
+import { T } from "./i18n/t";
+import { CartIcon } from "./brand/icons";
 import { CART_COUNT_KEY, readFromStorage } from "@/lib/cart-events";
+import logo from "@/public/brand/logo-96.webp";
+
+const NAV = [
+  { path: "", ta: "முகப்பு", en: "Home" },
+  { path: "/products", ta: "நூல்கள்", en: "Books" },
+  { path: "/orders", ta: "ஆர்டர்கள்", en: "Orders" },
+  { path: "/track", ta: "ஆர்டர் நிலை", en: "Track Order" },
+  { path: "/account", ta: "கணக்கு", en: "Account" },
+] as const;
 
 /**
- * Storefront chrome (top bar) — Muthamilarignar Pathipagam Bookstore Header.
- *
- *  - Publisher logo (/logo.jpg) + bilingual brand title.
- *  - Bilingual navigation (முகப்பு / Home, நூல்கள் / Books, ஆர்டர்கள் / Orders, கணக்கு / Account).
- *  - Prominent Tamil / English toggle button (தமிழ் | English).
- *  - Cart icon with live count badge.
+ * Storefront header: logo + wordmark, simplified bilingual nav, language toggle and
+ * cart icon with a live count badge. Light, sticky, ~1440px container.
  */
-export default function StorefrontHeader({
-  tenant,
-  storeName,
-  logoUrl,
-}: {
-  tenant: string;
-  storeName?: string;
-  logoUrl?: string | null;
-}) {
-  const router = useRouter();
+export default function StorefrontHeader({ tenant }: { tenant: string }) {
   const pathname = usePathname() || `/${tenant}`;
-  const onHome = pathname === `/${tenant}` || pathname === `/${tenant}/`;
-  const [cartCount, setCartCount] = useState(0);
   const { t } = useLanguage();
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
-    setCartCount(readFromStorage().count);
-    const onChange = () => setCartCount(readFromStorage().count);
-    window.addEventListener("infalette-cart-changed", onChange);
-    window.addEventListener("storage", (e) => {
-      if (e.key === CART_COUNT_KEY) onChange();
-    });
-    return () => window.removeEventListener("infalette-cart-changed", onChange);
+    const sync = () => setCartCount(readFromStorage().count);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CART_COUNT_KEY) sync();
+    };
+    sync();
+    window.addEventListener("infalette-cart-changed", sync);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("infalette-cart-changed", sync);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
-  const handleBack = () => {
-    if (typeof window === "undefined") return;
-    if (window.history.length > 1) router.back();
-    else router.push(`/${tenant}`);
+  const home = `/${tenant}`;
+  const isActive = (path: string) => {
+    const href = `${home}${path}`;
+    if (!path) return pathname === home || pathname === `${home}/`;
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
-
-  const isActive = (href: string) => {
-    if (pathname === href) return true;
-    if (pathname === `/${tenant}` || pathname === `/${tenant}/`) return false;
-    return pathname.startsWith(href + "/") || pathname.startsWith(href);
-  };
-
-  const linkBase =
-    "relative inline-flex h-16 items-center text-[13.5px] transition-colors whitespace-nowrap";
-  const linkColor = "text-gray-700";
-  const linkColorActive = "text-brand-red font-semibold";
-  const linkHover = "hover:text-brand-red";
-  const underline =
-    "after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-brand-red after:rounded-full";
-
-  const resolvedLogo = logoUrl || "/logo.jpg";
-  const displayTitle = t(
-    "முத்தமிழறிஞர் பதிப்பகம்",
-    storeName || "Muthamilarignar Pathipagam",
-  );
-  const displaySubtitle = t(
-    "Muthamilarignar Pathipagam",
-    "முத்தமிழறிஞர் பதிப்பகம்",
-  );
+  const cartActive = isActive("/cart");
+  const countLabel = cartCount > 99 ? "99+" : String(cartCount);
 
   return (
-    <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 border-b border-gray-200/80">
-      {/* Top Black & Red Dravidian accent bar */}
-      <div className="h-1 w-full bg-gradient-to-r from-black via-brand-red to-black" />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
-        {/* Back / Brand logo & wordmark */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          {!onHome && (
-            <button
-              type="button"
-              onClick={handleBack}
-              aria-label={t("பின்செல்", "Go back")}
-              title={t("பின்செல்", "Go back")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-          )}
-          <Link
-            href={`/${tenant}`}
-            className="flex items-center gap-2.5 min-w-0 group"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={resolvedLogo}
-              alt="Muthamilarignar Pathipagam Logo"
-              className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain bg-white border border-gray-200 p-0.5 flex-shrink-0 shadow-sm"
-            />
-            <div className="min-w-0">
-              <p className="text-[14px] sm:text-[16px] font-bold tracking-tight text-gray-900 truncate group-hover:text-brand-red transition-colors">
-                {displayTitle}
-              </p>
-              <p className="text-[11px] text-gray-500 truncate hidden sm:block">
-                {displaySubtitle}
-              </p>
-            </div>
-          </Link>
-        </div>
+    <header className="sticky top-0 z-40 w-full border-b border-black/[0.07] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+      <div className="h-[3px] w-full bg-brand-red" aria-hidden="true" />
+      <div className="container-site flex h-16 items-center gap-4 lg:h-[76px]">
+        <Link href={home} className="group flex min-w-0 items-center gap-3" aria-label={t("முத்தமிழறிஞர் பதிப்பகம் — முகப்பு", "Muthamilarignar Pathipagam — Home")}>
+          <Image
+            src={logo}
+            alt=""
+            width={48}
+            height={48}
+            priority
+            sizes="48px"
+            className="h-10 w-10 flex-shrink-0 rounded-lg lg:h-12 lg:w-12"
+          />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-[15px] font-bold text-brand-red sm:text-[17px] lg:text-[19px]">
+              முத்தமிழறிஞர் பதிப்பகம்
+            </span>
+            <span className="hidden truncate text-[11.5px] font-medium tracking-wide text-black/60 sm:block">
+              Muthamilarignar Pathipagam
+            </span>
+          </span>
+        </Link>
 
-        {/* Primary nav (desktop) */}
-        <nav className="hidden lg:flex items-center gap-6 ml-6">
-          <Link
-            href={`/${tenant}`}
-            aria-current={onHome ? "page" : undefined}
-            className={`${linkBase} ${
-              onHome ? `${linkColorActive} ${underline}` : `${linkColor} ${linkHover}`
-            }`}
-          >
-            {t("முகப்பு", "Home")}
-          </Link>
-          <Link
-            href={`/${tenant}/products`}
-            aria-current={isActive(`/${tenant}/products`) ? "page" : undefined}
-            className={`${linkBase} ${
-              isActive(`/${tenant}/products`)
-                ? `${linkColorActive} ${underline}`
-                : `${linkColor} ${linkHover}`
-            }`}
-          >
-            {t("நூல்கள் (27)", "Books (27)")}
-          </Link>
-          <Link
-            href={`/${tenant}/orders`}
-            aria-current={isActive(`/${tenant}/orders`) ? "page" : undefined}
-            className={`${linkBase} ${
-              isActive(`/${tenant}/orders`)
-                ? `${linkColorActive} ${underline}`
-                : `${linkColor} ${linkHover}`
-            }`}
-          >
-            {t("ஆர்டர்கள்", "Orders")}
-          </Link>
-          <Link
-            href={`/${tenant}/track`}
-            aria-current={isActive(`/${tenant}/track`) ? "page" : undefined}
-            className={`${linkBase} ${
-              isActive(`/${tenant}/track`)
-                ? `${linkColorActive} ${underline}`
-                : `${linkColor} ${linkHover}`
-            }`}
-          >
-            {t("ஆர்டர் நிலை", "Track Order")}
-          </Link>
-          <Link
-            href={`/${tenant}/account`}
-            aria-current={isActive(`/${tenant}/account`) ? "page" : undefined}
-            className={`${linkBase} ${
-              isActive(`/${tenant}/account`)
-                ? `${linkColorActive} ${underline}`
-                : `${linkColor} ${linkHover}`
-            }`}
-          >
-            {t("கணக்கு", "Account")}
-          </Link>
+        <nav aria-label={t("முதன்மை வழிசெலுத்தல்", "Primary")} className="ml-6 hidden items-center gap-1 lg:flex">
+          {NAV.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                href={`${home}${item.path}`}
+                aria-current={active ? "page" : undefined}
+                className={`relative rounded-full px-3.5 py-2 text-[15px] font-medium transition-colors ${
+                  active ? "text-brand-red" : "text-black/75 hover:text-brand-red"
+                }`}
+              >
+                <T ta={item.ta} en={item.en} />
+                {active && <span className="absolute inset-x-3.5 -bottom-[17px] h-[3px] rounded-full bg-brand-red" aria-hidden="true" />}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Right-side actions */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <LanguageToggle />
           <Link
-            href={`/${tenant}/cart`}
-            aria-label={t("கூடை", "Cart")}
-            title={t("கூடை", "Cart")}
-            aria-current={isActive(`/${tenant}/cart`) ? "page" : undefined}
-            className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-              isActive(`/${tenant}/cart`)
-                ? "bg-brand-red-light text-brand-red"
-                : "text-gray-700 hover:bg-gray-100"
+            href={`${home}/cart`}
+            aria-label={
+              cartCount > 0
+                ? t(`கூடை — ${countLabel} பொருட்கள்`, `Cart — ${countLabel} items`)
+                : t("கூடை", "Cart")
+            }
+            aria-current={cartActive ? "page" : undefined}
+            className={`relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
+              cartActive
+                ? "border-brand-red bg-brand-red-light text-brand-red"
+                : "border-black/10 text-black hover:border-brand-red hover:text-brand-red"
             }`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-5 h-5"
-            >
-              <circle cx="9" cy="20" r="1.5" />
-              <circle cx="17" cy="20" r="1.5" />
-              <path d="M3 4h2l2.4 9.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.5L21 8H6" />
-            </svg>
+            <CartIcon className="h-[22px] w-[22px]" />
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-brand-red text-white">
-                {cartCount > 99 ? "99+" : cartCount}
+              <span
+                aria-hidden="true"
+                className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-red px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white"
+              >
+                {countLabel}
               </span>
             )}
           </Link>
         </div>
       </div>
 
-      {/* Mobile Secondary Nav Bar */}
-      <div className="flex lg:hidden items-center justify-around border-t border-gray-100 px-3 py-2 text-[12px] font-medium bg-gray-50/70">
-        <Link
-          href={`/${tenant}`}
-          className={onHome ? "text-brand-red font-semibold" : "text-gray-600"}
-        >
-          {t("முகப்பு", "Home")}
-        </Link>
-        <Link
-          href={`/${tenant}/products`}
-          className={
-            isActive(`/${tenant}/products`)
-              ? "text-brand-red font-semibold"
-              : "text-gray-600"
-          }
-        >
-          {t("நூல்கள்", "Books")}
-        </Link>
-        <Link
-          href={`/${tenant}/orders`}
-          className={
-            isActive(`/${tenant}/orders`)
-              ? "text-brand-red font-semibold"
-              : "text-gray-600"
-          }
-        >
-          {t("ஆர்டர்கள்", "Orders")}
-        </Link>
-        <Link
-          href={`/${tenant}/account`}
-          className={
-            isActive(`/${tenant}/account`)
-              ? "text-brand-red font-semibold"
-              : "text-gray-600"
-          }
-        >
-          {t("கணக்கு", "Account")}
-        </Link>
-      </div>
+      {/* Mobile / tablet nav: one swipeable row, no JS menu */}
+      <nav
+        aria-label={t("முதன்மை வழிசெலுத்தல்", "Primary")}
+        className="no-scrollbar flex snap-x gap-1 overflow-x-auto border-t border-black/[0.06] px-3 py-1.5 lg:hidden"
+      >
+        {NAV.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              href={`${home}${item.path}`}
+              aria-current={active ? "page" : undefined}
+              className={`snap-start whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13.5px] font-medium ${
+                active ? "bg-brand-red text-white" : "text-black/75"
+              }`}
+            >
+              <T ta={item.ta} en={item.en} />
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }

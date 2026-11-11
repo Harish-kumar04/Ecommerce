@@ -207,3 +207,25 @@ export function resolveLink(tenant: string, link?: string | null): string | null
 export function isExternal(href: string): boolean {
   return /^(https?:|mailto:|tel:)/i.test(href);
 }
+
+/**
+ * Whether next/image may optimize this src. Must mirror `images.remotePatterns` in
+ * next.config.js; anything else (e.g. an admin-pasted URL on another host) is rendered
+ * with `unoptimized` instead of throwing at runtime.
+ */
+export function canOptimize(src?: string | null): boolean {
+  if (!src) return false;
+  if (src.startsWith("/")) return true;
+  try {
+    const { protocol, hostname } = new URL(src);
+    if (protocol !== "https:") return false;
+    return (
+      hostname === "s3.ap-south-1.amazonaws.com" ||
+      hostname.endsWith(".public.blob.vercel-storage.com") ||
+      hostname === "cdn.infalette.com" ||
+      hostname.endsWith(".infalette.com")
+    );
+  } catch {
+    return false;
+  }
+}

@@ -1,108 +1,127 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
-import { useLanguage } from "./language-provider";
+import { T } from "./i18n/t";
+import PageLines from "./brand/page-lines";
+import Sunburst from "./brand/sunburst";
+import { FacebookIcon, MailIcon, WhatsAppIcon } from "./brand/icons";
+import { type SocialConfig, whatsappHref } from "@/lib/site-defaults";
+import logo from "@/public/brand/logo-96.webp";
 
 /**
- * Storefront footer — Muthamilarignar Pathipagam Bookstore Footer.
+ * Storefront footer (Server Component, zero client JS): solid black with red accents,
+ * a layered "book pages" top edge, contact details and social icon buttons.
  */
-export default function StorefrontFooter({ tenant }: { tenant: string }) {
+export default function StorefrontFooter({
+  tenant,
+  social,
+  bookCount,
+}: {
+  tenant: string;
+  social: SocialConfig;
+  bookCount?: number;
+}) {
   const year = new Date().getFullYear();
-  const { t } = useLanguage();
+  const home = `/${tenant}`;
+  const count = bookCount ? ` (${bookCount})` : "";
+
+  const socials = [
+    { href: social.facebook, label: "Facebook — Muthamilarignar Pathipagam", Icon: FacebookIcon },
+    { href: `mailto:${social.email}`, label: `Email / Gmail — ${social.email}`, Icon: MailIcon },
+    { href: whatsappHref(social), label: `WhatsApp — ${social.whatsappDisplay}`, Icon: WhatsAppIcon },
+  ];
+
+  const linkCls = "text-white/75 transition-colors hover:text-white";
 
   return (
-    <footer className="border-t border-gray-200 bg-brand-black text-neutral-200 mt-16">
-      <div className="h-1 w-full bg-gradient-to-r from-black via-brand-red to-black" />
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.jpg"
-                alt="Muthamilarignar Pathipagam"
-                className="h-12 w-12 rounded-lg object-contain bg-white p-0.5"
-              />
-              <div>
-                <p className="text-base font-bold tracking-tight text-white">
-                  {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
-                </p>
-                <p className="text-xs text-brand-red font-medium">
-                  {t("Muthamilarignar Pathipagam", "முத்தமிழறிஞர் பதிப்பகம்")}
-                </p>
-              </div>
+    <footer className="mt-20">
+      <PageLines className="h-8 sm:h-10" />
+      <div className="relative overflow-hidden bg-brand-black text-white">
+        <div className="h-1 w-full bg-brand-red" aria-hidden="true" />
+        <Sunburst className="pointer-events-none absolute -right-16 -top-4 w-72 opacity-[0.12] sm:w-96" />
+        <div className="container-site relative py-14 lg:py-16">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <Link href={home} className="inline-flex items-center gap-3">
+                <Image src={logo} alt="" width={48} height={48} sizes="48px" className="h-12 w-12 rounded-lg bg-white" />
+                <span className="leading-tight">
+                  <span className="block text-[18px] font-bold text-white">முத்தமிழறிஞர் பதிப்பகம்</span>
+                  <span className="block text-[12px] font-medium tracking-wide text-brand-red">Muthamilarignar Pathipagam</span>
+                </span>
+              </Link>
+              <p className="mt-5 max-w-md text-[14.5px] leading-relaxed text-white/70">
+                <T
+                  ta="திராவிட இயக்க வரலாறு, சமூகநீதி, மாநில சுயாட்சி மற்றும் முத்தமிழறிஞர் கலைஞர் அவர்களின் படைப்புகளைத் தாங்கி வரும் அதிகாரப்பூர்வப் பதிப்பகம்."
+                  en="The official publishing house for Dravidian movement history, social justice, state autonomy and the works of Muthamilarignar Kalaignar."
+                />
+              </p>
+              <ul className="mt-6 flex items-center gap-3" aria-label="Social">
+                {socials.map(({ href, label, Icon }) => (
+                  <li key={label}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      title={label}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-brand-red hover:bg-brand-red"
+                    >
+                      <Icon className="h-5 w-5" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="mt-4 text-sm text-neutral-400 max-w-md leading-relaxed">
-              {t(
-                "திராவிட இயக்க வரலாறு, சமூகநீதி, மாநில சுயாட்சி மற்றும் முத்தமிழறிஞர் கலைஞர் அவர்களின் படைப்புகளைத் தாங்கி வரும் அதிகாரப்பூர்வப் பதிப்பகம்.",
-                "The official publishing house dedicated to Dravidian movement history, social justice, state autonomy, Dravidian Model governance, and the works of Muthamilarignar Kalaignar.",
-              )}
+
+            <div className="lg:col-span-2">
+              <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand-red">
+                <T ta="நூலகம்" en="Bookstore" />
+              </p>
+              <ul className="space-y-2.5 text-[14.5px]">
+                <li><Link href={`${home}/products`} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
+                <li><Link href={`${home}/cart`} className={linkCls}><T ta="கூடை" en="Cart" /></Link></li>
+                <li><Link href={`${home}/orders`} className={linkCls}><T ta="எனது ஆர்டர்கள்" en="My orders" /></Link></li>
+                <li><Link href={`${home}/returns`} className={linkCls}><T ta="மாற்று / திரும்பப் பெறுதல்" en="Returns & support" /></Link></li>
+              </ul>
+            </div>
+
+            <div className="lg:col-span-2">
+              <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand-red">
+                <T ta="வாசகர் கணக்கு" en="Reader account" />
+              </p>
+              <ul className="space-y-2.5 text-[14.5px]">
+                <li><Link href={`${home}/account`} className={linkCls}><T ta="சுயவிவரம்" en="Profile" /></Link></li>
+                <li><Link href={`${home}/track`} className={linkCls}><T ta="ஆர்டர் நிலை" en="Track order" /></Link></li>
+                <li><Link href={`${home}/account/consent`} className={linkCls}><T ta="தனியுரிமை அமைப்புகள்" en="Privacy & consent" /></Link></li>
+              </ul>
+            </div>
+
+            <div className="lg:col-span-3">
+              <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand-red">
+                <T ta="தொடர்புக்கு" en="Contact" />
+              </p>
+              <ul className="space-y-3 text-[14.5px]">
+                <li>
+                  <a href={whatsappHref(social)} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2.5 ${linkCls}`}>
+                    <WhatsAppIcon className="h-4 w-4 text-brand-red" /> {social.whatsappDisplay}
+                  </a>
+                </li>
+                <li>
+                  <a href={`mailto:${social.email}`} className={`inline-flex items-center gap-2.5 break-all ${linkCls}`}>
+                    <MailIcon className="h-4 w-4 flex-shrink-0 text-brand-red" /> {social.email}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-[12.5px] text-white/55 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {year} <T ta="முத்தமிழறிஞர் பதிப்பகம். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை." en="Muthamilarignar Pathipagam. All rights reserved." />
+            </p>
+            <p>
+              <T ta="இந்தியா முழுவதும் விநியோகம் • பாதுகாப்பான கட்டணம் • COD" en="Pan-India delivery • Secure checkout • Cash on delivery" />
             </p>
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-brand-red font-semibold mb-3">
-              {t("நூலகம்", "Bookstore")}
-            </p>
-            <ul className="space-y-2 text-sm text-neutral-300">
-              <li>
-                <Link href={`/${tenant}/products`} className="hover:text-white hover:underline">
-                  {t("அனைத்து நூல்கள் (27)", "All Books (27)")}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${tenant}/cart`} className="hover:text-white hover:underline">
-                  {t("கூடை (Cart)", "Shopping Cart")}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${tenant}/orders`} className="hover:text-white hover:underline">
-                  {t("எனது ஆர்டர்கள்", "My Orders")}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${tenant}/returns`} className="hover:text-white hover:underline">
-                  {t("மாற்று / திரும்பப் பெறுதல்", "Returns & Support")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-brand-red font-semibold mb-3">
-              {t("வாசகர் கணக்கு", "Reader Account")}
-            </p>
-            <ul className="space-y-2 text-sm text-neutral-300">
-              <li>
-                <Link href={`/${tenant}/account`} className="hover:text-white hover:underline">
-                  {t("சுயவிவரம்", "Profile")}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${tenant}/track`} className="hover:text-white hover:underline">
-                  {t("ஆர்டர் நிலையை அறிய", "Track Order")}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${tenant}/account/consent`} className="hover:text-white hover:underline">
-                  {t("தனியுரிமை அமைப்புகள்", "Privacy & Consent")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-10 pt-6 border-t border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-neutral-400">
-          <p>
-            © {year}{" "}
-            {t(
-              "முத்தமிழறிஞர் பதிப்பகம் (Muthamilarignar Pathipagam). அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
-              "Muthamilarignar Pathipagam (முத்தமிழறிஞர் பதிப்பகம்). All rights reserved.",
-            )}
-          </p>
-          <p>
-            {t(
-              "இந்தியா முழுவதும் விரைவான அஞ்சல் / கூரியர் விநியோகம்.",
-              "Pan-India fast book delivery • Secure checkout via Razorpay, Stripe & COD.",
-            )}
-          </p>
         </div>
       </div>
     </footer>
