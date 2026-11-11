@@ -30,9 +30,9 @@ export default function ProductCard({
   return (
     <Link
       href={`/${tenant}/products/${product.id}`}
-      className="group flex flex-col rounded-2xl border border-gray-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-950 transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-[0_12px_32px_rgba(220,38,38,0.10)] overflow-hidden"
+      className="group flex flex-col rounded-2xl border border-gray-200/80 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-[0_12px_32px_rgba(220,38,38,0.10)] overflow-hidden"
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 p-3 flex items-center justify-center">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 p-3 flex items-center justify-center">
         {onSale && (
           <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
             {t("சிறப்புத் தள்ளுபடி", "SALE")}
@@ -54,22 +54,22 @@ export default function ProductCard({
       </div>
       <div className="flex flex-1 flex-col justify-between p-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600">
             {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
           </p>
-          <h3 className="mt-1 text-[15px] font-bold leading-snug text-gray-900 dark:text-neutral-100 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+          <h3 className="mt-1 text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
             {primaryTitle}
           </h3>
           {secondaryTitle && (
-            <p className="mt-0.5 text-[12px] text-gray-500 dark:text-neutral-400 line-clamp-1">
+            <p className="mt-0.5 text-[12px] text-gray-500 line-clamp-1">
               {secondaryTitle}
             </p>
           )}
         </div>
 
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-900 flex items-center justify-between gap-2">
+        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[16px] font-bold text-gray-900 dark:text-neutral-100">
+            <span className="text-[16px] font-bold text-gray-900">
               ₹{price.toFixed(0)}
             </span>
             {onSale && (
@@ -78,7 +78,7 @@ export default function ProductCard({
               </span>
             )}
           </div>
-          <span className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/60 px-2.5 py-1 text-[11px] font-semibold text-red-600 dark:text-red-400 group-hover:bg-red-600 group-hover:text-white transition-colors">
+          <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
             {t("வாங்க →", "Buy →")}
           </span>
         </div>

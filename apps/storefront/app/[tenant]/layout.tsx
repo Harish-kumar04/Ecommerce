@@ -19,7 +19,7 @@ export default function TenantLayout({
   params: { tenant: string };
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-gray-900 dark:bg-black dark:text-gray-100">
+    <div className="min-h-screen flex flex-col bg-white text-gray-900">
       <StorefrontHeader tenant={params.tenant} />
       <main className="flex-1">{children}</main>
       <StorefrontFooter tenant={params.tenant} />

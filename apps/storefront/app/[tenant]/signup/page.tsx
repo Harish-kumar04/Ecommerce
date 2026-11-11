@@ -39,29 +39,29 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-4">
-      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-8 space-y-3">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 space-y-3">
         <div className="text-center">
-          <h1 className="text-[28px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+          <h1 className="text-[28px] font-semibold tracking-tight text-gray-900">
             Create your account
           </h1>
-          <p className="mt-2 text-[13px] text-gray-500 dark:text-neutral-500">
+          <p className="mt-2 text-[13px] text-gray-500">
             Set up your account in under a minute.
           </p>
         </div>
         {error && (
-          <p className="text-[13px] text-red-700 dark:text-red-300 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 px-4 py-2">
+          <p className="text-[13px] text-red-700 rounded-xl border border-red-200 bg-red-50 px-4 py-2">
             {error}
           </p>
         )}
         <input
-          className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="First name"
           value={form.first_name}
           onChange={(e) => setForm({ ...form, first_name: e.target.value })}
         />
         <input
-          className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Last name"
           value={form.last_name}
           onChange={(e) => setForm({ ...form, last_name: e.target.value })}
@@ -69,7 +69,7 @@ export default function SignupPage() {
         <input
           type="email"
           required
-          className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -78,7 +78,7 @@ export default function SignupPage() {
           type="password"
           required
           minLength={8}
-          className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Password (min 8 chars)"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -90,11 +90,11 @@ export default function SignupPage() {
         >
           {busy ? "Creating…" : "Create account"}
         </button>
-        <p className="text-[13px] text-gray-500 dark:text-neutral-500 text-center mt-2">
+        <p className="text-[13px] text-gray-500 text-center mt-2">
           Already have an account?{" "}
           <Link
             href={`/${params.tenant}/login?next=${encodeURIComponent(next)}`}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-blue-600 hover:underline"
           >
             Sign in
           </Link>

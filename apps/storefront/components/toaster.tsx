@@ -88,7 +88,7 @@ export function Toaster() {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto rounded-lg shadow-lg border ${palette.border} ${palette.bg} text-sm text-gray-900 dark:text-gray-100 overflow-hidden`}
+            className={`pointer-events-auto rounded-lg shadow-lg border ${palette.border} ${palette.bg} text-sm text-gray-900 overflow-hidden`}
           >
             <div className="px-4 py-3 flex items-start gap-3">
               <span className={`mt-0.5 inline-flex w-5 h-5 items-center justify-center rounded-full ${palette.icon} text-white text-xs font-bold`}>
@@ -97,14 +97,14 @@ export function Toaster() {
               <div className="flex-1">
                 <div className="font-semibold">{t.title}</div>
                 {t.description && (
-                  <div className="mt-1 text-xs text-gray-700 dark:text-gray-300">{t.description}</div>
+                  <div className="mt-1 text-xs text-gray-700">{t.description}</div>
                 )}
               </div>
               <button
                 type="button"
                 aria-label="Dismiss"
                 onClick={() => dismiss(t.id)}
-                className="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="ml-2 text-gray-500 hover:text-gray-700"
               >
                 ×
               </button>
@@ -118,23 +118,23 @@ export function Toaster() {
 
 const PALETTE: Record<ToastKind, { bg: string; border: string; icon: string }> = {
   info: {
-    bg: "bg-white dark:bg-gray-800",
-    border: "border-gray-200 dark:border-gray-700",
+    bg: "bg-white",
+    border: "border-gray-200",
     icon: "bg-blue-500",
   },
   success: {
-    bg: "bg-white dark:bg-gray-800",
-    border: "border-green-300 dark:border-green-700",
+    bg: "bg-white",
+    border: "border-green-300",
     icon: "bg-green-500",
   },
   error: {
-    bg: "bg-white dark:bg-gray-800",
-    border: "border-red-300 dark:border-red-700",
+    bg: "bg-white",
+    border: "border-red-300",
     icon: "bg-red-500",
   },
   warning: {
-    bg: "bg-white dark:bg-gray-800",
-    border: "border-yellow-300 dark:border-yellow-700",
+    bg: "bg-white",
+    border: "border-yellow-300",
     icon: "bg-yellow-500",
   },
 };

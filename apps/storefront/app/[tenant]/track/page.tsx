@@ -42,13 +42,13 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <header className="mb-8">
-        <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
+        <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500">
           Tracking
         </p>
-        <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+        <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900">
           Track your order
         </h1>
-        <p className="mt-2 text-[15px] text-gray-500 dark:text-neutral-400">
+        <p className="mt-2 text-[15px] text-gray-500">
           Enter the order ID from your confirmation page or email, plus the
           email you used at checkout.
         </p>
@@ -56,10 +56,10 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
 
       <form
         onSubmit={handleTrack}
-        className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4"
+        className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8 space-y-4"
       >
         <div>
-          <label className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 dark:text-neutral-500 mb-1">
+          <label className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 mb-1">
             Order ID
           </label>
           <input
@@ -68,11 +68,11 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
             onChange={(e) => setOrderId(e.target.value)}
             placeholder="e.g. 3f2c9a1e-…"
             required
-            className="w-full h-11 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 dark:text-neutral-500 mb-1">
+          <label className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 mb-1">
             Email used at checkout
           </label>
           <input
@@ -81,35 +81,35 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="w-full h-11 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-11 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[14px] font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="w-full h-11 rounded-full bg-gray-900 text-white text-[14px] font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           {loading ? "Checking…" : "Track order"}
         </button>
       </form>
 
       {error && (
-        <div className="mt-4 rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 px-4 py-3 text-[14px] text-red-700 dark:text-red-300">
+        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="mt-6 rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
+        <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[16px] font-semibold text-gray-900 dark:text-neutral-100">
+            <h2 className="text-[16px] font-semibold text-gray-900">
               Order #{String(result.order_id).slice(0, 8)}
             </h2>
-            <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 capitalize">
+            <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-700 capitalize">
               {result.status}
             </span>
           </div>
-          <p className="text-[14px] text-gray-600 dark:text-neutral-400">
+          <p className="text-[14px] text-gray-600">
             Total: ₹{(result.total_cents / 100).toFixed(2)} {result.currency ? `· ${result.currency}` : ""}
           </p>
 
@@ -120,14 +120,14 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
                 <li
                   key={stage}
                   className={`flex items-center gap-2 text-[14px] ${
-                    done ? "text-green-700 dark:text-green-400" : "text-gray-400 dark:text-neutral-600"
+                    done ? "text-green-700" : "text-gray-400"
                   }`}
                 >
                   <span
                     className={`w-3.5 h-3.5 rounded-full border ${
                       done
-                        ? "bg-green-600 border-green-600 dark:bg-green-500 dark:border-green-500"
-                        : "border-gray-300 dark:border-neutral-700"
+                        ? "bg-green-600 border-green-600"
+                        : "border-gray-300"
                     }`}
                   />
                   {stageLabels[stage]}
@@ -137,10 +137,10 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
           </ol>
 
           {(result.tracking || []).length > 0 && (
-            <div className="mt-4 border-t border-gray-100 dark:border-neutral-900 pt-4">
-              <h3 className="text-[14px] font-semibold mb-2 text-gray-900 dark:text-neutral-100">Shipments</h3>
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <h3 className="text-[14px] font-semibold mb-2 text-gray-900">Shipments</h3>
               {result.tracking.map((t: any, i: number) => (
-                <div key={i} className="text-[14px] text-gray-600 dark:text-neutral-400 mb-2">
+                <div key={i} className="text-[14px] text-gray-600 mb-2">
                   <p className="font-medium">{t.carrier || "Carrier"}</p>
                   {t.tracking_number ? (
                     <p>
@@ -149,13 +149,13 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
                         href={`https://www.google.com/search?q=${encodeURIComponent((t.carrier || "") + " tracking " + t.tracking_number)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 dark:text-blue-400 underline break-all"
+                        className="text-blue-600 underline break-all"
                       >
                         {t.tracking_number}
                       </a>
                     </p>
                   ) : (
-                    <p className="text-gray-400 dark:text-neutral-600">Awaiting pickup — tracking number pending.</p>
+                    <p className="text-gray-400">Awaiting pickup — tracking number pending.</p>
                   )}
                 </div>
               ))}
@@ -167,7 +167,7 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
       <div className="mt-8 text-center">
         <Link
           href={`/${params.tenant}`}
-          className="text-[13px] text-gray-500 dark:text-neutral-500 hover:underline"
+          className="text-[13px] text-gray-500 hover:underline"
         >
           ← Back to store
         </Link>

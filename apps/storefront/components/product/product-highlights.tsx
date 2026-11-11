@@ -85,19 +85,19 @@ export default function ProductHighlights({ product }: { product: any }) {
   ];
 
   return (
-    <section className="bg-gray-50 dark:bg-neutral-950 border-y border-gray-200/70 dark:border-neutral-900">
+    <section className="bg-gray-50 border-y border-gray-200/70">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {items.map((it, idx) => (
             <div key={idx} className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-950 flex items-center justify-center text-red-600 dark:text-red-400">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-red-200 flex items-center justify-center text-red-600">
                 {it.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500 dark:text-neutral-500">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
                   {it.label}
                 </p>
-                <p className="mt-1 text-[14px] font-semibold text-gray-900 dark:text-neutral-100">
+                <p className="mt-1 text-[14px] font-semibold text-gray-900">
                   {it.value}
                 </p>
               </div>

@@ -56,7 +56,7 @@ function Stars({ value }: { value: number }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           className={`w-4 h-4 ${
-            i <= value ? "text-amber-500" : "text-gray-300 dark:text-neutral-700"
+            i <= value ? "text-amber-500" : "text-gray-300"
           }`}
         >
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -129,13 +129,13 @@ export default function ProductReviews({
   };
 
   return (
-    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-12 border-t border-gray-100 dark:border-neutral-900">
+    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-12 border-t border-gray-100">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-[24px] font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+          <h2 className="text-[24px] font-bold tracking-tight text-gray-900">
             {t("வாசகர் கருத்துக்கள்", "Reader Reviews")}
           </h2>
-          <div className="mt-1 flex items-center gap-2 text-[14px] text-gray-500 dark:text-neutral-400">
+          <div className="mt-1 flex items-center gap-2 text-[14px] text-gray-500">
             <Stars value={Math.round(avg)} />
             <span>
               {avg.toFixed(1)} / 5 ({reviews.length}{" "}
@@ -159,16 +159,16 @@ export default function ProductReviews({
         <div className="space-y-2">
           {histogram.map((h) => (
             <div key={h.stars} className="flex items-center gap-3 text-[13px]">
-              <span className="w-8 text-gray-500 dark:text-neutral-500">
+              <span className="w-8 text-gray-500">
                 {h.stars} ★
               </span>
-              <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-neutral-900 overflow-hidden">
+              <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                 <div
                   className="h-full bg-amber-400"
                   style={{ width: `${(h.count / maxCount) * 100}%` }}
                 />
               </div>
-              <span className="w-6 text-right text-gray-500 dark:text-neutral-500">
+              <span className="w-6 text-right text-gray-500">
                 {h.count}
               </span>
             </div>
@@ -179,7 +179,7 @@ export default function ProductReviews({
         {showForm && (
           <form onSubmit={submit} className="space-y-3">
             {submitted && (
-              <p className="text-[13px] text-green-600 dark:text-green-400">
+              <p className="text-[13px] text-green-600">
                 {t(
                   "நன்றி — உங்கள் கருத்து பதிவு செய்யப்பட்டது.",
                   "Thank you — your review has been posted.",
@@ -191,7 +191,7 @@ export default function ProductReviews({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("உங்கள் பெயர்", "Your name")}
-                className="h-10 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-[14px]"
+                className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-[14px]"
                 required
               />
               <div className="flex items-center gap-1">
@@ -211,7 +211,7 @@ export default function ProductReviews({
                       className={`w-5 h-5 ${
                         i <= rating
                           ? "text-amber-500"
-                          : "text-gray-300 dark:text-neutral-700"
+                          : "text-gray-300"
                       }`}
                     >
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -224,7 +224,7 @@ export default function ProductReviews({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t("மதிப்புரை தலைப்பு", "Review title")}
-              className="w-full h-10 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-[14px]"
+              className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-[14px]"
               required
             />
             <textarea
@@ -235,7 +235,7 @@ export default function ProductReviews({
                 "Share your thoughts about this book…",
               )}
               rows={4}
-              className="w-full rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-[14px]"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-[14px]"
               required
             />
             <button
@@ -253,18 +253,18 @@ export default function ProductReviews({
         {reviews.map((r) => (
           <article
             key={r.id}
-            className="border-b border-gray-100 dark:border-neutral-900 pb-6 last:border-0"
+            className="border-b border-gray-100 pb-6 last:border-0"
           >
             <div className="flex items-center gap-2">
               <Stars value={r.rating} />
-              <span className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100">
+              <span className="text-[14px] font-semibold text-gray-900">
                 {r.title}
               </span>
             </div>
-            <p className="mt-2 text-[14px] text-gray-700 dark:text-neutral-300 leading-relaxed">
+            <p className="mt-2 text-[14px] text-gray-700 leading-relaxed">
               {r.body}
             </p>
-            <p className="mt-3 text-[12px] text-gray-500 dark:text-neutral-500">
+            <p className="mt-3 text-[12px] text-gray-500">
               {r.name} · {r.date}
               {r.verified
                 ? ` · ${t("உறுதிசெய்யப்பட்ட வாசகர்", "Verified Reader")}`

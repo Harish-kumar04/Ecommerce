@@ -32,7 +32,7 @@ export default function AccountPage({ params }: { params: { tenant: string } }) 
 
   if (authed === null) {
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center text-[13px] text-gray-500 dark:text-neutral-500">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center text-[13px] text-gray-500">
         Loading…
       </div>
     );
@@ -53,13 +53,13 @@ function Onboarding({ tenant }: { tenant: string }) {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center">
-        <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-black text-[20px] font-semibold">
+        <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 text-white text-[20px] font-semibold">
           I
         </div>
-        <h1 className="mt-6 text-[32px] sm:text-[40px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+        <h1 className="mt-6 text-[32px] sm:text-[40px] font-semibold tracking-tight text-gray-900">
           Sign in to your account
         </h1>
-        <p className="mt-3 text-[15px] text-gray-500 dark:text-neutral-400 max-w-md mx-auto">
+        <p className="mt-3 text-[15px] text-gray-500 max-w-md mx-auto">
           Your orders, returns, account details and consent preferences live
           behind sign-in.
         </p>
@@ -68,39 +68,39 @@ function Onboarding({ tenant }: { tenant: string }) {
       <div className="mt-10 grid sm:grid-cols-2 gap-4">
         <Link
           href={`/${tenant}/login?next=/${tenant}/account`}
-          className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 hover:border-gray-300 dark:hover:border-neutral-700 transition-colors"
+          className="rounded-2xl border border-gray-200 bg-white p-6 hover:border-gray-300 transition-colors"
         >
-          <p className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
+          <p className="text-[15px] font-semibold text-gray-900">
             I already have an account
           </p>
-          <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
+          <p className="mt-1 text-[13px] text-gray-500">
             Sign in with email and password.
           </p>
-          <p className="mt-4 text-[13px] font-medium text-blue-600 dark:text-blue-400">
+          <p className="mt-4 text-[13px] font-medium text-blue-600">
             Sign in →
           </p>
         </Link>
         <Link
           href={`/${tenant}/signup?next=/${tenant}/account`}
-          className="rounded-2xl bg-gray-900 dark:bg-white p-6 hover:opacity-90 transition-opacity"
+          className="rounded-2xl bg-gray-900 p-6 hover:opacity-90 transition-opacity"
         >
-          <p className="text-[15px] font-semibold text-white dark:text-black">
+          <p className="text-[15px] font-semibold text-white">
             Create an account
           </p>
-          <p className="mt-1 text-[13px] text-gray-300 dark:text-gray-600">
+          <p className="mt-1 text-[13px] text-gray-300">
             New here — set up your account in under a minute.
           </p>
-          <p className="mt-4 text-[13px] font-medium text-white dark:text-black">
+          <p className="mt-4 text-[13px] font-medium text-white">
             Get started →
           </p>
         </Link>
       </div>
 
-      <p className="mt-8 text-center text-[13px] text-gray-500 dark:text-neutral-500">
+      <p className="mt-8 text-center text-[13px] text-gray-500">
         Just looking for an order?{" "}
         <Link
           href={`/${tenant}/track`}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-blue-600 hover:underline"
         >
           Track your order by ID + email
         </Link>
@@ -127,13 +127,13 @@ function AccountDashboard({ tenant }: { tenant: string }) {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <header className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
+          <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500">
             Account
           </p>
-          <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+          <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900">
             My account
           </h1>
-          <p className="mt-2 text-[15px] text-gray-500 dark:text-neutral-400">
+          <p className="mt-2 text-[15px] text-gray-500">
             Profile, orders, support and consent — all in one place.
           </p>
         </div>
@@ -143,7 +143,7 @@ function AccountDashboard({ tenant }: { tenant: string }) {
             clearStorefrontTokens();
             window.location.href = `/${tenant}`;
           }}
-          className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-gray-200 dark:border-neutral-800 text-[13px] font-medium text-gray-900 dark:text-neutral-100 hover:bg-gray-50 dark:hover:bg-neutral-900"
+          className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-gray-200 text-[13px] font-medium text-gray-900 hover:bg-gray-50"
         >
           Sign out
         </button>
@@ -152,7 +152,7 @@ function AccountDashboard({ tenant }: { tenant: string }) {
       {/* Section tabs */}
       <nav
         aria-label="Account sections"
-        className="mb-8 flex gap-2 overflow-x-auto rounded-full border border-gray-100 dark:border-neutral-900 bg-gray-50 dark:bg-neutral-950 p-1"
+        className="mb-8 flex gap-2 overflow-x-auto rounded-full border border-gray-100 bg-gray-50 p-1"
       >
         {sections.map((s) => (
           <button
@@ -162,8 +162,8 @@ function AccountDashboard({ tenant }: { tenant: string }) {
             aria-current={section === s.id ? "page" : undefined}
             className={`flex-shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
               section === s.id
-                ? "bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 shadow-sm"
-                : "text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
             {s.label}
@@ -213,16 +213,16 @@ function ProfileSection({ tenant }: { tenant: string }) {
   }, []);
 
   return (
-    <section className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
-      <h2 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+    <section className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+      <h2 className="text-[20px] font-semibold tracking-tight text-gray-900">
         My details
       </h2>
-      <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
+      <p className="mt-1 text-[13px] text-gray-500">
         The information we have on file for you.
       </p>
       {loading && <p className="mt-6 text-[13px] text-gray-500">Loading…</p>}
       {meError && (
-        <p className="mt-6 text-[13px] text-red-600 dark:text-red-400">{meError}</p>
+        <p className="mt-6 text-[13px] text-red-600">{meError}</p>
       )}
       {me && (
         <dl className="mt-6 grid sm:grid-cols-2 gap-6 text-[14px]">
@@ -242,10 +242,10 @@ function ProfileSection({ tenant }: { tenant: string }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[12px] uppercase tracking-[0.16em] text-gray-500 dark:text-neutral-500">
+      <dt className="text-[12px] uppercase tracking-[0.16em] text-gray-500">
         {label}
       </dt>
-      <dd className="mt-1 text-[15px] font-medium text-gray-900 dark:text-neutral-100 break-words">
+      <dd className="mt-1 text-[15px] font-medium text-gray-900 break-words">
         {value}
       </dd>
     </div>
@@ -326,37 +326,37 @@ function OrdersSection({ tenant }: { tenant: string }) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900">
           Order history
         </h2>
         <Link
           href={`/${tenant}/orders`}
-          className="text-[13px] text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-[13px] text-blue-600 hover:underline"
         >
           Open full list →
         </Link>
       </div>
 
       {loading && (
-        <div className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 text-[14px] text-gray-500 dark:text-neutral-400">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 text-[14px] text-gray-500">
           Loading…
         </div>
       )}
 
       {error && !loading && (
-        <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-4 text-[14px] text-red-700 dark:text-red-300">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[14px] text-red-700">
           {error}
         </div>
       )}
 
       {!loading && !error && orders.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-neutral-800 py-12 px-6 text-center bg-white dark:bg-neutral-950">
-          <p className="text-[14px] text-gray-700 dark:text-neutral-300">
+        <div className="rounded-2xl border border-dashed border-gray-300 py-12 px-6 text-center bg-white">
+          <p className="text-[14px] text-gray-700">
             You haven&apos;t placed any orders yet.
           </p>
           <Link
             href={`/${tenant}/products`}
-            className="mt-4 inline-flex h-10 px-5 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[13px] font-medium hover:opacity-90 transition-opacity"
+            className="mt-4 inline-flex h-10 px-5 items-center justify-center rounded-full bg-gray-900 text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
           >
             Start shopping
           </Link>
@@ -368,24 +368,24 @@ function OrdersSection({ tenant }: { tenant: string }) {
           {orders.map((order: any) => (
             <div
               key={order.id}
-              className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-4"
+              className="rounded-2xl border border-gray-100 bg-white p-4"
             >
               <Link href={`/${tenant}/orders/${order.id}`} className="block">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-[14px] text-gray-900 dark:text-neutral-100">
+                    <p className="font-semibold text-[14px] text-gray-900">
                       Order #{String(order.id).slice(0, 8)}
                     </p>
-                    <p className="text-[12px] text-gray-500 dark:text-neutral-500">
+                    <p className="text-[12px] text-gray-500">
                       Status: <span className="capitalize">{order.status}</span>
                     </p>
                   </div>
-                  <p className="font-semibold text-[14px] text-gray-900 dark:text-neutral-100">
+                  <p className="font-semibold text-[14px] text-gray-900">
                     ₹{(order.total_cents / 100).toFixed(2)}
                   </p>
                 </div>
                 {(tracking[order.id] || []).map((f: any, i: number) => (
-                  <p key={i} className="text-[11px] text-gray-500 dark:text-neutral-500 mt-1">
+                  <p key={i} className="text-[11px] text-gray-500 mt-1">
                     {f.carrier || "Shipment"}
                     {f.tracking_number ? ` — Tracking: ${f.tracking_number}` : " — tracking pending"}
                     {f.status ? ` (${f.status})` : ""}
@@ -397,14 +397,14 @@ function OrdersSection({ tenant }: { tenant: string }) {
                   <button
                     type="button"
                     onClick={() => handleDownloadInvoice(order.id)}
-                    className="inline-flex h-8 px-4 items-center justify-center rounded-full bg-gray-900 dark:bg-white text-white dark:text-black text-[12px] font-medium hover:opacity-90 transition-opacity"
+                    className="inline-flex h-8 px-4 items-center justify-center rounded-full bg-gray-900 text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                   >
                     Download invoice
                   </button>
                 )}
                 <Link
                   href={`/${tenant}/orders/${order.id}`}
-                  className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-gray-200 dark:border-neutral-800 text-[12px] font-medium text-gray-900 dark:text-neutral-100 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                  className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-gray-200 text-[12px] font-medium text-gray-900 hover:bg-gray-50"
                 >
                   View details →
                 </Link>
@@ -478,45 +478,45 @@ function SupportSection({ tenant }: { tenant: string }) {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
-        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900">
           Help &amp; support
         </h2>
-        <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
+        <p className="mt-1 text-[13px] text-gray-500">
           Returns, contact us, and frequently asked questions.
         </p>
 
         <div className="mt-6 grid sm:grid-cols-3 gap-4">
           <Link
             href={`/${tenant}/orders`}
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
+            className="rounded-xl border border-gray-100 p-4 hover:bg-gray-50 transition-colors"
           >
-            <p className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100">
+            <p className="text-[14px] font-semibold text-gray-900">
               My orders
             </p>
-            <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
+            <p className="mt-1 text-[12px] text-gray-500">
               View, track, cancel.
             </p>
           </Link>
           <Link
             href={`/${tenant}/returns`}
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
+            className="rounded-xl border border-gray-100 p-4 hover:bg-gray-50 transition-colors"
           >
-            <p className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100">
+            <p className="text-[14px] font-semibold text-gray-900">
               My returns
             </p>
-            <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
+            <p className="mt-1 text-[12px] text-gray-500">
               Request &amp; track returns.
             </p>
           </Link>
           <Link
             href={`/${tenant}/track`}
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
+            className="rounded-xl border border-gray-100 p-4 hover:bg-gray-50 transition-colors"
           >
-            <p className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100">
+            <p className="text-[14px] font-semibold text-gray-900">
               Track order
             </p>
-            <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
+            <p className="mt-1 text-[12px] text-gray-500">
               By ID + email (no login).
             </p>
           </Link>
@@ -525,13 +525,13 @@ function SupportSection({ tenant }: { tenant: string }) {
 
       <form
         onSubmit={submit}
-        className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8 space-y-4"
+        className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8 space-y-4"
       >
-        <h3 className="text-[16px] font-semibold text-gray-900 dark:text-neutral-100">
+        <h3 className="text-[16px] font-semibold text-gray-900">
           Send us a message
         </h3>
         {feedback && (
-          <p className="text-[13px] text-green-700 dark:text-green-400">{feedback}</p>
+          <p className="text-[13px] text-green-700">{feedback}</p>
         )}
         <input
           type="text"
@@ -539,14 +539,14 @@ function SupportSection({ tenant }: { tenant: string }) {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
-          className="w-full h-11 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="text"
           placeholder="Order ID (optional)"
           value={orderRef}
           onChange={(e) => setOrderRef(e.target.value)}
-          className="w-full h-11 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <textarea
           placeholder="How can we help?"
@@ -554,7 +554,7 @@ function SupportSection({ tenant }: { tenant: string }) {
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
           required
-          className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
@@ -565,20 +565,20 @@ function SupportSection({ tenant }: { tenant: string }) {
         </button>
       </form>
 
-      <div className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
-        <h3 className="text-[16px] font-semibold text-gray-900 dark:text-neutral-100">
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+        <h3 className="text-[16px] font-semibold text-gray-900">
           Frequently asked
         </h3>
-        <div className="mt-4 divide-y divide-gray-100 dark:divide-neutral-900">
+        <div className="mt-4 divide-y divide-gray-100">
           {faqs.map((f, idx) => (
             <details key={idx} className="py-4 group">
-              <summary className="cursor-pointer text-[14px] font-medium text-gray-900 dark:text-neutral-100 flex items-center justify-between">
+              <summary className="cursor-pointer text-[14px] font-medium text-gray-900 flex items-center justify-between">
                 {f.q}
                 <span className="text-gray-400 group-open:rotate-180 transition-transform">
                   ⌄
                 </span>
               </summary>
-              <p className="mt-2 text-[13px] text-gray-600 dark:text-neutral-400">
+              <p className="mt-2 text-[13px] text-gray-600">
                 {f.a}
               </p>
             </details>
@@ -702,16 +702,16 @@ function ConsentSection({ tenant }: { tenant: string }) {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
-        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+        <h2 className="text-[20px] font-semibold tracking-tight text-gray-900">
           Consent preferences
         </h2>
-        <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
+        <p className="mt-1 text-[13px] text-gray-500">
           Choose how we communicate with you and what we do with your data.
         </p>
         {resolving && <p className="mt-4 text-[13px] text-gray-500">Loading…</p>}
         {resolveError && (
-          <p className="mt-4 text-[13px] text-amber-700 dark:text-amber-300">{resolveError}</p>
+          <p className="mt-4 text-[13px] text-amber-700">{resolveError}</p>
         )}
         {customerId && (
           <div className="mt-6 space-y-3">
@@ -743,18 +743,18 @@ function ConsentSection({ tenant }: { tenant: string }) {
               disabled
               onChange={() => {}}
             />
-            {feedback && <p className="text-[13px] text-green-700 dark:text-green-400">{feedback}</p>}
-            {error && <p className="text-[13px] text-red-700 dark:text-red-300">{error}</p>}
+            {feedback && <p className="text-[13px] text-green-700">{feedback}</p>}
+            {error && <p className="text-[13px] text-red-700">{error}</p>}
           </div>
         )}
       </div>
 
       {customerId && (
-        <div className="rounded-2xl border border-gray-100 dark:border-neutral-900 bg-white dark:bg-neutral-950 p-6 sm:p-8">
-          <h3 className="text-[16px] font-semibold text-gray-900 dark:text-neutral-100">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8">
+          <h3 className="text-[16px] font-semibold text-gray-900">
             Your data
           </h3>
-          <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
+          <p className="mt-1 text-[13px] text-gray-500">
             Export a copy of everything we hold on you, or permanently delete
             your account.
           </p>
@@ -763,7 +763,7 @@ function ConsentSection({ tenant }: { tenant: string }) {
               type="button"
               onClick={exportData}
               disabled={saving}
-              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-gray-200 dark:border-neutral-800 text-[13px] font-medium text-gray-900 dark:text-neutral-100 hover:bg-gray-50 dark:hover:bg-neutral-900"
+              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-gray-200 text-[13px] font-medium text-gray-900 hover:bg-gray-50"
             >
               Export my data
             </button>
@@ -771,7 +771,7 @@ function ConsentSection({ tenant }: { tenant: string }) {
               type="button"
               onClick={deleteAccount}
               disabled={saving}
-              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-red-200 dark:border-red-900 text-[13px] font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-red-200 text-[13px] font-medium text-red-700 hover:bg-red-50"
             >
               Delete my account
             </button>
@@ -796,7 +796,7 @@ function ConsentRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-neutral-900 last:border-0">
+    <label className="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
       <input
         type="checkbox"
         checked={checked}
@@ -805,8 +805,8 @@ function ConsentRow({
         className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
       />
       <div>
-        <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100">{label}</p>
-        <p className="text-[12px] text-gray-500 dark:text-neutral-500">{description}</p>
+        <p className="text-[14px] font-medium text-gray-900">{label}</p>
+        <p className="text-[12px] text-gray-500">{description}</p>
       </div>
     </label>
   );

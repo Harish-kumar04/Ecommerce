@@ -118,7 +118,7 @@ export default function AddToCart({
         <div className="mb-5">
           <label
             htmlFor="variant-select"
-            className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 dark:text-neutral-500 mb-2"
+            className="block text-[12px] uppercase tracking-[0.16em] text-gray-500 mb-2"
           >
             {t("பதிப்பு", "Edition")}
           </label>
@@ -126,7 +126,7 @@ export default function AddToCart({
             id="variant-select"
             value={selectedVariant}
             onChange={(e) => setSelectedVariant(e.target.value)}
-            className="w-full h-11 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="w-full h-11 rounded-full border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
           >
             {variants.map((v: any) => (
               <option
@@ -150,11 +150,11 @@ export default function AddToCart({
       )}
 
       <div className="flex items-stretch gap-3 mb-4">
-        <div className="flex items-center gap-2 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 h-12">
+        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 h-12">
           <button
             type="button"
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-7 h-7 rounded-full text-lg leading-none text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900"
+            className="w-7 h-7 rounded-full text-lg leading-none text-gray-700 hover:bg-gray-100"
             aria-label={t("குறைக்க", "Decrease")}
           >
             −
@@ -165,7 +165,7 @@ export default function AddToCart({
           <button
             type="button"
             onClick={() => setQuantity(Math.min(maxQty || 999, quantity + 1))}
-            className="w-7 h-7 rounded-full text-lg leading-none text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900"
+            className="w-7 h-7 rounded-full text-lg leading-none text-gray-700 hover:bg-gray-100"
             aria-label={t("அதிகரிக்க", "Increase")}
           >
             +
@@ -186,7 +186,7 @@ export default function AddToCart({
       {added && (
         <a
           href={`/${tenant}/cart`}
-          className="block text-center text-[13px] font-medium text-red-600 dark:text-red-400 hover:underline"
+          className="block text-center text-[13px] font-medium text-red-600 hover:underline"
         >
           {t("கூடைக்குச் சென்று ஆர்டர் செய்க →", "Go to Cart & Checkout →")}
         </a>

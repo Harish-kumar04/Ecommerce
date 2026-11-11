@@ -73,7 +73,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
 
   if (loading)
     return (
-      <div className="max-w-5xl mx-auto px-6 py-24 text-center text-[15px] text-gray-500 dark:text-neutral-400">
+      <div className="max-w-5xl mx-auto px-6 py-24 text-center text-[15px] text-gray-500">
         {t("உங்கள் கூடை ஏற்றப்படுகிறது…", "Loading your cart…")}
       </div>
     );
@@ -99,10 +99,10 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <header className="mb-10">
-        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600 dark:text-red-400">
+        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600">
           {t("உங்கள் புத்தகக் கூடை", "Your Book Cart")}
         </p>
-        <h1 className="mt-2 text-[32px] sm:text-[42px] font-extrabold tracking-tight text-gray-900 dark:text-neutral-100">
+        <h1 className="mt-2 text-[32px] sm:text-[42px] font-extrabold tracking-tight text-gray-900">
           {isEmpty
             ? t("உங்கள் கூடை காலியாக உள்ளது.", "Your cart is empty.")
             : t(
@@ -111,7 +111,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
               )}
         </h1>
         {!isEmpty && (
-          <p className="mt-2 text-[15px] text-gray-500 dark:text-neutral-400">
+          <p className="mt-2 text-[15px] text-gray-500">
             {t(
               "ஆர்டரை உறுதி செய்யும் முன் தேர்ந்தெடுத்த நூல்களைச் சரிபார்க்கவும்.",
               "Review your selected books before checkout.",
@@ -121,8 +121,8 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       </header>
 
       {isEmpty ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-neutral-800 py-20 px-6 text-center">
-          <p className="text-[15px] text-gray-500 dark:text-neutral-400">
+        <div className="rounded-2xl border border-dashed border-gray-300 py-20 px-6 text-center">
+          <p className="text-[15px] text-gray-500">
             {t(
               "நீங்கள் தேர்ந்தெடுக்கும் நூல்கள் இங்கே தோன்றும்.",
               "Once you add books, they'll appear here.",
@@ -138,7 +138,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Items */}
-          <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-neutral-950 divide-y divide-gray-100 dark:divide-neutral-900">
+          <div className="lg:col-span-2 rounded-2xl bg-white divide-y divide-gray-100">
             {items.map((it: any) => {
               const rawName =
                 it.product?.name || it.name || it.product_name || "Book";
@@ -146,7 +146,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                 <div key={it.id} className="flex gap-4 py-6 first:pt-0">
                   <Link
                     href={`/${params.tenant}/products/${it.product_id}`}
-                    className="flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-gray-100 dark:bg-neutral-900 p-1.5 overflow-hidden border border-gray-200/70 dark:border-neutral-800"
+                    className="flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-gray-100 p-1.5 overflow-hidden border border-gray-200/70"
                   >
                     {it.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -164,11 +164,11 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/${params.tenant}/products/${it.product_id}`}
-                      className="text-[15px] font-bold text-gray-900 dark:text-neutral-100 hover:text-red-600 hover:underline block"
+                      className="text-[15px] font-bold text-gray-900 hover:text-red-600 hover:underline block"
                     >
                       {localizeName(rawName)}
                     </Link>
-                    <p className="mt-1 text-[12px] text-gray-500 dark:text-neutral-500">
+                    <p className="mt-1 text-[12px] text-gray-500">
                       ₹{((it.price_cents ?? 0) / 100).toFixed(2)}{" "}
                       {t("/ பிரதி", "each")}
                     </p>
@@ -176,7 +176,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                       <button
                         disabled={!!updating}
                         onClick={() => updateQty(it.id, (it.quantity || 1) - 1)}
-                        className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                        className="w-7 h-7 border border-gray-200 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50"
                       >
                         −
                       </button>
@@ -186,19 +186,19 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                       <button
                         disabled={!!updating}
                         onClick={() => updateQty(it.id, (it.quantity || 1) + 1)}
-                        className="w-7 h-7 border border-gray-200 dark:border-neutral-800 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                        className="w-7 h-7 border border-gray-200 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50"
                       >
                         +
                       </button>
                       <button
                         onClick={() => removeItem(it.id)}
-                        className="ml-3 text-[12px] text-gray-500 dark:text-neutral-400 hover:text-red-600 hover:underline"
+                        className="ml-3 text-[12px] text-gray-500 hover:text-red-600 hover:underline"
                       >
                         {t("நீக்குக", "Remove")}
                       </button>
                     </div>
                   </div>
-                  <p className="text-[15px] font-bold text-gray-900 dark:text-neutral-100 whitespace-nowrap">
+                  <p className="text-[15px] font-bold text-gray-900 whitespace-nowrap">
                     ₹
                     {(
                       ((it.price_cents ?? 0) * (it.quantity ?? 1)) /
@@ -211,23 +211,23 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
           </div>
 
           {/* Summary */}
-          <aside className="rounded-2xl bg-gray-50 dark:bg-neutral-950 border border-gray-200/70 dark:border-neutral-900 p-6 h-fit lg:sticky lg:top-24">
-            <h2 className="text-[16px] font-bold text-gray-900 dark:text-neutral-100">
+          <aside className="rounded-2xl bg-gray-50 border border-gray-200/70 p-6 h-fit lg:sticky lg:top-24">
+            <h2 className="text-[16px] font-bold text-gray-900">
               {t("ஆர்டர் சுருக்கம்", "Order Summary")}
             </h2>
             <div className="mt-4 space-y-2 text-[14px]">
-              <div className="flex justify-between text-gray-600 dark:text-neutral-400">
+              <div className="flex justify-between text-gray-600">
                 <span>{t("நூல்களின் விலை", "Subtotal")}</span>
                 <span>₹{(total / 100).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-gray-600 dark:text-neutral-400">
+              <div className="flex justify-between text-gray-600">
                 <span>{t("அஞ்சல் / கூரியர் கட்டணம்", "Shipping")}</span>
-                <span className="text-gray-500 dark:text-neutral-500">
+                <span className="text-gray-500">
                   {t("அடுத்தப் பக்கத்தில்", "Calculated at checkout")}
                 </span>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800 flex justify-between text-[16px] font-extrabold text-gray-900 dark:text-neutral-100">
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between text-[16px] font-extrabold text-gray-900">
               <span>{t("மொத்தத் தொகை", "Total")}</span>
               <span>₹{(total / 100).toFixed(2)}</span>
             </div>
@@ -239,11 +239,11 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
             </Link>
             <Link
               href={`/${params.tenant}/products`}
-              className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-[14px] font-medium text-gray-900 dark:text-neutral-100 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+              className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-full bg-white border border-gray-200 text-[14px] font-medium text-gray-900 hover:bg-gray-50 transition-colors"
             >
               {t("மேலும் நூல்களைத் தேர்ந்தெடுக்க", "Continue Shopping")}
             </Link>
-            <p className="mt-4 text-[12px] text-gray-500 dark:text-neutral-500 text-center">
+            <p className="mt-4 text-[12px] text-gray-500 text-center">
               {t(
                 "பாதுகாப்பான கட்டணம் · Razorpay, Stripe அல்லது COD வசதி.",
                 "Secure checkout · Razorpay, Stripe or COD.",

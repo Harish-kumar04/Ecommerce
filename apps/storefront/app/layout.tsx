@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import AttributionCapture from "@/components/attribution-capture";
-import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { Toaster } from "@/components/toaster";
 import { CartRefreshBridge } from "@/components/cart-refresh-bridge";
@@ -21,18 +19,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const content = (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AttributionCapture />
-        <CartRefreshBridge />
-        {children}
-        <Toaster />
-      </LanguageProvider>
-    </ThemeProvider>
-  );
-
   return (
     <html lang="ta" suppressHydrationWarning>
       <head>
@@ -42,22 +28,17 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var t=localStorage.getItem('infalette-theme');var e=(t==='dark'||t==='light')?t:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(e==='dark'){document.documentElement.classList.add('dark');}document.documentElement.setAttribute('data-theme',e);}catch(e){}})();",
-          }}
-        />
       </head>
       <body
         className="font-sans antialiased"
         style={{ fontFeatureSettings: '"ss01", "cv11"' }}
       >
-        {clerkKey ? (
-          <ClerkProvider publishableKey={clerkKey}>{content}</ClerkProvider>
-        ) : (
-          content
-        )}
+        <LanguageProvider>
+          <AttributionCapture />
+          <CartRefreshBridge />
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

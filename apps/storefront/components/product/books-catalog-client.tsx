@@ -52,16 +52,16 @@ export default function BooksCatalogClient({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <header className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-700 dark:text-red-300">
+        <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-700">
           {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
         </div>
-        <h1 className="mt-3 text-[34px] sm:text-[46px] font-extrabold leading-[1.08] tracking-tight text-gray-900 dark:text-neutral-100">
+        <h1 className="mt-3 text-[34px] sm:text-[46px] font-extrabold leading-[1.08] tracking-tight text-gray-900">
           {t(
             "அனைத்து நூல்கள் (Complete Book Catalog)",
             "Complete Book Catalog (அனைத்து நூல்கள்)",
           )}
         </h1>
-        <p className="mt-2.5 text-[15px] text-gray-600 dark:text-neutral-400 max-w-2xl">
+        <p className="mt-2.5 text-[15px] text-gray-600 max-w-2xl">
           {t(
             `முத்தமிழறிஞர் பதிப்பகத்தின் ${products.length} அதிகாரப்பூர்வ வெளியீடுகள் — திராவிட இயக்க வரலாறு, சமூகநீதி, திராவிட மாடல் மற்றும் கலைஞர் படைப்புகள்.`,
             `Browse all ${products.length} official publications from Muthamilarignar Pathipagam — covering Dravidian history, social justice, the Dravidian Model, and Kalaignar's works.`,
@@ -80,7 +80,7 @@ export default function BooksCatalogClient({
               "நூல் பெயர் (தமிழ் / English) அல்லது குறியீடு மூலம் தேடுக…",
               "Search books in Tamil or English (e.g., Kalaignar, Dravida, கலைஞர்)…",
             )}
-            className="w-full h-11 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 pl-10 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="w-full h-11 rounded-full border border-gray-200 bg-white pl-10 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
           />
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function BooksCatalogClient({
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as any)}
           aria-label={t("வரிசைப்படுத்து", "Sort books")}
-          className="h-11 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 text-[13px] font-medium text-gray-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-red-600"
+          className="h-11 rounded-full border border-gray-200 bg-white px-4 text-[13px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600"
         >
           <option value="default">
             {t("வரிசை: சிறப்பு வெளியீடுகள்", "Sort: Featured")}
@@ -124,7 +124,7 @@ export default function BooksCatalogClient({
             className={`px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
               selectedCategory === "all"
                 ? "bg-red-600 text-white shadow-sm"
-                : "bg-gray-100 dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-800"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {t(`அனைத்தும் (${products.length})`, `All Books (${products.length})`)}
@@ -137,7 +137,7 @@ export default function BooksCatalogClient({
               className={`px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
                   ? "bg-red-600 text-white shadow-sm"
-                  : "bg-gray-100 dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-800"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               {localizeName(cat.name)}
@@ -148,8 +148,8 @@ export default function BooksCatalogClient({
 
       {/* Results Grid */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-neutral-800 py-20 px-6 text-center">
-          <p className="text-gray-500 dark:text-neutral-400">
+        <div className="rounded-2xl border border-dashed border-gray-300 py-20 px-6 text-center">
+          <p className="text-gray-500">
             {t(
               "உங்கள் தேடலுக்குப் பொருந்தும் நூல்கள் எதுவும் கிடைக்கவில்லை.",
               "No books matched your search or filter.",

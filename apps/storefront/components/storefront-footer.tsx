@@ -11,7 +11,7 @@ export default function StorefrontFooter({ tenant }: { tenant: string }) {
   const { t } = useLanguage();
 
   return (
-    <footer className="border-t border-gray-200 dark:border-neutral-900 bg-neutral-950 text-neutral-200 mt-16">
+    <footer className="border-t border-gray-200 bg-neutral-950 text-neutral-200 mt-16">
       <div className="h-1 w-full bg-gradient-to-r from-black via-red-600 to-black" />
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">

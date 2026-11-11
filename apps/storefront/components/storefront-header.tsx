@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
 import { useLanguage } from "./language-provider";
 import { CART_COUNT_KEY, readFromStorage } from "@/lib/cart-events";
@@ -56,11 +54,11 @@ export default function StorefrontHeader({
 
   const linkBase =
     "relative inline-flex h-16 items-center text-[13.5px] transition-colors whitespace-nowrap";
-  const linkColor = "text-gray-700 dark:text-neutral-300";
-  const linkColorActive = "text-red-600 dark:text-red-400 font-semibold";
-  const linkHover = "hover:text-red-600 dark:hover:text-red-400";
+  const linkColor = "text-gray-700";
+  const linkColorActive = "text-red-600 font-semibold";
+  const linkHover = "hover:text-red-600";
   const underline =
-    "after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-red-600 after:dark:bg-red-500 after:rounded-full";
+    "after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-red-600 after:rounded-full";
 
   const resolvedLogo = logoUrl || "/logo.jpg";
   const displayTitle = t(
@@ -73,7 +71,7 @@ export default function StorefrontHeader({
   );
 
   return (
-    <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 dark:bg-black/85 border-b border-gray-200/80 dark:border-neutral-900">
+    <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 border-b border-gray-200/80">
       {/* Top Black & Red Dravidian accent bar */}
       <div className="h-1 w-full bg-gradient-to-r from-black via-red-600 to-black" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
@@ -85,7 +83,7 @@ export default function StorefrontHeader({
               onClick={handleBack}
               aria-label={t("பின்செல்", "Go back")}
               title={t("பின்செல்", "Go back")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -109,13 +107,13 @@ export default function StorefrontHeader({
             <img
               src={resolvedLogo}
               alt="Muthamilarignar Pathipagam Logo"
-              className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain bg-white border border-gray-200 dark:border-neutral-800 p-0.5 flex-shrink-0 shadow-sm"
+              className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain bg-white border border-gray-200 p-0.5 flex-shrink-0 shadow-sm"
             />
             <div className="min-w-0">
-              <p className="text-[14px] sm:text-[16px] font-bold tracking-tight text-gray-900 dark:text-neutral-100 truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+              <p className="text-[14px] sm:text-[16px] font-bold tracking-tight text-gray-900 truncate group-hover:text-red-600 transition-colors">
                 {displayTitle}
               </p>
-              <p className="text-[11px] text-gray-500 dark:text-neutral-400 truncate hidden sm:block">
+              <p className="text-[11px] text-gray-500 truncate hidden sm:block">
                 {displaySubtitle}
               </p>
             </div>
@@ -182,32 +180,6 @@ export default function StorefrontHeader({
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-2">
           <LanguageToggle />
-          <ThemeToggle />
-          {Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && (
-            <>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="hidden sm:inline-flex h-9 px-3.5 items-center justify-center rounded-full text-[13px] font-medium text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
-                  >
-                    {t("உள்நுழைக", "Sign in")}
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <button
-                    type="button"
-                    className="hidden sm:inline-flex h-9 px-3.5 items-center justify-center rounded-full text-[13px] font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
-                  >
-                    {t("பதிவு செய்க", "Sign up")}
-                  </button>
-                </SignUpButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton afterSignOutUrl={`/${tenant}`} />
-              </SignedIn>
-            </>
-          )}
           <Link
             href={`/${tenant}/cart`}
             aria-label={t("கூடை", "Cart")}
@@ -215,8 +187,8 @@ export default function StorefrontHeader({
             aria-current={isActive(`/${tenant}/cart`) ? "page" : undefined}
             className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
               isActive(`/${tenant}/cart`)
-                ? "bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400"
-                : "text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-900"
+                ? "bg-red-50 text-red-600"
+                : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <svg
@@ -243,10 +215,10 @@ export default function StorefrontHeader({
       </div>
 
       {/* Mobile Secondary Nav Bar */}
-      <div className="flex lg:hidden items-center justify-around border-t border-gray-100 dark:border-neutral-900 px-3 py-2 text-[12px] font-medium bg-gray-50/70 dark:bg-neutral-950/70">
+      <div className="flex lg:hidden items-center justify-around border-t border-gray-100 px-3 py-2 text-[12px] font-medium bg-gray-50/70">
         <Link
           href={`/${tenant}`}
-          className={onHome ? "text-red-600 font-semibold" : "text-gray-600 dark:text-neutral-400"}
+          className={onHome ? "text-red-600 font-semibold" : "text-gray-600"}
         >
           {t("முகப்பு", "Home")}
         </Link>
@@ -255,7 +227,7 @@ export default function StorefrontHeader({
           className={
             isActive(`/${tenant}/products`)
               ? "text-red-600 font-semibold"
-              : "text-gray-600 dark:text-neutral-400"
+              : "text-gray-600"
           }
         >
           {t("நூல்கள்", "Books")}
@@ -265,7 +237,7 @@ export default function StorefrontHeader({
           className={
             isActive(`/${tenant}/orders`)
               ? "text-red-600 font-semibold"
-              : "text-gray-600 dark:text-neutral-400"
+              : "text-gray-600"
           }
         >
           {t("ஆர்டர்கள்", "Orders")}
@@ -275,7 +247,7 @@ export default function StorefrontHeader({
           className={
             isActive(`/${tenant}/account`)
               ? "text-red-600 font-semibold"
-              : "text-gray-600 dark:text-neutral-400"
+              : "text-gray-600"
           }
         >
           {t("கணக்கு", "Account")}
