@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "@/components/ui/img";
 import { storefrontApi } from "@/lib/api";
 import AuthGate from "@/components/auth-gate";
 
@@ -312,10 +313,15 @@ function OrderDetail({ tenant, id }: { tenant: string; id: string }) {
               <ul className="divide-y">
                 {lineItems.map((item: any, idx: number) => (
                   <li key={item.id || idx} className="py-3 flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+                    <div className="relative w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                       {item.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        <Image
+                          src={item.image_url}
+                          alt={item.name || ""}
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">—</div>
                       )}

@@ -1,7 +1,7 @@
 import StorefrontHeader from "@/components/storefront-header";
 import StorefrontFooter from "@/components/storefront-footer";
 import WhatsAppFloat from "@/components/whatsapp-float";
-import PromoPopup from "@/components/home/promo-popup";
+import PromoPopup from "@/components/home/promo-popup-lazy";
 import { getBooksWithFallback, getStoreWithFallback } from "@/lib/catalog-fallback";
 import { getPopup, getSocial } from "@/lib/site-defaults";
 

@@ -10,6 +10,11 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://muthamilarignar-storefront.vercel.app"
 ).replace(/\/$/, "");
 
+export const DEFAULT_TENANT = process.env.NEXT_PUBLIC_DEMO_TENANT || "demo-store";
+
+/** ISR window (seconds) for catalogue pages. */
+export const REVALIDATE_SECONDS = 60;
+
 export const BRAND = {
   nameTa: "முத்தமிழறிஞர் பதிப்பகம்",
   nameEn: "Muthamilarignar Pathipagam",

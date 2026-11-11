@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import Image from "@/components/ui/img";
 import { useLanguage, splitBilingual } from "@/components/language-provider";
 import AddToCart from "@/components/product/add-to-cart";
 import ProductHighlights from "@/components/product/product-highlights";
@@ -27,10 +29,20 @@ export default function BookDetailClient({
   const activeDesc = lang === "ta" ? taDesc : enDesc;
   const secondaryDesc = lang === "ta" ? enDesc : taDesc;
 
+  // Same event/payload the server used to send; now fire-and-forget from the browser.
+  useEffect(() => {
+    fetch("/api/v1/public/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Tenant": tenant },
+      body: JSON.stringify({ event_type: "product.viewed", product_id: product.id, source: "storefront" }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }, [tenant, product.id]);
+
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-12">
+      <section className="container-site pt-8 pb-12">
         <nav className="text-[12px] text-gray-500 mb-6 flex items-center flex-wrap gap-1">
           <Link
             href={`/${tenant}`}
@@ -54,13 +66,15 @@ export default function BookDetailClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
           {/* Book Cover Gallery */}
           <div className="lg:col-span-5">
-            <div className="aspect-[3/4] w-full max-w-md mx-auto rounded-3xl bg-neutral-100 border border-gray-200/80 p-6 flex items-center justify-center overflow-hidden shadow-sm">
+            <div className="relative aspect-[3/4] w-full max-w-md mx-auto rounded-3xl bg-[#fafafa] border border-black/[0.06] overflow-hidden shadow-glow">
               {product.images?.[0] || product.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={product.images?.[0] || product.image_url}
-                  alt={primaryTitle}
-                  className="w-full h-full object-contain drop-shadow-xl"
+                  alt={splitBilingual(product.name, "|").join(" — ")}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 90vw, 448px"
+                  className="object-contain p-6"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-gray-400">

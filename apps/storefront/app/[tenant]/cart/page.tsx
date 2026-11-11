@@ -3,6 +3,7 @@
 import { toast } from "@/components/toaster";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "@/components/ui/img";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
 import { useLanguage } from "@/components/language-provider";
@@ -146,14 +147,15 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                 <div key={it.id} className="flex gap-4 py-6 first:pt-0">
                   <Link
                     href={`/${params.tenant}/products/${it.product_id}`}
-                    className="flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-gray-100 p-1.5 overflow-hidden border border-gray-200/70"
+                    className="relative flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-[#fafafa] overflow-hidden border border-black/[0.07]"
                   >
                     {it.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={it.image_url}
                         alt={localizeName(rawName)}
-                        className="w-full h-full object-contain"
+                        fill
+                        sizes="96px"
+                        className="object-contain p-1.5"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">

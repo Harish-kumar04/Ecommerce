@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-defaults";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://infalette.com";
   return {
     rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/admin/", "/_next/"] },
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

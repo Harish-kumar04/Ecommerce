@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/ui/img";
 import Link from "next/link";
 import { T } from "./i18n/t";
 import PageLines from "./brand/page-lines";

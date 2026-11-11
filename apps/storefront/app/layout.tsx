@@ -3,7 +3,7 @@ import { Inter, Noto_Sans_Tamil } from "next/font/google";
 import "./globals.css";
 import AttributionCapture from "@/components/attribution-capture";
 import { LanguageProvider } from "@/components/language-provider";
-import { Toaster } from "@/components/toaster";
+import Toaster from "@/components/toaster-lazy";
 import { CartRefreshBridge } from "@/components/cart-refresh-bridge";
 import { LANG_BOOT_SCRIPT } from "@/lib/i18n";
 import { SITE_URL } from "@/lib/site-defaults";

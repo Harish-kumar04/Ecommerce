@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { captureAttribution } from "@/lib/api";
+import { captureAttribution } from "@/lib/attribution";
 
 /**
  * Mounted once per app shell: records UTM/campaign params from any

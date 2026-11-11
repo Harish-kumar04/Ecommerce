@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ui/img";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { T } from "../i18n/t";
 import { CloseIcon } from "../brand/icons";
-import { canOptimize, isExternal, resolveLink, type PopupConfig } from "@/lib/site-defaults";
+import { isExternal, resolveLink, type PopupConfig } from "@/lib/site-defaults";
 
 const SEEN_KEY = "mp-popup-seen";
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -125,7 +125,6 @@ export default function PromoPopup({ tenant, popup }: { tenant: string; popup: P
               alt=""
               fill
               sizes="(max-width: 480px) 100vw, 448px"
-              unoptimized={!canOptimize(popup.image_url)}
               className="object-cover"
             />
           </div>
