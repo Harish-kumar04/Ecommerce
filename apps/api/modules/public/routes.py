@@ -210,8 +210,9 @@ async def public_list_products(
         # search_products already scopes to tenant; still filter published
         filtered = [
             p for p in items
-            if str(getattr(getattr(p, "status", None), "value", getattr(p, "status", "")) or "").lower() in ("active", "published")
-            or getattr(p, "status", None) is None
+            if str(getattr(p, "visibility", "published") or "published").lower() not in ("hidden", "draft")
+            and (str(getattr(getattr(p, "status", None), "value", getattr(p, "status", "")) or "").lower() in ("active", "published")
+            or getattr(p, "status", None) is None)
         ]
         if cat_uuid:
             filtered = [p for p in filtered if str(getattr(p, "category_id", None)) == str(cat_uuid)]
@@ -226,6 +227,9 @@ async def public_list_products(
                 "sale_price_cents": getattr(p, "sale_price_cents", None),
                 "inventory": int(getattr(p, "inventory_quantity", None) or getattr(p, "inventory", 0) or 0),
                 "status": str(getattr(p.status, "value", p.status)) if getattr(p, "status", None) else None,
+                "visibility": getattr(p, "visibility", "published"),
+                "tags": list(getattr(p, "tags", None) or []),
+                "dimensions_json": getattr(p, "dimensions_json", None) or {},
                 "category_id": str(p.category_id) if getattr(p, "category_id", None) else None,
                 "image_url": getattr(p, "image_url", None),
                 "images": [p.image_url] if getattr(p, "image_url", None) else [],
@@ -240,8 +244,8 @@ async def public_list_products(
     return [
         p
         for p in items
-        if str(p.get("status", "")).lower() in ("active", "published")
-        or p.get("status") is None
+        if str(p.get("visibility", "published") or "published").lower() not in ("hidden", "draft")
+        and (str(p.get("status", "")).lower() in ("active", "published") or p.get("status") is None)
     ]
 
 
@@ -273,6 +277,8 @@ async def public_get_product(
             product = serialize_product(row)
 
     if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if str(product.get("visibility", "published") or "published").lower() in ("hidden", "draft"):
         raise HTTPException(status_code=404, detail="Product not found")
     if str(product.get("status", "")).lower() not in ("active", "published") and product.get("status") is not None:
         raise HTTPException(status_code=404, detail="Product not found")

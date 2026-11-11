@@ -95,13 +95,13 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
-            Catalog
+            Bookstore Catalog
           </p>
           <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
-            Products
+            Books
           </h1>
           <p className="mt-1 text-[13px] text-gray-500 dark:text-neutral-500">
-            {total} product{total === 1 ? "" : "s"} total
+            {total} book{total === 1 ? "" : "s"} total
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -111,9 +111,9 @@ export default function ProductsPage() {
           </label>
           <Link
             href="/products/create"
-            className="inline-flex h-10 px-5 items-center justify-center rounded-full bg-blue-600 text-white text-[14px] font-medium hover:bg-blue-700 transition-colors"
+            className="inline-flex h-10 px-5 items-center justify-center rounded-full bg-[#E52320] text-white text-[14px] font-medium hover:bg-[#c91e1b] transition-colors shadow-sm"
           >
-            New product
+            Add a book
           </Link>
         </div>
       </div>
@@ -192,19 +192,19 @@ export default function ProductsPage() {
                 className="group rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 overflow-hidden hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.04)] transition-all"
               >
                 <Link href={`/products/${p.id}`} className="block">
-                  <div className="aspect-square bg-gray-100 dark:bg-neutral-900 overflow-hidden">
+                  <div className="aspect-[3/4] bg-gray-100 dark:bg-neutral-900 overflow-hidden">
                     {imgSrc(p) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={imgSrc(p)!} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">No image</div>
+                      <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">No cover</div>
                     )}
                   </div>
                 </Link>
                 <div className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <Link href={`/products/${p.id}`} className="text-[14px] font-medium text-gray-900 dark:text-neutral-100 line-clamp-1 hover:underline">
-                      {p.name}
+                    <Link href={`/products/${p.id}`} className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100 line-clamp-1 hover:underline">
+                      {p.name.includes("|") ? p.name.split("|")[0].trim() : p.name}
                     </Link>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${

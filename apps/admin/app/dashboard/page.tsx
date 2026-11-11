@@ -3,361 +3,396 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminApi } from "@/lib/api";
-import { BarChart, type BarPoint } from "@/components/charts/bar-chart";
-import { LineChart, type LinePoint } from "@/components/charts/line-chart";
 
-interface DashboardData {
-  total_sales_cents?: number;
-  total_orders?: number;
-  total_customers?: number;
-  conversion_rate?: number;
-  gross_sales?: number;
-  net_sales?: number;
-  orders?: number;
-  refunds?: number;
-  aov?: number;
-  sales_over_time?: Array<{ date: string; sales_cents?: number; revenue_cents?: number; orders?: number }>;
-  series?: Array<{ date: string; sales_cents?: number; revenue_cents?: number; orders?: number }>;
-  top_products?: Array<{ id?: string; product_id?: string; name?: string; product_name?: string; total_sold?: number; quantity?: number; revenue_cents?: number; total_revenue?: number }>;
-  funnel?: any;
+interface OrderItem {
+  id: string;
+  order_number?: string;
+  total_cents: number;
+  status: string;
+  fulfillment_status?: string;
+  created_at: string;
+  customer?: { name?: string; email?: string };
+  shipping_address_json?: any;
+}
+
+interface ProductItem {
+  id: string;
+  name: string;
+  sku: string;
+  price_cents: number;
+  inventory?: number;
+  inventory_quantity?: number;
+  image_url?: string;
+  images?: string[];
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [sales, setSales] = useState<any>(null);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(30);
 
   useEffect(() => {
     let cancelled = false;
-    const fetchData = async () => {
+
+    async function loadData() {
       setLoading(true);
       setError(null);
       try {
-        const [dashboard, salesData, top] = await Promise.all([
-          adminApi.getDashboardData(days).catch(() => null),
-          adminApi.getSalesAnalytics(days).catch(() => null),
-          adminApi.getTopProducts(5).catch(() => []),
+        const [ordersRes, productsRes] = await Promise.all([
+          adminApi.getOrders({ per_page: "50" }).catch(() => ({ data: [] })),
+          adminApi.getProducts({ per_page: "100" }).catch(() => ({ data: [] })),
         ]);
+
         if (!cancelled) {
-          setData(dashboard);
-          setSales(salesData);
-          const topList = Array.isArray(top) ? top : ((top as any)?.data ?? (top as any)?.items ?? []);
-          setTopProducts(topList);
+          const rawOrders = Array.isArray(ordersRes)
+            ? ordersRes
+            : (ordersRes as any)?.data || (ordersRes as any)?.items || [];
+          const rawProducts = Array.isArray(productsRes)
+            ? productsRes
+            : (productsRes as any)?.data || (productsRes as any)?.items || [];
+
+          setOrders(rawOrders);
+          setProducts(rawProducts);
         }
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load dashboard");
+        if (!cancelled) {
+          setError(err.message || "Failed to load dashboard metrics");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
-    fetchData();
+    }
+
+    loadData();
     return () => {
       cancelled = true;
     };
-  }, [days]);
+  }, []);
 
-  const formatMoney = (cents?: number) => {
-    if (cents == null) return "—";
-    return `₹${(cents / 100).toFixed(2)}`;
+  // Calculations
+  const today = new Date().toDateString();
+
+  const todayOrders = orders.filter((o) => {
+    if (!o.created_at) return false;
+    return new Date(o.created_at).toDateString() === today;
+  });
+
+  const todayRevenueCents = todayOrders.reduce((sum, o) => {
+    if (["cancelled", "refunded"].includes((o.status || "").toLowerCase())) return sum;
+    return sum + (o.total_cents || 0);
+  }, 0);
+
+  // Orders to ship: status in ("paid", "confirmed", "processing") or fulfillment_status not shipped
+  const ordersToShip = orders.filter((o) => {
+    const s = (o.status || "").toLowerCase();
+    const f = (o.fulfillment_status || "").toLowerCase();
+    if (["cancelled", "refunded", "failed"].includes(s)) return false;
+    if (["fulfilled", "shipped", "delivered"].includes(f)) return false;
+    return ["paid", "confirmed", "processing", "pending"].includes(s) || f === "unfulfilled";
+  });
+
+  // Low stock products (inventory <= 5)
+  const lowStockProducts = products
+    .filter((p) => {
+      const qty = p.inventory_quantity ?? p.inventory ?? 0;
+      return qty <= 5;
+    })
+    .sort((a, b) => {
+      const qA = a.inventory_quantity ?? a.inventory ?? 0;
+      const qB = b.inventory_quantity ?? b.inventory ?? 0;
+      return qA - qB;
+    });
+
+  const formatPrice = (cents: number) => `₹${(cents / 100).toFixed(2)}`;
+
+  const getProductCover = (p: ProductItem) => {
+    if (p.images && p.images.length > 0) return p.images[0];
+    if (p.image_url) return p.image_url;
+    return null;
   };
-  const compactMoney = (cents?: number) => {
-    if (cents == null) return "—";
-    const value = cents / 100;
-    if (value >= 1_00_000) return `₹${(value / 1_00_000).toFixed(1)}L`;
-    if (value >= 1_000) return `₹${(value / 1_000).toFixed(1)}k`;
-    return `₹${value.toFixed(0)}`;
-  };
 
-  // Build chart series from the dashboard payload. Prefer the rich
-  // `sales_over_time` array; fall back to the older `series` alias.
-  const series: Array<{ date: string; sales_cents: number; orders: number }> = (
-    (data?.sales_over_time && data.sales_over_time.length > 0
-      ? data.sales_over_time
-      : (data?.series && data.series.length > 0 ? data.series : sales?.series || [])) as any[]
-  )
-    .map((row: any) => ({
-      date: row.date || row.day || row.label || "",
-      sales_cents:
-        row.sales_cents ??
-        row.revenue_cents ??
-        row.value ??
-        row.revenue ??
-        0,
-      orders: row.orders ?? 0,
-    }))
-    .filter((p) => p.date);
-
-  const revenueLineData: LinePoint[] = series.map((p) => ({
-    label: String(p.date).slice(5), // MM-DD
-    value: p.sales_cents,
-  }));
-  const ordersBarData: BarPoint[] = series.map((p) => ({
-    label: String(p.date).slice(5),
-    value: p.orders,
-  }));
-
-  // Channels breakdown derived from the channel-attribution endpoint.
-  // Best-effort: if the API is empty/unavailable, fall back to a single
-  // "website" bar so the chart never shows a blank rectangle.
-  const channelRaw: any = (data as any)?.channels;
-  const channelData: BarPoint[] = (() => {
-    if (channelRaw && Array.isArray(channelRaw.channels) && channelRaw.channels.length > 0) {
-      return channelRaw.channels.map((c: any) => ({
-        label: String(c.source || c.name || "channel"),
-        value: Math.round((c.revenue_cents || c.value || 0) / 100),
-      }));
+  const parseBookTitle = (rawName: string) => {
+    if (!rawName) return "Untitled Book";
+    if (rawName.includes("|")) {
+      const [ta, en] = rawName.split("|");
+      return ta.trim() || en.trim();
     }
-    return [
-      { label: "website", value: Math.round(series.reduce((s, p) => s + (p.sales_cents || 0), 0) / 100) },
-    ];
-  })();
-
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-6">
-        <div className="h-9 bg-gray-100 dark:bg-neutral-900 rounded w-1/3" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-gray-100 dark:bg-neutral-900 rounded-2xl" />
-          ))}
-        </div>
-        <div className="grid lg:grid-cols-2 gap-4">
-          <div className="h-64 bg-gray-100 dark:bg-neutral-900 rounded-2xl" />
-          <div className="h-64 bg-gray-100 dark:bg-neutral-900 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:bg-red-900/10 dark:border-red-900">
-        <p className="text-red-700 font-medium dark:text-red-300">Failed to load dashboard</p>
-        <p className="text-red-600 text-sm mt-1 dark:text-red-400">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-3 text-sm bg-red-600 text-white px-3 py-1.5 rounded-full"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const stats = [
-    {
-      label: "Gross Sales",
-      value: formatMoney(data?.total_sales_cents ?? data?.gross_sales),
-      sub: `${data?.total_orders ?? data?.orders ?? 0} orders`,
-      trend: "+12.4%",
-      accent: "text-emerald-600",
-    },
-    {
-      label: "Orders",
-      value: String(data?.total_orders ?? data?.orders ?? 0),
-      sub: `${data?.refunds ?? 0} refunds`,
-      trend: "+4.1%",
-      accent: "text-blue-600",
-    },
-    {
-      label: "Customers",
-      value: String(data?.total_customers ?? 0),
-      sub: `last ${days} days`,
-      trend: "+8.7%",
-      accent: "text-violet-600",
-    },
-    {
-      label: "Conversion",
-      value: data?.conversion_rate != null ? `${(Number(data.conversion_rate) * 100).toFixed(1)}%` : "—",
-      sub: `AOV ${formatMoney(data?.aov)}`,
-      trend: "—",
-      accent: "text-amber-600",
-    },
-  ];
+    return rawName;
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+      {/* Top Header & Bookstore Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 dark:border-neutral-800 pb-6">
         <div>
-          <p className="text-[12px] uppercase tracking-[0.18em] text-gray-500 dark:text-neutral-500">
-            Overview
-          </p>
-          <h1 className="mt-2 text-[36px] sm:text-[44px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
-            Dashboard
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+            முத்தமிழறிஞர் பதிப்பகம்
           </h1>
+          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">
+            Bookstore Storefront & Operations Overview
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={days}
-            onChange={(e) => setDays(parseInt(e.target.value))}
-            className="h-9 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-[13px]"
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/homepage"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors shadow-sm"
           >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-          <Link href="/analytics" className="text-[13px] text-blue-600 dark:text-blue-400 hover:underline">
-            View analytics →
+            <svg
+              className="w-4 h-4 text-gray-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
+            </svg>
+            Edit Homepage
+          </Link>
+
+          <Link
+            href="/products/create"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#E52320] text-white hover:bg-[#c91e1b] transition-colors shadow-sm"
+          >
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add a Book
           </Link>
         </div>
       </div>
 
-      {/* Stat cards with trend chips */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-5"
-          >
-            <p className="text-[12px] uppercase tracking-[0.16em] text-gray-500 dark:text-neutral-500">
-              {s.label}
-            </p>
-            <p className="mt-3 text-[28px] font-semibold tracking-tight text-gray-900 dark:text-neutral-100">
-              {s.value}
-            </p>
-            <div className="mt-1 flex items-center gap-2 text-[12px]">
-              <span className={`${s.accent} font-medium`}>{s.trend}</span>
-              <span className="text-gray-500 dark:text-neutral-500">{s.sub}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {error && (
+        <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-                Revenue trend
-              </h3>
-              <p className="text-[12px] text-gray-500 dark:text-neutral-500">
-                Daily revenue over the last {days} days
-              </p>
-            </div>
-            <span className="text-[12px] text-gray-400 dark:text-neutral-500">
-              {revenueLineData.length} points
+      {/* 4 Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Today's Revenue */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+            Today&apos;s Revenue
+          </p>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+              {loading ? "..." : formatPrice(todayRevenueCents)}
+            </span>
+            <span className="text-xs font-medium text-gray-500">
+              {todayOrders.length} {todayOrders.length === 1 ? "order" : "orders"}
             </span>
           </div>
-          <LineChart
-            data={revenueLineData}
-            valueFormat={(v) => compactMoney(v)}
-            emptyText="No revenue recorded for this period yet"
-          />
-        </div>
-        <div className="rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-              Channel split
-            </h3>
-            <span className="text-[12px] text-gray-400 dark:text-neutral-500">{days}d</span>
-          </div>
-          <BarChart
-            data={channelData}
-            valueFormat={(v) => `₹${v}`}
-            height={160}
-            emptyText="No channel data yet"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-              Orders per day
-            </h3>
-            <span className="text-[12px] text-gray-400 dark:text-neutral-500">{days}d</span>
-          </div>
-          <BarChart
-            data={ordersBarData}
-            valueFormat={(v) => `${v}`}
-            height={180}
-            emptyText="No orders yet — start selling!"
-          />
+          <p className="text-[11px] text-gray-400 mt-1">Confirmed orders placed today</p>
         </div>
 
-        <div className="rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100">
-              Top products
-            </h3>
-            <Link href="/products" className="text-[12px] text-blue-600 dark:text-blue-400 hover:underline">
+        {/* Today's Orders */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+            Today&apos;s Orders
+          </p>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-neutral-100">
+              {loading ? "..." : todayOrders.length}
+            </span>
+            <Link
+              href="/orders"
+              className="text-xs font-medium text-[#E52320] hover:underline"
+            >
               View all
             </Link>
           </div>
-          {topProducts.length > 0 ? (
-            <div className="divide-y divide-gray-100 dark:divide-neutral-900">
-              {topProducts.map((p: any) => {
-                const sold = p.total_sold ?? p.quantity ?? 0;
-                const revenue = p.revenue_cents ?? p.total_revenue ?? 0;
+          <p className="text-[11px] text-gray-400 mt-1">Total orders received today</p>
+        </div>
+
+        {/* Orders to Ship */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+            Orders to Ship
+          </p>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+              {loading ? "..." : ordersToShip.length}
+            </span>
+            {ordersToShip.length > 0 && (
+              <span className="inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-100 text-amber-800">
+                Action needed
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">Awaiting dispatch and shipping</p>
+        </div>
+
+        {/* Low Stock (<= 5) */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+            Low Stock Books
+          </p>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span
+              className={`text-2xl font-bold tracking-tight ${
+                lowStockProducts.length > 0 ? "text-red-600" : "text-gray-900 dark:text-neutral-100"
+              }`}
+            >
+              {loading ? "..." : lowStockProducts.length}
+            </span>
+            {lowStockProducts.length > 0 && (
+              <span className="inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full bg-red-100 text-red-800">
+                &le; 5 left
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">Titles requiring reprint/restock</p>
+        </div>
+      </div>
+
+      {/* Two Column Layout: Orders to Ship & Low Stock Inventory */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Panel 1: Orders to Ship */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-neutral-100">
+                Orders to Ship
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-neutral-400">
+                Paid and confirmed orders ready for fulfillment
+              </p>
+            </div>
+            <Link
+              href="/orders"
+              className="text-xs font-medium text-[#E52320] hover:underline"
+            >
+              All Orders &rarr;
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="py-8 text-center text-sm text-gray-400">Loading orders...</div>
+          ) : ordersToShip.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">
+              No orders pending shipment right now.
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+              {ordersToShip.slice(0, 5).map((order) => {
+                const customerName =
+                  order.customer?.name ||
+                  order.shipping_address_json?.name ||
+                  "Guest Customer";
                 return (
-                  <div
-                    key={p.id || p.product_id}
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
-                  >
+                  <div key={order.id} className="py-3 flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100 truncate">
-                        {p.name || p.product_name}
+                      <p className="text-sm font-semibold text-gray-900 dark:text-neutral-100 truncate">
+                        {customerName}
                       </p>
-                      <p className="text-[12px] text-gray-500 dark:text-neutral-500">
-                        {sold} sold · {compactMoney(revenue)}
+                      <p className="text-xs text-gray-400 truncate">
+                        Order #{order.order_number || order.id.slice(0, 8)} &bull;{" "}
+                        {order.created_at ? new Date(order.created_at).toLocaleDateString() : ""}
                       </p>
                     </div>
-                    <span className="text-[14px] font-semibold text-gray-900 dark:text-neutral-100 whitespace-nowrap">
-                      {formatMoney(revenue)}
-                    </span>
+
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-neutral-100">
+                        {formatPrice(order.total_cents)}
+                      </p>
+                      <span className="inline-flex px-2 py-0.5 text-[10.5px] font-medium rounded-full bg-amber-100 text-amber-800">
+                        {order.status || "confirmed"}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div className="text-center py-10">
-              <p className="text-gray-500 dark:text-neutral-500 text-sm">No product sales yet</p>
-              <Link href="/products" className="text-[12px] text-blue-600 hover:underline mt-2 inline-block">
-                Manage products
-              </Link>
-            </div>
           )}
         </div>
-      </div>
 
-      <div className="rounded-2xl bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 p-6">
-        <h3 className="text-[15px] font-semibold text-gray-900 dark:text-neutral-100 mb-4">
-          Quick actions
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link
-            href="/products/create"
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
-          >
-            <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100">Add product</p>
-            <p className="text-[12px] text-gray-500 dark:text-neutral-500 mt-1">Catalog</p>
-          </Link>
-          <Link
-            href="/orders"
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
-          >
-            <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100">View orders</p>
-            <p className="text-[12px] text-gray-500 dark:text-neutral-500 mt-1">Fulfillment</p>
-          </Link>
-          <Link
-            href="/automation/create"
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
-          >
-            <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100">New automation</p>
-            <p className="text-[12px] text-gray-500 dark:text-neutral-500 mt-1">Instagram / WA</p>
-          </Link>
-          <Link
-            href="/customers"
-            className="rounded-xl border border-gray-100 dark:border-neutral-800 p-4 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors"
-          >
-            <p className="text-[14px] font-medium text-gray-900 dark:text-neutral-100">Customers</p>
-            <p className="text-[12px] text-gray-500 dark:text-neutral-500 mt-1">CRM</p>
-          </Link>
+        {/* Panel 2: Low Stock Alert (<= 5) */}
+        <div className="rounded-2xl border border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-neutral-100">
+                Low Stock Alerts (&le; 5 units)
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-neutral-400">
+                Book titles that need stock replenishment
+              </p>
+            </div>
+            <Link
+              href="/products"
+              className="text-xs font-medium text-[#E52320] hover:underline"
+            >
+              All Books &rarr;
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="py-8 text-center text-sm text-gray-400">Loading inventory...</div>
+          ) : lowStockProducts.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">
+              All books have healthy stock levels (&gt; 5 units).
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+              {lowStockProducts.slice(0, 5).map((book) => {
+                const cover = getProductCover(book);
+                const stockQty = book.inventory_quantity ?? book.inventory ?? 0;
+                return (
+                  <div key={book.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-12 w-9 rounded border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={cover}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[9px] text-gray-400 font-serif">Book</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-neutral-100 truncate">
+                          {parseBookTitle(book.name)}
+                        </p>
+                        <p className="text-xs text-gray-400 font-mono truncate">
+                          SKU: {book.sku}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span
+                        className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
+                          stockQty === 0
+                            ? "bg-red-100 text-red-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {stockQty === 0 ? "Out of stock" : `${stockQty} left`}
+                      </span>
+                      <Link
+                        href={`/products/${book.id}`}
+                        className="text-xs font-medium text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        Edit &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

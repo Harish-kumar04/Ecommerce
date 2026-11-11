@@ -240,15 +240,27 @@ class ProductCreate(BaseSchema):
     sku: str = Field(..., min_length=1, max_length=100)
     price_cents: int = Field(..., ge=0)
     sale_price_cents: Optional[int] = Field(default=None, ge=0)
-    tax_class: str = Field(default="standard")
+    tax_class: str = Field(default="zero")
     inventory: int = Field(default=0, ge=0)
     images: list[str] = Field(default_factory=list)
     ingredients: Optional[str] = None
     safety_info: Optional[str] = None
     age_suitability: Optional[ProductAgeSuitability] = None
     pregnancy_stage: Optional[ProductPregnancyStage] = None
+    category_id: Optional[UUID] = None
     category_ids: list[UUID] = Field(default_factory=list)
+    visibility: Optional[str] = Field(default="published")
+    tags: list[str] = Field(default_factory=list)
+    dimensions_json: Optional[dict[str, Any]] = None
     variants: list[ProductVariantCreate] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_pricing(self) -> ProductCreate:
+        if self.price_cents < 0:
+            raise ValueError("price_cents must be non-negative")
+        if self.sale_price_cents is not None and self.sale_price_cents > self.price_cents:
+            raise ValueError("sale_price_cents cannot be greater than price_cents")
+        return self
 
 
 class ProductRead(BaseRead):
@@ -259,10 +271,16 @@ class ProductRead(BaseRead):
     slug: str
     sku: str
     price_cents: int
-    sale_price_cents: Optional[int]
-    inventory: int
-    images: list[str]
-    status: ProductStatus
+    sale_price_cents: Optional[int] = None
+    inventory: int = 0
+    images: list[str] = Field(default_factory=list)
+    status: Optional[str] = None
+    visibility: Optional[str] = "published"
+    tags: list[str] = Field(default_factory=list)
+    dimensions_json: Optional[dict[str, Any]] = None
+    tax_class: Optional[str] = "zero"
+    description: Optional[str] = None
+    category_id: Optional[str] = None
 
 
 # =============================================================================

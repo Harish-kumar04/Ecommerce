@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
+from fastapi import HTTPException
 from sqlalchemy import select, update, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.models.product import Product, ProductStatus, ProductVariant
@@ -26,6 +28,9 @@ def serialize_product(product: Product) -> dict:
     inventory = getattr(product, "inventory_quantity", None)
     if inventory is None:
         inventory = getattr(product, "inventory", 0)
+    visibility = getattr(product, "visibility", "published") or "published"
+    tags = list(getattr(product, "tags", None) or [])
+    dimensions_json = getattr(product, "dimensions_json", None) or {}
     return {
         "id": str(product.id),
         "tenant_id": str(product.tenant_id),
@@ -38,8 +43,11 @@ def serialize_product(product: Product) -> dict:
         "inventory": int(inventory or 0),
         "images": images,
         "status": status,
+        "visibility": visibility,
+        "tags": tags,
+        "dimensions_json": dimensions_json,
         "description": getattr(product, "description", None),
-        "tax_class": getattr(product, "tax_class", "standard"),
+        "tax_class": getattr(product, "tax_class", "zero"),
         "ingredients": getattr(product, "ingredients", None),
         "safety_info": getattr(product, "safety_info", None),
         "age_suitability": getattr(
@@ -208,19 +216,51 @@ async def import_products_csv(tenant_id: UUID, content: str | bytes, session: As
     return stats
 
 
-async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSession) -> Product:
+async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSession) -> dict:
     """Create a new product."""
-    slug = data.slug or data.name.lower().replace(" ", "-").replace("_", "-")
+    if data.price_cents < 0:
+        raise HTTPException(status_code=422, detail="Price must be non-negative")
+    if data.sale_price_cents is not None and data.sale_price_cents > data.price_cents:
+        raise HTTPException(status_code=422, detail="Sale price cannot be greater than regular price")
+
+    slug = (data.slug or data.name.lower().replace(" ", "-").replace("_", "-")).strip()
+
+    # Check duplicate slug in same store
+    existing_slug = await session.execute(
+        select(Product.id).where(Product.tenant_id == tenant_id, Product.slug == slug)
+    )
+    if existing_slug.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="A book with this slug already exists")
+
+    # Check duplicate SKU in same store
+    clean_sku = data.sku.strip()
+    existing_sku = await session.execute(
+        select(Product.id).where(Product.tenant_id == tenant_id, Product.sku == clean_sku)
+    )
+    if existing_sku.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+
+    cat_id = data.category_id or (data.category_ids[0] if getattr(data, "category_ids", None) else None)
+    visibility = getattr(data, "visibility", "published") or "published"
+    tags = list(getattr(data, "tags", None) or [])
+    dimensions_json = getattr(data, "dimensions_json", None) or {}
+
     product = Product(
         tenant_id=tenant_id,
         name=data.name,
         slug=slug,
         description=data.description,
-        sku=data.sku,
+        category_id=cat_id,
+        sku=clean_sku,
         price_cents=data.price_cents,
         sale_price_cents=data.sale_price_cents,
-        tax_class=data.tax_class,
+        tax_class=data.tax_class or "zero",
+        inventory_quantity=data.inventory,
         inventory=data.inventory,
+        inventory_policy="deny",
+        visibility=visibility,
+        tags=tags,
+        dimensions_json=dimensions_json,
         images_json=data.images,
         ingredients=data.ingredients,
         safety_info=data.safety_info,
@@ -228,8 +268,17 @@ async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSes
         pregnancy_stage=data.pregnancy_stage,
         status=ProductStatus.ACTIVE,
     )
-    session.add(product)
-    await session.commit()
+    try:
+        session.add(product)
+        await session.commit()
+    except IntegrityError as err:
+        await session.rollback()
+        err_msg = str(err).lower()
+        if "sku" in err_msg:
+            raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+        if "slug" in err_msg:
+            raise HTTPException(status_code=409, detail="A book with this slug already exists")
+        raise HTTPException(status_code=409, detail="A book with this identifier already exists")
     await session.refresh(product)
     return serialize_product(product)
 
@@ -285,29 +334,81 @@ async def list_products(
     }
 
 
-async def update_product(tenant_id: UUID, product_id: UUID, data: ProductCreate, session: AsyncSession) -> Product | None:
+async def update_product(tenant_id: UUID, product_id: UUID, data: ProductCreate, session: AsyncSession) -> dict | None:
     """Update a product."""
-    await session.execute(
-        update(Product)
-        .where(Product.id == product_id, Product.tenant_id == tenant_id)
-        .values(
-            name=data.name,
-            slug=data.slug,
-            description=data.description,
-            sku=data.sku,
-            price_cents=data.price_cents,
-            sale_price_cents=data.sale_price_cents,
-            tax_class=data.tax_class,
-            inventory=data.inventory,
-            images_json=data.images,
-            ingredients=data.ingredients,
-            safety_info=data.safety_info,
-            age_suitability=data.age_suitability,
-            pregnancy_stage=data.pregnancy_stage,
+    if data.price_cents < 0:
+        raise HTTPException(status_code=422, detail="Price must be non-negative")
+    if data.sale_price_cents is not None and data.sale_price_cents > data.price_cents:
+        raise HTTPException(status_code=422, detail="Sale price cannot be greater than regular price")
+
+    # Check duplicate slug in same store (excluding this product)
+    if data.slug:
+        clean_slug = data.slug.strip()
+        existing_slug = await session.execute(
+            select(Product.id).where(
+                Product.tenant_id == tenant_id,
+                Product.slug == clean_slug,
+                Product.id != product_id
+            )
         )
-        .execution_options(synchronize_session="fetch")
-    )
-    await session.commit()
+        if existing_slug.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="A book with this slug already exists")
+    else:
+        clean_slug = None
+
+    # Check duplicate SKU in same store (excluding this product)
+    clean_sku = data.sku.strip() if data.sku else None
+    if clean_sku:
+        existing_sku = await session.execute(
+            select(Product.id).where(
+                Product.tenant_id == tenant_id,
+                Product.sku == clean_sku,
+                Product.id != product_id
+            )
+        )
+        if existing_sku.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+
+    cat_id = data.category_id or (data.category_ids[0] if getattr(data, "category_ids", None) else None)
+    visibility = getattr(data, "visibility", "published") or "published"
+    tags = list(getattr(data, "tags", None) or [])
+    dimensions_json = getattr(data, "dimensions_json", None) or {}
+
+    try:
+        await session.execute(
+            update(Product)
+            .where(Product.id == product_id, Product.tenant_id == tenant_id)
+            .values(
+                name=data.name,
+                slug=clean_slug or data.slug,
+                description=data.description,
+                category_id=cat_id,
+                sku=clean_sku or data.sku,
+                price_cents=data.price_cents,
+                sale_price_cents=data.sale_price_cents,
+                tax_class=data.tax_class or "zero",
+                inventory_quantity=data.inventory,
+                inventory=data.inventory,
+                visibility=visibility,
+                tags=tags,
+                dimensions_json=dimensions_json,
+                images_json=data.images,
+                ingredients=data.ingredients,
+                safety_info=data.safety_info,
+                age_suitability=data.age_suitability,
+                pregnancy_stage=data.pregnancy_stage,
+            )
+            .execution_options(synchronize_session="fetch")
+        )
+        await session.commit()
+    except IntegrityError as err:
+        await session.rollback()
+        err_msg = str(err).lower()
+        if "sku" in err_msg:
+            raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+        if "slug" in err_msg:
+            raise HTTPException(status_code=409, detail="A book with this slug already exists")
+        raise HTTPException(status_code=409, detail="A book with this identifier already exists")
 
     # Spec §4 event model: product.updated
     try:
@@ -372,6 +473,7 @@ async def search_products(tenant_id: UUID, query: str, session: AsyncSession) ->
     result = await session.execute(
         select(Product).where(
             Product.tenant_id == tenant_id,
+            Product.visibility != "hidden",
             or_(
                 Product.name.ilike(pattern),
                 Product.slug.ilike(pattern),
