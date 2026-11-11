@@ -9,21 +9,33 @@ from pathlib import Path
 import sys
 import types as _types
 
-# Ensure both `apps.api.*` and `api.*` imports work when Vercel sets `root = "apps"` (/var/task)
-_APPS_DIR = Path(__file__).resolve().parents[1]
+# Ensure `apps.api.*`, `api.*`, and `main:app` imports all work across:
+#   1) Local / Docker repo root (`apps.api.main:app`)
+#   2) Vercel Services isolated FastAPI root (`root = "apps/api"`, `entrypoint = "main:app"`, `/var/task`)
+_API_DIR = Path(__file__).resolve().parent
+_APPS_DIR = _API_DIR.parent
 _REPO_ROOT = _APPS_DIR.parent
 
 if "apps" not in sys.modules:
     _apps_pkg = _types.ModuleType("apps")
-    _apps_pkg.__path__ = [str(_APPS_DIR)]  # type: ignore[attr-defined]
+    _apps_pkg.__path__ = [str(_APPS_DIR)] if (_APPS_DIR / "api").is_dir() else []  # type: ignore[attr-defined]
     sys.modules["apps"] = _apps_pkg
-    if "api" in sys.modules:
-        sys.modules.setdefault("apps.api", sys.modules["api"])
-    if __name__ == "api.main":
-        sys.modules.setdefault("apps.api.main", sys.modules[__name__])
 
-# Ensure repo root, packages/*/src (local/Docker), and apps/_vendor (Vercel Serverless) are importable
-for _candidate in (_REPO_ROOT, _REPO_ROOT.parent):
+if "apps.api" not in sys.modules:
+    if "api" in sys.modules and getattr(sys.modules["api"], "__path__", None):
+        _api_pkg = sys.modules["api"]
+    else:
+        _api_pkg = _types.ModuleType("apps.api")
+        _api_pkg.__path__ = [str(_API_DIR)]  # type: ignore[attr-defined]
+        _api_pkg.__package__ = "apps.api"
+    sys.modules["apps.api"] = _api_pkg
+    setattr(sys.modules["apps"], "api", _api_pkg)
+
+if __name__ in ("main", "api.main"):
+    sys.modules.setdefault("apps.api.main", sys.modules[__name__])
+
+# Ensure repo root, packages/*/src (local/Docker), and _vendor (Vercel Serverless) are importable
+for _candidate in (_REPO_ROOT, _APPS_DIR):
     if (_candidate / "packages").is_dir():
         if str(_candidate) not in sys.path:
             sys.path.insert(0, str(_candidate))
@@ -32,9 +44,9 @@ for _candidate in (_REPO_ROOT, _REPO_ROOT.parent):
                 sys.path.insert(0, str(_pkg_src))
         break
 
-_VENDOR_DIR = _APPS_DIR / "_vendor"
-if _VENDOR_DIR.is_dir() and str(_VENDOR_DIR) not in sys.path:
-    sys.path.append(str(_VENDOR_DIR))
+for _vendor_candidate in (_API_DIR / "_vendor", _APPS_DIR / "_vendor"):
+    if _vendor_candidate.is_dir() and str(_vendor_candidate) not in sys.path:
+        sys.path.append(str(_vendor_candidate))
 
 try:
     import sentry_sdk

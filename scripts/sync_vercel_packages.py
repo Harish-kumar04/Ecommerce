@@ -1,10 +1,11 @@
-"""Synchronize internal monorepo Python packages into ``apps/_vendor/`` for Vercel Serverless.
+"""Synchronize internal monorepo Python packages into ``apps/api/_vendor/`` for Vercel Serverless.
 
-When Vercel builds the ``apps`` service with ``"root": "apps"``, only files inside
-``apps/`` are included in the ``/var/task`` serverless function bundle. Running this
-script vendors all ``packages/*/src/infalette_*`` modules and ``scripts/demo_seed.py``
-into ``apps/_vendor/`` (~520 KB) so ``apps/`` is 100% self-contained while local
-development and Docker continue resolving ``packages/*/src`` first on ``sys.path``.
+When Vercel builds the ``api`` service with ``"root": "apps/api"`` and ``"entrypoint": "main:app"``,
+only files inside ``apps/api/`` are included in the ``/var/task`` serverless function bundle
+(completely isolating it from sibling Next.js apps ``apps/storefront``, ``apps/admin``, and
+``apps/platform-admin``). Running this script vendors all ``packages/*/src/infalette_*`` modules
+and ``scripts/demo_seed.py`` into ``apps/api/_vendor/`` (~520 KB) so ``apps/api/`` is 100%
+self-contained while local development and Docker continue resolving ``packages/*/src`` first.
 """
 
 from __future__ import annotations
@@ -14,10 +15,13 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKAGES_DIR = REPO_ROOT / "packages"
-VENDOR_DIR = REPO_ROOT / "apps" / "_vendor"
+LEGACY_VENDOR_DIR = REPO_ROOT / "apps" / "_vendor"
+VENDOR_DIR = REPO_ROOT / "apps" / "api" / "_vendor"
 
 
 def sync() -> None:
+    if LEGACY_VENDOR_DIR.exists():
+        shutil.rmtree(LEGACY_VENDOR_DIR)
     if VENDOR_DIR.exists():
         shutil.rmtree(VENDOR_DIR)
     VENDOR_DIR.mkdir(parents=True, exist_ok=True)

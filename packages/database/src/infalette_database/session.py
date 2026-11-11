@@ -50,9 +50,10 @@ def _build_engine_kwargs(url: str) -> dict:
 
     parsed = make_url(url)
     connect_args: dict = {}
-    if parsed.drivername.startswith("postgresql+asyncpg") or parsed.drivername == "postgresql":
+    if parsed.drivername.startswith("postgresql+asyncpg") or parsed.drivername in ("postgresql", "postgres"):
         parsed = parsed.set(drivername="postgresql+asyncpg")
         q = dict(parsed.query)
+        q.pop("channel_binding", None)
         if "sslmode" in q:
             raw = q.pop("sslmode")
             mode = raw.lower() if isinstance(raw, str) else ""

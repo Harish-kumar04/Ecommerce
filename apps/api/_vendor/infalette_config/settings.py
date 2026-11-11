@@ -87,7 +87,10 @@ class DatabaseSettings(BaseSettings):
         validation_alias="DATABASE_URL",
     )
     pooled_url: str | None = Field(default=None, validation_alias="DATABASE_URL_POOLED")
-    direct_url: str | None = Field(default=None, validation_alias="DATABASE_URL_DIRECT")
+    direct_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("DATABASE_URL_DIRECT", "DATABASE_URL_UNPOOLED"),
+    )
 
     host: str = Field(default="localhost", validation_alias="POSTGRES_HOST")
     port: int = Field(default=5432, validation_alias="POSTGRES_PORT")

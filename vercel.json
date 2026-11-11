@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "apps": {
-      "root": "apps",
+    "api": {
+      "root": "apps/api",
       "framework": "fastapi",
-      "entrypoint": "api/main.py"
+      "entrypoint": "main:app"
     },
     "admin": {
       "root": "apps/admin",
@@ -14,7 +14,7 @@
       "bindings": [
         {
           "type": "service",
-          "service": "apps",
+          "service": "api",
           "format": "url",
           "env": "API_URL"
         }
@@ -28,7 +28,7 @@
       "bindings": [
         {
           "type": "service",
-          "service": "apps",
+          "service": "api",
           "format": "url",
           "env": "API_URL"
         }
@@ -42,7 +42,7 @@
       "bindings": [
         {
           "type": "service",
-          "service": "apps",
+          "service": "api",
           "format": "url",
           "env": "API_URL"
         }
@@ -77,13 +77,13 @@
     {
       "source": "/health",
       "destination": {
-        "service": "apps"
+        "service": "api"
       }
     },
     {
       "source": "/health/(.*)",
       "destination": {
-        "service": "apps"
+        "service": "api"
       }
     },
     {
