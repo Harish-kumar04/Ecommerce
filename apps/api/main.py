@@ -2,12 +2,27 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 import sys
+import types as _types
 
-# Ensure repo root and internal packages/*/src are importable in serverless & local environments
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+# Ensure both `apps.api.*` and `api.*` imports work when Vercel sets `root = "apps"` (/var/task)
+_APPS_DIR = Path(__file__).resolve().parents[1]
+_REPO_ROOT = _APPS_DIR.parent
+
+if "apps" not in sys.modules:
+    _apps_pkg = _types.ModuleType("apps")
+    _apps_pkg.__path__ = [str(_APPS_DIR)]  # type: ignore[attr-defined]
+    sys.modules["apps"] = _apps_pkg
+    if "api" in sys.modules:
+        sys.modules.setdefault("apps.api", sys.modules["api"])
+    if __name__ == "api.main":
+        sys.modules.setdefault("apps.api.main", sys.modules[__name__])
+
+# Ensure repo root, packages/*/src (local/Docker), and apps/_vendor (Vercel Serverless) are importable
 for _candidate in (_REPO_ROOT, _REPO_ROOT.parent):
     if (_candidate / "packages").is_dir():
         if str(_candidate) not in sys.path:
@@ -17,11 +32,20 @@ for _candidate in (_REPO_ROOT, _REPO_ROOT.parent):
                 sys.path.insert(0, str(_pkg_src))
         break
 
-import sentry_sdk
+_VENDOR_DIR = _APPS_DIR / "_vendor"
+if _VENDOR_DIR.is_dir() and str(_VENDOR_DIR) not in sys.path:
+    sys.path.append(str(_VENDOR_DIR))
+
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+except ImportError:  # pragma: no cover - optional in slim runtimes
+    sentry_sdk = None  # type: ignore[assignment]
+    SentryAsgiMiddleware = None  # type: ignore[assignment]
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from infalette_config import get_settings
 from infalette_config.logging import configure_logging
@@ -38,58 +62,114 @@ from infalette_auth.middleware import AuthMiddleware
 API_VERSION = "v1"
 API_PREFIX = f"/api/{API_VERSION}"
 
+_RUNTIME_READY = False
+_RUNTIME_LOCK: asyncio.Lock | None = None
+
+
+async def _auto_seed_if_empty() -> None:
+    """Seed the Muthamilarignar Pathipagam staging catalog when running in Vercel/staging with an empty DB."""
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return
+    should_seed = bool(os.getenv("VERCEL")) or os.getenv("AUTO_SEED_DEMO", "").lower() in ("1", "true", "yes")
+    if not should_seed:
+        return
+
+    import logging
+
+    log = logging.getLogger(__name__)
+    try:
+        from sqlalchemy import select
+        from infalette_database.models.tenant import Tenant
+        from infalette_database.session import get_session_factory
+
+        async with get_session_factory()() as session:
+            existing = (
+                await session.execute(select(Tenant.id).where(Tenant.slug == "demo-store").limit(1))
+            ).scalar_one_or_none()
+        if existing is not None:
+            return
+
+        log.info("Empty staging database detected — seeding 27 Muthamilarignar Pathipagam books...")
+        try:
+            import demo_seed  # type: ignore[import-not-found]
+        except ImportError:
+            scripts_dir = _REPO_ROOT / "scripts"
+            if scripts_dir.is_dir() and str(scripts_dir) not in sys.path:
+                sys.path.append(str(scripts_dir))
+            import demo_seed  # type: ignore[import-not-found]
+
+        await demo_seed.main()
+    except Exception as exc:
+        log.warning("Auto-seed skipped or failed: %s", exc)
+
+
+async def _ensure_runtime_ready() -> None:
+    """Idempotent startup initializer safe for both ASGI lifespan and cold serverless invocations."""
+    global _RUNTIME_READY, _RUNTIME_LOCK
+    if _RUNTIME_READY:
+        return
+    if _RUNTIME_LOCK is None:
+        _RUNTIME_LOCK = asyncio.Lock()
+    async with _RUNTIME_LOCK:
+        if _RUNTIME_READY:
+            return
+
+        settings = get_settings()
+        configure_logging(debug=settings.debug)
+
+        from infalette_database.session import init_db
+
+        await init_db()
+        await _auto_seed_if_empty()
+
+        if settings.sentry_dsn and sentry_sdk is not None:
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=0.1,
+                profiles_sample_rate=0.1,
+            )
+
+        # Initialize OpenTelemetry (if configured)
+        # OTEL endpoint can come from top-level `otel_endpoint` or nested `otel.endpoint`
+        # Config example: infrastructure/monitoring/otel-collector.yaml
+        otel_endpoint = getattr(settings, "otel_endpoint", None) or getattr(getattr(settings, "otel", None), "endpoint", None)
+        otel_enabled = getattr(getattr(settings, "otel", None), "enabled", False) or bool(otel_endpoint)
+        if otel_enabled and otel_endpoint:
+            try:
+                from opentelemetry import trace
+                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+                from opentelemetry.sdk.resources import Resource
+                from opentelemetry.sdk.trace import TracerProvider
+                from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+                service_name = getattr(getattr(settings, "otel", None), "service_name", "infalette-api")
+                resource = Resource.create({"service.name": service_name, "service.version": "0.1.0", "deployment.environment": settings.app_env})
+                provider = TracerProvider(resource=resource)
+                processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otel_endpoint, insecure=True))
+                provider.add_span_processor(processor)
+                trace.set_tracer_provider(provider)
+            except Exception as e:
+                import logging
+
+                logging.getLogger(__name__).warning("OTEL init failed (optional): %s", e)
+
+        # Event-driven CRM stage progression (spec §3 pipeline)
+        try:
+            from apps.api.modules.crm_listeners import register_crm_listeners
+
+            register_crm_listeners()
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning("CRM listeners init failed (optional): %s", e)
+
+        _RUNTIME_READY = True
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
-    settings = get_settings()
-    configure_logging(debug=settings.debug)
-
-    # Initialize database
-    from infalette_database.session import init_db
-    await init_db()
-
-    # Initialize Sentry
-    if settings.sentry_dsn:
-        sentry_sdk.init(
-            dsn=settings.sentry_dsn,
-            traces_sample_rate=0.1,
-            profiles_sample_rate=0.1,
-        )
-
-    # Initialize OpenTelemetry (if configured)
-    # OTEL endpoint can come from top-level `otel_endpoint` or nested `otel.endpoint`
-    # Config example: infrastructure/monitoring/otel-collector.yaml
-    otel_endpoint = getattr(settings, "otel_endpoint", None) or getattr(getattr(settings, "otel", None), "endpoint", None)
-    otel_enabled = getattr(getattr(settings, "otel", None), "enabled", False) or bool(otel_endpoint)
-    if otel_enabled and otel_endpoint:
-        try:
-            from opentelemetry import trace
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-            from opentelemetry.sdk.resources import Resource
-            from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-            service_name = getattr(getattr(settings, "otel", None), "service_name", "infalette-api")
-            resource = Resource.create({"service.name": service_name, "service.version": "0.1.0", "deployment.environment": settings.app_env})
-            provider = TracerProvider(resource=resource)
-            processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otel_endpoint, insecure=True))
-            provider.add_span_processor(processor)
-            trace.set_tracer_provider(provider)
-        except Exception as e:
-            import logging
-
-            logging.getLogger(__name__).warning("OTEL init failed (optional): %s", e)
-
-    # Event-driven CRM stage progression (spec §3 pipeline)
-    try:
-        from apps.api.modules.crm_listeners import register_crm_listeners
-
-        register_crm_listeners()
-    except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).warning("CRM listeners init failed (optional): %s", e)
+    await _ensure_runtime_ready()
 
     yield
 
@@ -117,6 +197,13 @@ def create_app() -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
     )
 
+    if os.getenv("VERCEL"):
+        @app.middleware("http")
+        async def _vercel_cold_start_guard(request: Request, call_next):
+            if not _RUNTIME_READY:
+                await _ensure_runtime_ready()
+            return await call_next(request)
+
     # Middleware - order matters (last added is outermost)
     # AuthMiddleware MUST run before IdempotencyMiddleware so tenant scoping
     # is available when building the idempotency cache key.
@@ -140,7 +227,8 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(AuditMiddleware)  # logs POST/PATCH/DELETE after auth
     app.add_middleware(AuthMiddleware)  # must wrap Idempotency for tenant scoping
-    app.add_middleware(SentryAsgiMiddleware)  # outermost
+    if SentryAsgiMiddleware is not None:
+        app.add_middleware(SentryAsgiMiddleware)  # outermost
 
     # Register exception handlers
     from apps.api.core.exceptions import register_exception_handlers
@@ -172,18 +260,23 @@ def create_app() -> FastAPI:
         except Exception as e:
             components["database"] = f"error: {e.__class__.__name__}"
 
-        try:
-            from infalette_config import get_settings as _gs
-            import redis.asyncio as aioredis
+        if os.getenv("VERCEL") and not os.getenv("REDIS_URL"):
+            components["redis"] = "in-memory-fallback"
+        else:
+            try:
+                from infalette_config import get_settings as _gs
+                import redis.asyncio as aioredis
 
-            r = aioredis.from_url(_gs().redis.url, socket_connect_timeout=2)
-            await r.ping()
-            await r.aclose()
-            components["redis"] = "healthy"
-        except Exception as e:
-            components["redis"] = f"error: {e.__class__.__name__}"
+                r = aioredis.from_url(_gs().redis.url, socket_connect_timeout=1)
+                await r.ping()
+                await r.aclose()
+                components["redis"] = "healthy"
+            except Exception as e:
+                components["redis"] = f"error: {e.__class__.__name__}"
 
-        healthy = all(v == "healthy" for v in components.values())
+        healthy = components["database"] == "healthy" and (
+            components["redis"] in ("healthy", "in-memory-fallback")
+        )
         return {
             "status": "healthy" if healthy else "degraded",
             "version": "0.1.0",

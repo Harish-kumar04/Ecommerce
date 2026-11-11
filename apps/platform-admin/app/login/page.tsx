@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { platformApi } from "@/lib/api";
 import { AuthManager } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("admin@infalette.com");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -18,7 +20,7 @@ export default function LoginPage() {
     try {
       const data = await platformApi.login(email, password);
       AuthManager.setToken(data.access_token);
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.message || "Login failed — check email and password");
     } finally {

@@ -8,7 +8,7 @@ function resolvePlatformApiOrigin(): string {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
   }
   if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return "";
+    return window.location.pathname.startsWith("/platform-admin") ? "/platform-admin" : "";
   }
   return "http://localhost:8000";
 }
@@ -33,9 +33,15 @@ api.interceptors.request.use((config) => {
 async function fetchJson(path: string, options: RequestInit = {}): Promise<any> {
   const base = resolvePlatformApiOrigin();
   const isHealthRoute = path === "/health" || path.startsWith("/health/");
+  const isSameOriginProxy =
+    typeof window !== "undefined" &&
+    !process.env.NEXT_PUBLIC_API_URL &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const resolvedPath = isHealthRoute && isSameOriginProxy ? `/api${path}` : path;
   const url = path.startsWith("http")
     ? path
-    : `${base}${path.startsWith("/api/v1") || isHealthRoute ? "" : "/api/v1"}${path}`;
+    : `${base}${resolvedPath.startsWith("/api/") || isHealthRoute ? "" : "/api/v1"}${resolvedPath}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),

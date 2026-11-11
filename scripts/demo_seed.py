@@ -582,14 +582,15 @@ async def main() -> None:
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Normalize any legacy lowercase/uppercase enum strings in existing DBs
-        await conn.execute(text("UPDATE tenants SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
-        await conn.execute(text("UPDATE users SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
-        await conn.execute(text("UPDATE users SET role = 'tenant_owner' WHERE lower(role) = 'tenant_owner'"))
-        await conn.execute(text("UPDATE users SET role = 'platform_owner' WHERE lower(role) = 'platform_owner'"))
-        await conn.execute(text("UPDATE stores SET status = 'PUBLISHED' WHERE lower(status) = 'published'"))
-        await conn.execute(text("UPDATE products SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
-        await conn.execute(text("UPDATE pages SET status = 'PUBLISHED' WHERE lower(status) = 'published'"))
+        if engine.dialect.name == "sqlite":
+            # Normalize any legacy lowercase/uppercase enum strings in existing SQLite DBs
+            await conn.execute(text("UPDATE tenants SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
+            await conn.execute(text("UPDATE users SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
+            await conn.execute(text("UPDATE users SET role = 'tenant_owner' WHERE lower(role) = 'tenant_owner'"))
+            await conn.execute(text("UPDATE users SET role = 'platform_owner' WHERE lower(role) = 'platform_owner'"))
+            await conn.execute(text("UPDATE stores SET status = 'PUBLISHED' WHERE lower(status) = 'published'"))
+            await conn.execute(text("UPDATE products SET status = 'ACTIVE' WHERE lower(status) = 'active'"))
+            await conn.execute(text("UPDATE pages SET status = 'PUBLISHED' WHERE lower(status) = 'published'"))
 
     created = []
     async with get_session_factory()() as s:
@@ -633,43 +634,54 @@ async def main() -> None:
         if not tenant.plan_id:
             tenant.plan_id = plan_by_slug["store_automation"].id
 
-        # Owner user
-        user = (
-            await s.execute(select(User).where(User.email == OWNER_EMAIL))
-        ).scalar_one_or_none()
-        if not user:
-            user = User(
-                tenant_id=tenant.id,
-                email=OWNER_EMAIL,
-                password_hash=PasswordHasher().hash_password(OWNER_PASSWORD),
-                first_name="Muthamilarignar",
-                last_name="Pathipagam",
-                role="tenant_owner",
-                status=UserStatus.ACTIVE,
-            )
-            s.add(user)
-            await s.flush()
-            created.append(f"user:{OWNER_EMAIL}")
+        # Owner users (both documented staging owner and legacy test owner)
+        owner_accounts = [
+            (OWNER_EMAIL, OWNER_PASSWORD),
+            ("owner@demo.infalette.com", os.environ.get("DEMO_OWNER_ALT_PASSWORD", "DemoOwner!2026")),
+        ]
+        for o_email, o_pw in owner_accounts:
+            u_row = (
+                await s.execute(select(User).where(User.email == o_email))
+            ).scalar_one_or_none()
+            if not u_row:
+                u_row = User(
+                    tenant_id=tenant.id,
+                    email=o_email,
+                    password_hash=PasswordHasher().hash_password(o_pw),
+                    first_name="Muthamilarignar",
+                    last_name="Pathipagam",
+                    role="tenant_owner",
+                    status=UserStatus.ACTIVE,
+                )
+                s.add(u_row)
+                await s.flush()
+                created.append(f"user:{o_email}")
 
-        # Platform super-admin user (for apps/platform-admin)
-        platform_email = os.environ.get("DEMO_PLATFORM_EMAIL", "admin@infalette.com")
-        platform_pw = os.environ.get("DEMO_PLATFORM_PASSWORD", "admin1234")
-        puser = (
-            await s.execute(select(User).where(User.email == platform_email))
-        ).scalar_one_or_none()
-        if not puser:
-            puser = User(
-                tenant_id=None,
-                email=platform_email,
-                password_hash=PasswordHasher().hash_password(platform_pw),
-                first_name="Platform",
-                last_name="Admin",
-                role="platform_owner",
-                status=UserStatus.ACTIVE,
-            )
-            s.add(puser)
-            await s.flush()
-            created.append(f"user:{platform_email}")
+        # Platform super-admin users (for apps/platform-admin)
+        platform_accounts = [
+            (
+                os.environ.get("DEMO_PLATFORM_EMAIL", "admin@infalette.com"),
+                os.environ.get("DEMO_PLATFORM_PASSWORD", "PlatformAdmin!2026"),
+            ),
+            ("admin@demo.test", "admin1234"),
+        ]
+        for p_email, p_pw in platform_accounts:
+            puser = (
+                await s.execute(select(User).where(User.email == p_email))
+            ).scalar_one_or_none()
+            if not puser:
+                puser = User(
+                    tenant_id=None,
+                    email=p_email,
+                    password_hash=PasswordHasher().hash_password(p_pw),
+                    first_name="Platform",
+                    last_name="Admin",
+                    role="platform_owner",
+                    status=UserStatus.ACTIVE,
+                )
+                s.add(puser)
+                await s.flush()
+                created.append(f"user:{p_email}")
 
         # Store
         store = (

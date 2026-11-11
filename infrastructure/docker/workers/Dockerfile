@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         -e packages/analytics \
         -e packages/integrations \
         -e packages/seo \
-        -e apps
+        -e "apps[full]"
 
 # Run the worker
 CMD ["celery", "-A", "apps.workers.main", "worker", "--loglevel=info"]

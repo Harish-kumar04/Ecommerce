@@ -21,22 +21,28 @@ from infalette_auth.schemas import LoginRequest, RegisterRequest, TokenResponse,
 def _mfa_required_for(user: User) -> bool:
     """True when this user's role must be MFA-enrolled (spec §5).
 
-    Local development allows bundled ``@demo.test`` seed accounts to log
-    in without enrolling TOTP so ``owner@demo.test / demo1234`` works
-    out-of-the-box, while enforcing the MFA mandate on all other admin
-    accounts across environments.
+    Honors ``MFA_ENABLED=false`` globally and allows bundled demo/staging
+    seed accounts (``@demo.test``, ``owner@demo.infalette.com``,
+    ``admin@infalette.com``) to log in without TOTP enrollment unless
+    ``MFA_FORCE_DEMO=true`` is set, while enforcing MFA on real staff
+    accounts.
     """
+    import os
     from infalette_config import get_settings
 
     try:
         settings = get_settings()
-        env = (settings.app_env or "").lower()
+        if not settings.auth.mfa_enabled:
+            return False
     except Exception:
         settings = None
-        env = "development"
 
     email = str(getattr(user, "email", "") or "").lower()
-    if env != "production" and (email.endswith("@demo.test") or email == "admin@infalette.com"):
+    is_demo_account = (
+        email.endswith("@demo.test")
+        or email in ("owner@demo.infalette.com", "admin@infalette.com")
+    )
+    if is_demo_account and os.environ.get("MFA_FORCE_DEMO", "").lower() != "true":
         return False
 
     try:

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { adminApi } from "@/lib/api";
 import { AuthManager } from "@/lib/auth";
 import { toast } from "@/components/toaster";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -17,7 +19,7 @@ export default function LoginPage() {
     try {
       const data = await adminApi.login(email, password);
       AuthManager.setToken(data.access_token);
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (error: any) {
       toast({ kind: "error", title: "Login failed", description: error?.message });
     } finally {

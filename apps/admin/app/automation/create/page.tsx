@@ -3,9 +3,11 @@
 import { toast } from "@/components/toaster";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api";
 
 export default function CreateAutomationRulePage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     trigger_type: "comment_keyword",
@@ -18,7 +20,7 @@ export default function CreateAutomationRulePage() {
     e.preventDefault();
     try {
       await adminApi.createAutomationRule(formData);
-      window.location.href = "/automation";
+      router.push("/automation");
     } catch (error) {
       toast({ kind: "error", title: "Failed to create rule" });
     }

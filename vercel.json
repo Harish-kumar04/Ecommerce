@@ -51,6 +51,18 @@
   },
   "rewrites": [
     {
+      "source": "/platform-admin",
+      "destination": {
+        "service": "platform-admin"
+      }
+    },
+    {
+      "source": "/platform-admin/(.*)",
+      "destination": {
+        "service": "platform-admin"
+      }
+    },
+    {
       "source": "/admin",
       "destination": {
         "service": "admin"
@@ -60,6 +72,18 @@
       "source": "/admin/(.*)",
       "destination": {
         "service": "admin"
+      }
+    },
+    {
+      "source": "/health",
+      "destination": {
+        "service": "apps"
+      }
+    },
+    {
+      "source": "/health/(.*)",
+      "destination": {
+        "service": "apps"
       }
     },
     {

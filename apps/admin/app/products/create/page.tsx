@@ -3,9 +3,11 @@
 import { toast } from "@/components/toaster";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api";
 
 export default function CreateProductPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -48,33 +50,15 @@ export default function CreateProductPage() {
     if (!file) return;
     setUploading(true);
     try {
-      // Try presigned S3 upload, fallback to image_url as data URL preview
-      const form = new FormData();
-      form.append("file", file);
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const res = await fetch(`${base.replace(/\/$/, "")}/media/upload`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const url = data.url || data.location || data.key ? `${data.url || data.key}` : "";
-        if (url) {
-          setFormData((p) => ({ ...p, image_url: url }));
-        } else {
-          // fallback: use location header
-          setFormData((p) => ({ ...p, image_url: data.url || data.signed_url || "" }));
-        }
-      } else {
-        // fallback: preview as object URL (not persisted, but lets user see)
-        const preview = URL.createObjectURL(file);
-        setFormData((p) => ({ ...p, image_url: preview }));
-        toast({ kind: "error", title: "S3 upload failed, using preview. Configure S3_BUCKET." });
+      const data = await adminApi.uploadMedia(file);
+      const url = data.url || data.location || data.signed_url || data.key || "";
+      if (url) {
+        setFormData((p) => ({ ...p, image_url: url }));
       }
-    } catch (err) {
-      toast({ kind: "error", title: "Upload failed" });
+    } catch {
+      const preview = URL.createObjectURL(file);
+      setFormData((p) => ({ ...p, image_url: preview }));
+      toast({ kind: "error", title: "S3 upload failed, using preview. Configure S3_BUCKET." });
     } finally {
       setUploading(false);
     }
@@ -108,7 +92,7 @@ export default function CreateProductPage() {
         collection_id: formData.collection_id || null,
       };
       await adminApi.createProduct(payload);
-      window.location.href = "/products";
+      router.push("/products");
     } catch (error: any) {
       toast({ kind: "error", title: "Something went wrong", description: error.message || "Failed to create product" });
     } finally {

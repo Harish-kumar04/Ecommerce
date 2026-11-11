@@ -68,9 +68,26 @@ def _create_engine():
     Uses ``DatabaseSettings.resolved_url()`` so that Neon deployments
     transparently pick up ``DATABASE_URL_POOLED`` while local dev (and any
     caller still setting only ``DATABASE_URL``) keeps working.
+    On SQLite or Vercel Serverless (``VERCEL=1``), uses ``NullPool`` so
+    connections are never shared across serverless event loops and Neon's
+    transaction pooler manages backend pooling cleanly.
     """
+    import os
+    from sqlalchemy.pool import NullPool
+
     settings = get_settings()
     kwargs = _build_engine_kwargs(settings.database.resolved_url())
+    is_sqlite = str(kwargs["url"].drivername).startswith("sqlite")
+    is_serverless = os.environ.get("VERCEL") == "1"
+
+    if is_sqlite or is_serverless:
+        return create_async_engine(
+            kwargs["url"],
+            poolclass=NullPool,
+            echo=settings.debug,
+            connect_args=kwargs["connect_args"],
+        )
+
     return create_async_engine(
         kwargs["url"],
         pool_size=settings.database.pool_size,

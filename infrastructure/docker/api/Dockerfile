@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         -e packages/analytics \
         -e packages/integrations \
         -e packages/seo \
-        -e apps
+        -e "apps[full]"
 
 # Default production-ready environment variables (can be overridden in cloud dashboard)
 ENV DATABASE_URL="sqlite+aiosqlite:///./bookstore.db" \

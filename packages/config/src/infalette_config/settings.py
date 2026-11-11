@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -102,12 +102,23 @@ class DatabaseSettings(BaseSettings):
     def resolved_url(self) -> str:
         """Return the runtime DSN.
 
-        Prefers ``DATABASE_URL_POOLED`` (Neon pooled) and falls back to
-        ``DATABASE_URL``. Kept as a method so callers can opt into the new
-        behavior without breaking anyone reading ``.url`` directly.
+        Prefers ``DATABASE_URL_POOLED`` (Neon pooled), then explicit
+        ``DATABASE_URL``. On Vercel Serverless (``VERCEL=1``), if no external
+        database URL was configured in the environment, falls back to an
+        ephemeral writable SQLite staging database in ``/tmp`` instead of
+        unreachable ``localhost:5432``.
         """
+        import os
+
         if self.pooled_url:
             return self.pooled_url
+        if os.environ.get("DATABASE_URL") or _ENV_FILE:
+            return self.url
+        if os.environ.get("VERCEL"):
+            import tempfile
+
+            tmp_db = (Path(tempfile.gettempdir()) / "muthamilarignar_staging.db").as_posix()
+            return f"sqlite+aiosqlite:///{tmp_db}"
         return self.url
 
     def migration_url(self) -> str:
@@ -382,9 +393,12 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = "Infalette"
-    app_env: str = Field(default="development", validation_alias="NODE_ENV")
-    debug: bool = Field(default=True, validation_alias="DEBUG")
+    app_name: str = "Muthamilarignar Pathipagam"
+    app_env: str = Field(
+        default="development",
+        validation_alias=AliasChoices("APP_ENV", "VERCEL_ENV", "NODE_ENV"),
+    )
+    debug: bool = Field(default=False, validation_alias="DEBUG")
     api_url: str = Field(default="http://localhost:8000", validation_alias="API_URL")
     storefront_url: str = Field(
         default="http://localhost:3000", validation_alias="STOREFRONT_URL"
@@ -414,9 +428,30 @@ class Settings(BaseSettings):
 
     # CORS
     allowed_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
-        validation_alias="ALLOWED_ORIGINS",
+        default=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "*"],
+        validation_alias=AliasChoices("ALLOWED_ORIGINS", "CORS_ORIGINS"),
     )
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def _parse_allowed_origins(cls, v: Any) -> list[str]:
+        if isinstance(v, list):
+            return [str(x).strip() for x in v if str(x).strip()]
+        if isinstance(v, str):
+            raw = v.strip()
+            if not raw:
+                return ["*"]
+            if raw.startswith("["):
+                import json
+
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        return [str(x).strip() for x in parsed if str(x).strip()]
+                except Exception:
+                    pass
+            return [item.strip() for item in raw.split(",") if item.strip()]
+        return ["*"]
 
     # Nested settings
     database: DatabaseSettings = DatabaseSettings()

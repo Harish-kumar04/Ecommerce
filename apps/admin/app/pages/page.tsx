@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, FileText, ExternalLink, Home as HomeIcon } from "lucide-react";
 import { adminApi } from "@/lib/api";
 
@@ -17,6 +18,7 @@ interface PageRow {
 }
 
 export default function PagesListPage() {
+  const router = useRouter();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export default function PagesListPage() {
       setBlocksJson("[]");
       setStoreId("");
       if (created?.id) {
-        window.location.href = `/pages/${created.id}`;
+        router.push(`/pages/${created.id}`);
       } else {
         fetchPages();
       }

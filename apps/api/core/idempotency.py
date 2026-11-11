@@ -57,16 +57,31 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self._redis = None
+        self._redis_unavailable = False
+        self._mem_cache: dict[str, str] = {}
 
     async def _get_redis(self):
+        if self._redis_unavailable:
+            return None
         if self._redis is None:
             try:
+                import os
                 import redis.asyncio as redis
                 from infalette_config import get_settings
 
                 settings = get_settings()
-                self._redis = redis.from_url(settings.redis.url, decode_responses=True)
+                redis_url = settings.redis.url
+                if os.environ.get("VERCEL") == "1" and ("localhost" in redis_url or "127.0.0.1" in redis_url):
+                    self._redis_unavailable = True
+                    return None
+                self._redis = redis.from_url(
+                    redis_url,
+                    decode_responses=True,
+                    socket_connect_timeout=0.5,
+                    socket_timeout=0.5,
+                )
             except Exception:
+                self._redis_unavailable = True
                 return None
         return self._redis
 
@@ -88,12 +103,10 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         # Tenant scoping – AuthMiddleware should have run before us
         tenant_suffix = ""
         try:
-            # AuthMiddleware stores tenant_context on request.state
             tc = getattr(request.state, "tenant_context", None)
             if tc is not None and hasattr(tc, "tenant_id") and tc.tenant_id:
                 tenant_suffix = f":{tc.tenant_id}"
             else:
-                # Fallback: try to extract from Authorization (user tenant)
                 user = getattr(request.state, "user", None)
                 if user and getattr(user, "tenant_id", None):
                     tenant_suffix = f":{user.tenant_id}"
@@ -102,17 +115,22 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         except Exception:
             pass
 
-        # Hash key to avoid extremely long redis keys but keep tenant suffix
         hashed = hashlib.sha256(idempotency_key.encode()).hexdigest()[:32]
         cache_key = f"idempotency:{hashed}{tenant_suffix}"
 
         redis = await self._get_redis()
-        if redis is None:
-            return await call_next(request)
+        cached: str | None = None
+        if redis is not None:
+            try:
+                cached = await redis.get(cache_key)
+            except Exception as e:
+                self._redis_unavailable = True
+                logger.debug("idempotency cache read failed: %s", e)
+        if cached is None:
+            cached = self._mem_cache.get(cache_key)
 
-        try:
-            cached = await redis.get(cache_key)
-            if cached:
+        if cached:
+            try:
                 data = json.loads(cached)
                 return Response(
                     content=json.dumps(data.get("body", {})),
@@ -120,8 +138,8 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                     headers={**data.get("headers", {}), "X-Idempotent-Replayed": "true"},
                     media_type="application/json",
                 )
-        except Exception as e:
-            logger.debug("idempotency cache read failed: %s", e)
+            except Exception:
+                pass
 
         response = await call_next(request)
 
@@ -131,14 +149,11 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 body_bytes = b""
                 headers_dict = dict(response.headers)
 
-                # Try to extract body from Response object
-                # For JSONResponse / Response, body is available as attribute
                 if hasattr(response, "body"):
                     try:
                         body_bytes = response.body  # type: ignore[attr-defined]
                     except Exception:
                         body_bytes = b""
-                # For streaming, collect chunks
                 if not body_bytes and hasattr(response, "body_iterator"):
                     chunks = []
                     async for chunk in response.body_iterator:  # type: ignore[attr-defined]
@@ -146,35 +161,31 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                             chunk = chunk.encode()
                         chunks.append(chunk)
                     body_bytes = b"".join(chunks)
-                    # Recreate response so downstream still has body
                     response = Response(
                         content=body_bytes,
                         status_code=response.status_code,
                         headers=headers_dict,
                         media_type=response.media_type,
                     )
-                    # Need to re-set Idempotency header after recreation
                 body_json: dict | list | str
                 if body_bytes:
                     try:
                         body_json = json.loads(body_bytes.decode())
                     except Exception:
-                        # Not JSON – store as text
                         body_json = body_bytes.decode(errors="ignore")
                 else:
                     body_json = {}
 
-                # Remove hop-by-hop headers before caching
                 headers_to_cache = {k: v for k, v in headers_dict.items() if k.lower() not in ("content-length", "connection")}
-                await redis.setex(
-                    cache_key,
-                    IDEMPOTENCY_TTL_SECONDS,
-                    json.dumps({"status": response.status_code, "body": body_json, "headers": headers_to_cache}),
-                )
+                serialized = json.dumps({"status": response.status_code, "body": body_json, "headers": headers_to_cache})
+                if len(self._mem_cache) > 1000:
+                    self._mem_cache.clear()
+                self._mem_cache[cache_key] = serialized
+                if redis is not None and not self._redis_unavailable:
+                    await redis.setex(cache_key, IDEMPOTENCY_TTL_SECONDS, serialized)
             except Exception as e:
                 logger.debug("idempotency cache write failed: %s", e)
 
-        # Echo key
         try:
             response.headers["Idempotency-Key"] = idempotency_key
         except Exception:
