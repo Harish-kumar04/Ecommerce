@@ -27,27 +27,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLogin = pathname === "/login";
   const showChrome = !isLogin && isLoggedIn;
 
-  const navItems = [
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const primaryNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
-    { href: "/products", label: "Products", icon: <IconBox /> },
+    { href: "/products", label: "Books", icon: <IconBox /> },
     { href: "/orders", label: "Orders", icon: <IconReceipt /> },
     { href: "/customers", label: "Customers", icon: <IconUser /> },
-    { href: "/conversations", label: "Conversations", icon: <IconChat /> },
-    { href: "/leads", label: "Leads", icon: <IconTarget /> },
-    { href: "/pages", label: "Pages", icon: <IconFile /> },
-    { href: "/automation", label: "Automation", icon: <IconBolt /> },
-    { href: "/analytics", label: "Analytics", icon: <IconChart /> },
-    { href: "/campaigns", label: "Campaigns", icon: <IconSend /> },
+    { href: "/homepage", label: "Homepage", icon: <IconLayout /> },
     { href: "/coupons", label: "Coupons", icon: <IconTag /> },
+    { href: "/settings", label: "Settings", icon: <IconCog /> },
+  ];
+
+  const advancedNavItems = [
+    { href: "/analytics", label: "Analytics", icon: <IconChart /> },
     { href: "/reports", label: "Reports", icon: <IconDoc /> },
-    { href: "/media", label: "Media", icon: <IconImage /> },
-    { href: "/inventory", label: "Inventory", icon: <IconLayers /> },
     { href: "/seo", label: "SEO", icon: <IconSearch /> },
+    { href: "/pages", label: "Pages", icon: <IconFile /> },
+    { href: "/inventory", label: "Inventory", icon: <IconLayers /> },
+    { href: "/campaigns", label: "Campaigns", icon: <IconSend /> },
+    { href: "/leads", label: "Leads", icon: <IconTarget /> },
+    { href: "/conversations", label: "Conversations", icon: <IconChat /> },
+    { href: "/automation", label: "Automation", icon: <IconBolt /> },
     { href: "/webhooks", label: "Webhooks", icon: <IconLink /> },
     { href: "/domains", label: "Domains", icon: <IconGlobe /> },
     { href: "/team", label: "Team", icon: <IconTeam /> },
-    { href: "/settings", label: "Settings", icon: <IconCog /> },
   ];
+
+  useEffect(() => {
+    const isAdvanced = advancedNavItems.some((it) => pathname === it.href || pathname.startsWith(it.href + "/"));
+    if (isAdvanced) {
+      setAdvancedOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   return (
     <div className="flex h-screen bg-white text-gray-900 dark:bg-black dark:text-neutral-100">
@@ -71,26 +84,69 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </Link>
           </div>
-          <ul className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-            {navItems.map((it) => {
-              const active = pathname === it.href || pathname.startsWith(it.href + "/");
-              return (
-                <li key={it.href}>
-                  <Link
-                    href={it.href}
-                    className={`flex items-center gap-3 px-3 h-9 rounded-lg text-[13.5px] transition-colors ${
-                      active
-                        ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 font-medium"
-                        : "text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-950"
-                    }`}
-                  >
-                    <span className="w-4 h-4 flex items-center justify-center">{it.icon}</span>
-                    <span>{it.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+            <ul className="space-y-0.5">
+              {primaryNavItems.map((it) => {
+                const active = pathname === it.href || pathname.startsWith(it.href + "/");
+                return (
+                  <li key={it.href}>
+                    <Link
+                      href={it.href}
+                      className={`flex items-center gap-3 px-3 h-9 rounded-lg text-[13.5px] transition-colors ${
+                        active
+                          ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 font-medium"
+                          : "text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-950"
+                      }`}
+                    >
+                      <span className="w-4 h-4 flex items-center justify-center">{it.icon}</span>
+                      <span>{it.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between px-3 py-1.5 text-[11.5px] font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
+              >
+                <span>Advanced</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={`w-3.5 h-3.5 transition-transform ${advancedOpen ? "rotate-90" : ""}`}
+                >
+                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {advancedOpen && (
+                <ul className="mt-1 space-y-0.5 pl-1">
+                  {advancedNavItems.map((it) => {
+                    const active = pathname === it.href || pathname.startsWith(it.href + "/");
+                    return (
+                      <li key={it.href}>
+                        <Link
+                          href={it.href}
+                          className={`flex items-center gap-3 px-3 h-8 rounded-lg text-[13px] transition-colors ${
+                            active
+                              ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 font-medium"
+                              : "text-gray-500 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-950"
+                          }`}
+                        >
+                          <span className="w-4 h-4 flex items-center justify-center opacity-80">{it.icon}</span>
+                          <span>{it.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
         </nav>
       )}
       <main className="flex-1 overflow-y-auto bg-white dark:bg-black">
@@ -178,3 +234,4 @@ function IconLink() { return <svg viewBox="0 0 24 24" fill="none" stroke="curren
 function IconGlobe() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18" /></svg>; }
 function IconTeam() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>; }
 function IconCog() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>; }
+function IconLayout() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>; }

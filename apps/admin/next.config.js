@@ -11,6 +11,7 @@ module.exports = {
       { protocol: "https", hostname: "img.clerk.com" },
       { protocol: "https", hostname: "**.clerk.com" },
       { protocol: "https", hostname: "s3.ap-south-1.amazonaws.com" },
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
     ],
   },
   async headers() {
@@ -25,7 +26,7 @@ module.exports = {
         key: "Content-Security-Policy",
         value: [
           "default-src 'self'",
-          "img-src 'self' data: blob: https://cdn.infalette.com https://*.infalette.com https://images.unsplash.com https://img.clerk.com https://*.clerk.com https://s3.ap-south-1.amazonaws.com",
+          "img-src 'self' data: blob: https://cdn.infalette.com https://*.infalette.com https://images.unsplash.com https://img.clerk.com https://*.clerk.com https://s3.ap-south-1.amazonaws.com https://*.public.blob.vercel-storage.com",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' data: https://fonts.gstatic.com",
