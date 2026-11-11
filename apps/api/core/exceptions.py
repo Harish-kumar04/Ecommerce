@@ -63,7 +63,18 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Internal server error", "type": "Exception"},
-        )
+        import logging
+        import os
+        from pathlib import Path
+        import traceback
+
+        logging.getLogger(__name__).exception("Unhandled exception on %s", request.url.path)
+        content: dict[str, object] = {"error": "Internal server error", "type": "Exception"}
+        if os.getenv("APP_ENV", "development").lower() != "production":
+            content["exc_type"] = exc.__class__.__name__
+            content["detail"] = str(exc)
+            content["frames"] = [
+                f"{Path(fr.filename).name}:{fr.lineno}:{fr.name}"
+                for fr in traceback.extract_tb(exc.__traceback__)[-5:]
+            ]
+        return JSONResponse(status_code=500, content=content)

@@ -53,6 +53,12 @@ for _vendor_candidate in (
         sys.path.insert(0, str(_vendor_candidate))
 
 try:
+    import aiosqlite as _aiosqlite  # noqa: F401
+    import greenlet as _greenlet  # noqa: F401
+except ImportError:  # pragma: no cover
+    pass
+
+try:
     import sentry_sdk
     from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 except ImportError:  # pragma: no cover - optional in slim runtimes
@@ -262,22 +268,8 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(AuditMiddleware)  # logs POST/PATCH/DELETE after auth
     app.add_middleware(AuthMiddleware)  # must wrap Idempotency for tenant scoping
-    if SentryAsgiMiddleware is not None:
+    if settings.sentry_dsn and SentryAsgiMiddleware is not None:
         app.add_middleware(SentryAsgiMiddleware)
-
-    if os.getenv("VERCEL"):
-        class _VercelColdStartMiddleware:
-            def __init__(self, inner_app):
-                self.app = inner_app
-
-            async def __call__(self, scope, receive, send):
-                if scope.get("type") == "http" and not _RUNTIME_READY:
-                    path = scope.get("path", "")
-                    if path not in ("/health", "/_vercel/ping"):
-                        await _ensure_runtime_ready()
-                await self.app(scope, receive, send)
-
-        app.add_middleware(_VercelColdStartMiddleware)  # outermost on Vercel
 
     # Register exception handlers
     from apps.api.core.exceptions import register_exception_handlers
@@ -418,9 +410,106 @@ def create_app() -> FastAPI:
     return app
 
 
+class _VercelSafeASGIApp:
+    """Outermost ASGI boundary for Vercel Serverless / Fluid Compute.
+
+    - Delegates attribute access (`routes`, `dependency_overrides`, etc.) to `FastAPI`.
+    - Short-circuits `/_vercel/ping` and `/health` with zero DB/middleware overhead.
+    - Runs idempotent cold-start DB + 27-book staging seed before other HTTP routes.
+    - Catches any `BaseException` (including `BaseExceptionGroup` from task groups)
+      so Uvicorn never emits an opaque plain-text `500 Internal Server Error`.
+    """
+
+    def __init__(self, inner_app: FastAPI) -> None:
+        self._inner = inner_app
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
+
+    async def __call__(self, scope, receive, send) -> None:
+        scope_type = scope.get("type")
+        if scope_type == "lifespan":
+            try:
+                await self._inner(scope, receive, send)
+            except BaseException:
+                # Never fail container Init on Vercel if lifespan encounters an optional error
+                pass
+            return
+
+        if scope_type != "http":
+            await self._inner(scope, receive, send)
+            return
+
+        path = scope.get("path", "") or "/"
+        if path == "/_vercel/ping":
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.body", "body": b"", "more_body": False})
+            return
+
+        if path == "/health":
+            body = b'{"status":"healthy","version":"0.1.0"}'
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode("ascii")),
+                    ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body, "more_body": False})
+            return
+
+        response_started = False
+
+        async def _safe_send(message) -> None:
+            nonlocal response_started
+            if message.get("type") == "http.response.start":
+                response_started = True
+            await send(message)
+
+        try:
+            if not _RUNTIME_READY:
+                await _ensure_runtime_ready()
+            await self._inner(scope, receive, _safe_send)
+        except BaseException as exc:
+            import json as _json
+            import logging as _logging
+            import traceback as _tb
+
+            tb_str = _tb.format_exc()
+            _logging.getLogger(__name__).error("Unhandled ASGI error on %s: %s\n%s", path, exc, tb_str)
+            if not response_started:
+                frames = [
+                    f"{Path(fr.filename).name}:{fr.lineno}:{fr.name}"
+                    for fr in _tb.extract_tb(exc.__traceback__)[-6:]
+                ]
+                payload: dict[str, object] = {
+                    "error": str(exc) or exc.__class__.__name__,
+                    "type": exc.__class__.__name__,
+                    "frames": frames,
+                }
+                raw = _json.dumps(payload).encode("utf-8")
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 500,
+                        "headers": [
+                            (b"content-type", b"application/json"),
+                            (b"content-length", str(len(raw)).encode("ascii")),
+                        ],
+                    }
+                )
+                await send({"type": "http.response.body", "body": raw, "more_body": False})
+
+
 def _build_asgi_app():
     try:
-        return create_app()
+        fastapi_app = create_app()
+        if os.getenv("VERCEL"):
+            return _VercelSafeASGIApp(fastapi_app)
+        return fastapi_app
     except Exception as _boot_exc:
         if not os.getenv("VERCEL"):
             raise

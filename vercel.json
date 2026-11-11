@@ -75,6 +75,12 @@
       }
     },
     {
+      "source": "/api/v1/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
       "source": "/health",
       "destination": {
         "service": "api"
