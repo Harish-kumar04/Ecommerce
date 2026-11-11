@@ -20,7 +20,7 @@ export default function LanguageToggle() {
         aria-pressed={lang === "ta"}
         className={`px-2.5 py-1 rounded-full transition-all ${
           lang === "ta"
-            ? "bg-red-600 text-white shadow-sm"
+            ? "bg-brand-red text-white shadow-sm"
             : "text-gray-700 hover:text-gray-900"
         }`}
       >
@@ -32,7 +32,7 @@ export default function LanguageToggle() {
         aria-pressed={lang === "en"}
         className={`px-2.5 py-1 rounded-full transition-all ${
           lang === "en"
-            ? "bg-red-600 text-white shadow-sm"
+            ? "bg-brand-red text-white shadow-sm"
             : "text-gray-700 hover:text-gray-900"
         }`}
       >

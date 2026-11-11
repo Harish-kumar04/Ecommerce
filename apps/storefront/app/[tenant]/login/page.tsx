@@ -57,7 +57,7 @@ export default function LoginPage({ params }: { params: { tenant: string } }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
         />
         <input
           type="password"
@@ -65,12 +65,12 @@ export default function LoginPage({ params }: { params: { tenant: string } }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
         />
         <button
           type="submit"
           disabled={busy}
-          className="w-full h-12 rounded-full bg-blue-600 disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-blue-700 transition-colors"
+          className="w-full h-12 rounded-full bg-brand-red disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-brand-red-dark transition-colors"
         >
           {busy ? "Signing in…" : "Sign in"}
         </button>
@@ -79,12 +79,12 @@ export default function LoginPage({ params }: { params: { tenant: string } }) {
         New here?{" "}
         <Link
           href={`/${tenant}/signup?next=${encodeURIComponent(next)}`}
-          className="text-blue-600 hover:underline"
+          className="text-brand-red hover:underline"
         >
           Create an account
         </Link>
         {" · "}
-        <Link href={`/${tenant}/forgot-password`} className="text-blue-600 hover:underline">
+        <Link href={`/${tenant}/forgot-password`} className="text-brand-red hover:underline">
           Forgot password?
         </Link>
       </p>

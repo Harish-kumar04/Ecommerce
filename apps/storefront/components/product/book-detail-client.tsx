@@ -34,14 +34,14 @@ export default function BookDetailClient({
         <nav className="text-[12px] text-gray-500 mb-6 flex items-center flex-wrap gap-1">
           <Link
             href={`/${tenant}`}
-            className="hover:text-red-600"
+            className="hover:text-brand-red"
           >
             {t("முகப்பு", "Home")}
           </Link>
           <span className="mx-1.5 opacity-60">/</span>
           <Link
             href={`/${tenant}/products`}
-            className="hover:text-red-600"
+            className="hover:text-brand-red"
           >
             {t("நூல்கள்", "Books")}
           </Link>
@@ -72,7 +72,7 @@ export default function BookDetailClient({
 
           {/* Book Info & Buy Box */}
           <div className="lg:col-span-7 lg:sticky lg:top-24">
-            <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-700">
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand-red-light border border-brand-red-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-red-dark">
               <span>
                 {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
               </span>
@@ -93,7 +93,7 @@ export default function BookDetailClient({
             )}
 
             <div className="mt-5 flex items-baseline gap-3">
-              <span className="text-[32px] font-extrabold text-red-600">
+              <span className="text-[32px] font-extrabold text-brand-red">
                 {formatPrice(price)}
               </span>
               {onSale && (
@@ -173,7 +173,7 @@ export default function BookDetailClient({
         </p>
         {secondaryDesc && secondaryDesc !== activeDesc && (
           <div className="mt-6 rounded-2xl bg-gray-50 p-5 border border-gray-200/60">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600 mb-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-red mb-1.5">
               {lang === "ta" ? "English Synopsis" : "தமிழ் சுருக்கம்"}
             </p>
             <p className="text-[14px] leading-relaxed text-gray-600">

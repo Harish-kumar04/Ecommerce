@@ -41,10 +41,10 @@ function ResetForm() {
           <p className="text-green-700 text-sm">Password updated. You can now log in.</p>
         ) : (
           <>
-            {status === "error" && <p className="text-red-600 text-sm">{message}</p>}
+            {status === "error" && <p className="text-brand-red text-sm">{message}</p>}
             <input required className="w-full p-3 border rounded-lg font-mono text-xs" placeholder="Reset token" value={token} onChange={(e) => setToken(e.target.value)} />
             <input type="password" required minLength={8} className="w-full p-3 border rounded-lg" placeholder="New password (min 8 chars)" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button disabled={busy} className="w-full py-3 rounded-lg text-white font-semibold bg-blue-600 disabled:opacity-50">
+            <button disabled={busy} className="w-full py-3 rounded-lg text-white font-semibold bg-brand-red disabled:opacity-50">
               {busy ? "Updating…" : "Update password"}
             </button>
           </>

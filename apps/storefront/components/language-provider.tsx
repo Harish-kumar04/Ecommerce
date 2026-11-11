@@ -1,8 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { splitBilingual, type Lang } from "@/lib/i18n";
 
-export type Lang = "ta" | "en";
+export { splitBilingual };
+export type { Lang };
 
 const STORAGE_KEY = "mp-lang";
 
@@ -17,24 +19,6 @@ type LanguageContextType = {
 };
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
-
-/**
- * Splits a bilingual string formatted as `"தமிழ் தலைப்பு | English Title"`
- * or `"தமிழ் விளக்கம் || English Description"` into `[ta, en]`.
- */
-export function splitBilingual(raw?: string | null, sep: "|" | "||" = "|"): [string, string] {
-  if (!raw) return ["", ""];
-  const str = String(raw);
-  if (sep === "||" && str.includes("||")) {
-    const [ta, ...rest] = str.split("||");
-    return [ta.trim(), rest.join("||").trim() || ta.trim()];
-  }
-  if (str.includes("|")) {
-    const [ta, ...rest] = str.split("|");
-    return [ta.trim(), rest.join("|").trim() || ta.trim()];
-  }
-  return [str.trim(), str.trim()];
-}
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("ta");

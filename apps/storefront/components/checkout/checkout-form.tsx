@@ -117,7 +117,7 @@ export default function CheckoutForm({ onSubmit, loading }: Props) {
             { id: "stripe", label: "Stripe", desc: "International cards" },
             { id: "cod", label: "Cash on Delivery", desc: "Pay on delivery, where available" },
           ].map((m) => (
-            <label key={m.id} className={`border rounded-xl p-3 cursor-pointer flex gap-3 items-start ${paymentMethod === m.id ? "border-blue-600 bg-blue-50" : "hover:bg-gray-50"}`}>
+            <label key={m.id} className={`border rounded-xl p-3 cursor-pointer flex gap-3 items-start ${paymentMethod === m.id ? "border-brand-red bg-brand-red-light" : "hover:bg-gray-50"}`}>
               <input type="radio" name="paymentMethod" value={m.id} checked={paymentMethod === m.id} onChange={(e) => setPaymentMethod(e.target.value as any)} className="mt-1" />
               <div>
                 <p className="text-sm font-medium">{m.label}</p>
@@ -139,7 +139,7 @@ export default function CheckoutForm({ onSubmit, loading }: Props) {
         <span>I agree to the privacy policy, terms, return policy and consent to store my data per DPDP. I confirm ingredients / age suitability warnings have been read.</span>
       </label>
 
-      <button type="submit" disabled={!!loading} className="w-full bg-blue-600 text-white py-3 rounded-full font-semibold disabled:opacity-50">
+      <button type="submit" disabled={!!loading} className="w-full bg-brand-red text-white py-3 rounded-full font-semibold disabled:opacity-50">
         {loading ? "Creating checkout…" : paymentMethod === "cod" ? "Place COD Order" : "Proceed to Secure Payment"}
       </button>
     </form>

@@ -129,8 +129,8 @@ const PALETTE: Record<ToastKind, { bg: string; border: string; icon: string }> =
   },
   error: {
     bg: "bg-white",
-    border: "border-red-300",
-    icon: "bg-red-500",
+    border: "border-brand-red",
+    icon: "bg-brand-red",
   },
   warning: {
     bg: "bg-white",

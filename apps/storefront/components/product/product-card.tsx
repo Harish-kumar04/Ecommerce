@@ -30,11 +30,11 @@ export default function ProductCard({
   return (
     <Link
       href={`/${tenant}/products/${product.id}`}
-      className="group flex flex-col rounded-2xl border border-gray-200/80 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-[0_12px_32px_rgba(220,38,38,0.10)] overflow-hidden"
+      className="group flex flex-col rounded-2xl border border-gray-200/80 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-red/50 hover:shadow-[0_12px_32px_rgba(229,35,32,0.10)] overflow-hidden"
     >
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 p-3 flex items-center justify-center">
         {onSale && (
-          <span className="absolute top-3 left-3 z-10 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute top-3 left-3 z-10 rounded-full bg-brand-red px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
             {t("சிறப்புத் தள்ளுபடி", "SALE")}
           </span>
         )}
@@ -54,10 +54,10 @@ export default function ProductCard({
       </div>
       <div className="flex flex-1 flex-col justify-between p-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-red">
             {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
           </p>
-          <h3 className="mt-1 text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
+          <h3 className="mt-1 text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-brand-red transition-colors">
             {primaryTitle}
           </h3>
           {secondaryTitle && (
@@ -78,7 +78,7 @@ export default function ProductCard({
               </span>
             )}
           </div>
-          <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
+          <span className="inline-flex items-center rounded-full bg-brand-red-light px-2.5 py-1 text-[11px] font-semibold text-brand-red group-hover:bg-brand-red group-hover:text-white transition-colors">
             {t("வாங்க →", "Buy →")}
           </span>
         </div>

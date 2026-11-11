@@ -231,7 +231,7 @@ export default function ConsentPage({ params }: { params: { tenant: string } }) 
           />
 
           {feedback && <p className="text-sm text-green-700">{feedback}</p>}
-          {error && <p className="text-sm text-red-700">{error}</p>}
+          {error && <p className="text-sm text-brand-red-dark">{error}</p>}
 
           <button
             type="submit"
@@ -263,7 +263,7 @@ export default function ConsentPage({ params }: { params: { tenant: string } }) 
               type="button"
               onClick={deleteAccount}
               disabled={saving}
-              className="px-4 py-2 rounded-full border border-red-300 text-red-700 text-sm font-semibold hover:bg-red-50 disabled:opacity-50"
+              className="px-4 py-2 rounded-full border border-brand-red text-brand-red-dark text-sm font-semibold hover:bg-brand-red-light disabled:opacity-50"
             >
               Delete my account
             </button>
@@ -281,7 +281,7 @@ export default function ConsentPage({ params }: { params: { tenant: string } }) 
             type="button"
             onClick={withdrawAll}
             disabled={saving}
-            className="px-4 py-2 rounded-full bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+            className="px-4 py-2 rounded-full bg-brand-red text-white text-sm font-semibold hover:bg-brand-red-dark disabled:opacity-50"
           >
             {saving ? "Working…" : "Withdraw all consent"}
           </button>

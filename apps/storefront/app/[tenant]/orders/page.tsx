@@ -72,7 +72,7 @@ function OrdersList({ tenant }: { tenant: string }) {
       )}
 
       {error && !loading && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[14px] text-red-700">
+        <div className="rounded-2xl border border-brand-red-soft bg-brand-red-light p-4 text-[14px] text-brand-red-dark">
           {error}
         </div>
       )}

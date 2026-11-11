@@ -50,18 +50,18 @@ export default function SignupPage() {
           </p>
         </div>
         {error && (
-          <p className="text-[13px] text-red-700 rounded-xl border border-red-200 bg-red-50 px-4 py-2">
+          <p className="text-[13px] text-brand-red-dark rounded-xl border border-brand-red-soft bg-brand-red-light px-4 py-2">
             {error}
           </p>
         )}
         <input
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           placeholder="First name"
           value={form.first_name}
           onChange={(e) => setForm({ ...form, first_name: e.target.value })}
         />
         <input
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           placeholder="Last name"
           value={form.last_name}
           onChange={(e) => setForm({ ...form, last_name: e.target.value })}
@@ -69,7 +69,7 @@ export default function SignupPage() {
         <input
           type="email"
           required
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -78,7 +78,7 @@ export default function SignupPage() {
           type="password"
           required
           minLength={8}
-          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-12 rounded-full border border-gray-200 bg-white px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           placeholder="Password (min 8 chars)"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -86,7 +86,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full h-12 rounded-full bg-blue-600 disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-blue-700 transition-colors"
+          className="w-full h-12 rounded-full bg-brand-red disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-brand-red-dark transition-colors"
         >
           {busy ? "Creating…" : "Create account"}
         </button>
@@ -94,7 +94,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link
             href={`/${params.tenant}/login?next=${encodeURIComponent(next)}`}
-            className="text-blue-600 hover:underline"
+            className="text-brand-red hover:underline"
           >
             Sign in
           </Link>

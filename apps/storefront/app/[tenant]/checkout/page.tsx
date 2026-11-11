@@ -101,7 +101,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-[14px] mb-6">
+        <div className="rounded-2xl border border-brand-red-soft bg-brand-red-light text-brand-red-dark px-4 py-3 text-[14px] mb-6">
           {error}
         </div>
       )}
@@ -110,7 +110,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
 
       {step === 2 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center">
-          <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-100 border-t-blue-600 animate-spin" />
+          <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-100 border-t-brand-red animate-spin" />
           <h2 className="mt-5 text-[20px] font-semibold text-gray-900">
             Checkout created
           </h2>
@@ -126,7 +126,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
           {checkout?.payment_url && (
             <a
               href={checkout.payment_url}
-              className="mt-6 inline-flex h-11 px-6 items-center justify-center rounded-full bg-blue-600 text-white text-[14px] font-medium hover:bg-blue-700 transition-colors"
+              className="mt-6 inline-flex h-11 px-6 items-center justify-center rounded-full bg-brand-red text-white text-[14px] font-medium hover:bg-brand-red-dark transition-colors"
             >
               Pay now
             </a>

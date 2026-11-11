@@ -126,7 +126,7 @@ export default function AddToCart({
             id="variant-select"
             value={selectedVariant}
             onChange={(e) => setSelectedVariant(e.target.value)}
-            className="w-full h-11 rounded-full border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="w-full h-11 rounded-full border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           >
             {variants.map((v: any) => (
               <option
@@ -174,7 +174,7 @@ export default function AddToCart({
         <button
           onClick={handleAdd}
           disabled={!canAdd || adding}
-          className="flex-1 h-12 inline-flex items-center justify-center rounded-full bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-[15px] font-semibold hover:bg-red-700 transition-colors shadow-sm"
+          className="flex-1 h-12 inline-flex items-center justify-center rounded-full bg-brand-red disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-[15px] font-semibold hover:bg-brand-red-dark transition-colors shadow-sm"
         >
           {adding
             ? t("சேர்க்கப்படுகிறது…", "Adding…")
@@ -186,7 +186,7 @@ export default function AddToCart({
       {added && (
         <a
           href={`/${tenant}/cart`}
-          className="block text-center text-[13px] font-medium text-red-600 hover:underline"
+          className="block text-center text-[13px] font-medium text-brand-red hover:underline"
         >
           {t("கூடைக்குச் சென்று ஆர்டர் செய்க →", "Go to Cart & Checkout →")}
         </a>

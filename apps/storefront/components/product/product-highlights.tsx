@@ -90,7 +90,7 @@ export default function ProductHighlights({ product }: { product: any }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {items.map((it, idx) => (
             <div key={idx} className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-red-200 flex items-center justify-center text-red-600">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-brand-red-soft flex items-center justify-center text-brand-red">
                 {it.icon}
               </div>
               <div className="min-w-0">

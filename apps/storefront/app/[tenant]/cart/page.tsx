@@ -79,7 +79,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
     );
   if (error)
     return (
-      <div className="max-w-3xl mx-auto px-6 py-24 text-center text-[14px] text-red-600">
+      <div className="max-w-3xl mx-auto px-6 py-24 text-center text-[14px] text-brand-red">
         {error}
       </div>
     );
@@ -99,7 +99,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
       <header className="mb-10">
-        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600">
+        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red">
           {t("உங்கள் புத்தகக் கூடை", "Your Book Cart")}
         </p>
         <h1 className="mt-2 text-[32px] sm:text-[42px] font-extrabold tracking-tight text-gray-900">
@@ -130,7 +130,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
           </p>
           <Link
             href={`/${params.tenant}/products`}
-            className="mt-6 inline-flex h-11 px-6 items-center justify-center rounded-full bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition-colors"
+            className="mt-6 inline-flex h-11 px-6 items-center justify-center rounded-full bg-brand-red text-white text-[14px] font-semibold hover:bg-brand-red-dark transition-colors"
           >
             {t("நூல்களைப் பார்வையிடுக", "Browse Books")}
           </Link>
@@ -164,7 +164,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/${params.tenant}/products/${it.product_id}`}
-                      className="text-[15px] font-bold text-gray-900 hover:text-red-600 hover:underline block"
+                      className="text-[15px] font-bold text-gray-900 hover:text-brand-red hover:underline block"
                     >
                       {localizeName(rawName)}
                     </Link>
@@ -192,7 +192,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                       </button>
                       <button
                         onClick={() => removeItem(it.id)}
-                        className="ml-3 text-[12px] text-gray-500 hover:text-red-600 hover:underline"
+                        className="ml-3 text-[12px] text-gray-500 hover:text-brand-red hover:underline"
                       >
                         {t("நீக்குக", "Remove")}
                       </button>
@@ -233,7 +233,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
             </div>
             <Link
               href={`/${params.tenant}/checkout`}
-              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition-colors"
+              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-brand-red text-white text-[14px] font-semibold hover:bg-brand-red-dark transition-colors"
             >
               {t("ஆர்டர் செய்யத் தொடர்க →", "Proceed to Checkout →")}
             </Link>

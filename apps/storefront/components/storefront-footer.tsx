@@ -11,8 +11,8 @@ export default function StorefrontFooter({ tenant }: { tenant: string }) {
   const { t } = useLanguage();
 
   return (
-    <footer className="border-t border-gray-200 bg-neutral-950 text-neutral-200 mt-16">
-      <div className="h-1 w-full bg-gradient-to-r from-black via-red-600 to-black" />
+    <footer className="border-t border-gray-200 bg-brand-black text-neutral-200 mt-16">
+      <div className="h-1 w-full bg-gradient-to-r from-black via-brand-red to-black" />
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
@@ -27,7 +27,7 @@ export default function StorefrontFooter({ tenant }: { tenant: string }) {
                 <p className="text-base font-bold tracking-tight text-white">
                   {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
                 </p>
-                <p className="text-xs text-red-400 font-medium">
+                <p className="text-xs text-brand-red font-medium">
                   {t("Muthamilarignar Pathipagam", "முத்தமிழறிஞர் பதிப்பகம்")}
                 </p>
               </div>
@@ -40,7 +40,7 @@ export default function StorefrontFooter({ tenant }: { tenant: string }) {
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-red-400 font-semibold mb-3">
+            <p className="text-xs uppercase tracking-wider text-brand-red font-semibold mb-3">
               {t("நூலகம்", "Bookstore")}
             </p>
             <ul className="space-y-2 text-sm text-neutral-300">
@@ -67,7 +67,7 @@ export default function StorefrontFooter({ tenant }: { tenant: string }) {
             </ul>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-red-400 font-semibold mb-3">
+            <p className="text-xs uppercase tracking-wider text-brand-red font-semibold mb-3">
               {t("வாசகர் கணக்கு", "Reader Account")}
             </p>
             <ul className="space-y-2 text-sm text-neutral-300">

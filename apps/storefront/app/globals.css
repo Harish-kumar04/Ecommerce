@@ -3,36 +3,90 @@
 @tailwind utilities;
 
 :root {
-  --background: 255 255 255;
-  --foreground: 17 17 17;
-  --card: 255 255 255;
-  --card-foreground: 17 17 17;
-  --muted: 245 245 247;
-  --muted-foreground: 110 110 115;
-  --border: 229 229 231;
-  --input: 229 229 231;
-  --ring: 10 10 10;
-  --accent: 0 122 255;
-  --accent-foreground: 255 255 255;
+  /* Brand palette (from the publisher logo) */
+  --brand-red: 229 35 32; /* #E52320 */
+  --brand-black: 0 0 0; /* #000000 */
+  --brand-white: 255 255 255; /* #FFFFFF */
+
+  --background: var(--brand-white);
+  --foreground: var(--brand-black);
+  --card: var(--brand-white);
+  --card-foreground: var(--brand-black);
+  --muted: 246 246 247;
+  --muted-foreground: 92 92 98;
+  --border: 232 232 235;
+  --input: 226 226 230;
+  --ring: var(--brand-red);
+  --accent: var(--brand-red);
+  --accent-foreground: var(--brand-white);
 }
 
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
   min-height: 100vh;
-  letter-spacing: -0.01em;
 }
 
-/* Apple-style focus ring */
+/* Visible, on-brand focus ring */
 *:focus-visible {
   outline: 2px solid rgb(var(--ring));
   outline-offset: 2px;
+}
+
+/* ---- Zero-JS bilingual text (components/i18n/t.tsx) ---- */
+html[lang="en"] .i18n-ta,
+html:not([lang="en"]) .i18n-en {
+  display: none;
+}
+
+@layer components {
+  .container-site {
+    @apply mx-auto w-full max-w-site px-4 sm:px-6 lg:px-10;
+  }
+  /* "Glowy white" card: soft shadow, faint red glow on hover */
+  .card-glow {
+    @apply rounded-2xl border border-black/[0.06] bg-white shadow-card transition-[box-shadow,transform,border-color] duration-300;
+  }
+  .card-glow:hover {
+    @apply -translate-y-0.5 border-brand-red/25 shadow-glow;
+  }
+  .btn-red {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-6 font-semibold text-white transition-colors hover:bg-brand-red-dark focus-visible:outline-offset-4;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-6 font-semibold text-black transition-colors hover:border-brand-red hover:text-brand-red;
+  }
+  .eyebrow {
+    @apply text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

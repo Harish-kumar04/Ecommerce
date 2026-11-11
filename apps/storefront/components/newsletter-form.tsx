@@ -53,7 +53,7 @@ export default function NewsletterForm({
         {state === "done" ? "Subscribed ✓" : state === "loading" ? "..." : "Subscribe"}
       </button>
       {state === "error" && (
-        <p className="text-xs text-red-500 self-center">Try again</p>
+        <p className="text-xs text-brand-red self-center">Try again</p>
       )}
     </form>
   );

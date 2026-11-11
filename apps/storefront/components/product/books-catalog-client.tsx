@@ -52,7 +52,7 @@ export default function BooksCatalogClient({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <header className="mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-700">
+        <div className="inline-flex items-center gap-2 rounded-full bg-brand-red-light border border-brand-red-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-red-dark">
           {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
         </div>
         <h1 className="mt-3 text-[34px] sm:text-[46px] font-extrabold leading-[1.08] tracking-tight text-gray-900">
@@ -80,7 +80,7 @@ export default function BooksCatalogClient({
               "நூல் பெயர் (தமிழ் / English) அல்லது குறியீடு மூலம் தேடுக…",
               "Search books in Tamil or English (e.g., Kalaignar, Dravida, கலைஞர்)…",
             )}
-            className="w-full h-11 rounded-full border border-gray-200 bg-white pl-10 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="w-full h-11 rounded-full border border-gray-200 bg-white pl-10 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           />
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function BooksCatalogClient({
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as any)}
           aria-label={t("வரிசைப்படுத்து", "Sort books")}
-          className="h-11 rounded-full border border-gray-200 bg-white px-4 text-[13px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600"
+          className="h-11 rounded-full border border-gray-200 bg-white px-4 text-[13px] font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-red"
         >
           <option value="default">
             {t("வரிசை: சிறப்பு வெளியீடுகள்", "Sort: Featured")}
@@ -123,7 +123,7 @@ export default function BooksCatalogClient({
             onClick={() => setSelectedCategory("all")}
             className={`px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
               selectedCategory === "all"
-                ? "bg-red-600 text-white shadow-sm"
+                ? "bg-brand-red text-white shadow-sm"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
@@ -136,7 +136,7 @@ export default function BooksCatalogClient({
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-4 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
-                  ? "bg-red-600 text-white shadow-sm"
+                  ? "bg-brand-red text-white shadow-sm"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
@@ -161,7 +161,7 @@ export default function BooksCatalogClient({
               setSearch("");
               setSelectedCategory("all");
             }}
-            className="mt-4 inline-flex h-9 px-5 items-center justify-center rounded-full bg-red-600 text-white text-[13px] font-semibold"
+            className="mt-4 inline-flex h-9 px-5 items-center justify-center rounded-full bg-brand-red text-white text-[13px] font-semibold"
           >
             {t("அனைத்து நூல்களையும் காட்டு", "Show All Books")}
           </button>

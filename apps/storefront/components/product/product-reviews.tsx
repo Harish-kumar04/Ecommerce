@@ -146,7 +146,7 @@ export default function ProductReviews({
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors"
+          className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-brand-red text-white text-[13px] font-semibold hover:bg-brand-red-dark transition-colors"
         >
           {showForm
             ? t("மூடுக", "Close")
@@ -240,7 +240,7 @@ export default function ProductReviews({
             />
             <button
               type="submit"
-              className="inline-flex h-10 px-5 items-center justify-center rounded-full bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition-colors"
+              className="inline-flex h-10 px-5 items-center justify-center rounded-full bg-brand-red text-white text-[14px] font-semibold hover:bg-brand-red-dark transition-colors"
             >
               {t("பதிவு செய்க", "Post Review")}
             </button>

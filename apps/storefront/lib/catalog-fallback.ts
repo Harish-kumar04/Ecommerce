@@ -43,7 +43,7 @@ export const FALLBACK_STORE = {
     "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam.",
   logo_url: "/logo.jpg",
   currency: "INR",
-  theme_config: { primary_color: "#dc2626", secondary_color: "#0a0a0a" },
+  theme_config: { primary_color: "#E52320", secondary_color: "#0a0a0a" },
   status: "published",
 };
 

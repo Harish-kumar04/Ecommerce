@@ -48,9 +48,9 @@ export default function ForgotPasswordPage() {
           </>
         ) : (
           <>
-            {status === "error" && <p className="text-red-600 text-sm">Something went wrong.</p>}
+            {status === "error" && <p className="text-brand-red text-sm">Something went wrong.</p>}
             <input type="email" required className="w-full p-3 border rounded-lg" placeholder="Your account email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <button disabled={busy} className="w-full py-3 rounded-lg text-white font-semibold bg-blue-600 disabled:opacity-50">
+            <button disabled={busy} className="w-full py-3 rounded-lg text-white font-semibold bg-brand-red disabled:opacity-50">
               {busy ? "Sending…" : "Send reset link"}
             </button>
           </>

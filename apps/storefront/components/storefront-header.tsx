@@ -55,10 +55,10 @@ export default function StorefrontHeader({
   const linkBase =
     "relative inline-flex h-16 items-center text-[13.5px] transition-colors whitespace-nowrap";
   const linkColor = "text-gray-700";
-  const linkColorActive = "text-red-600 font-semibold";
-  const linkHover = "hover:text-red-600";
+  const linkColorActive = "text-brand-red font-semibold";
+  const linkHover = "hover:text-brand-red";
   const underline =
-    "after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-red-600 after:rounded-full";
+    "after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[2px] after:bg-brand-red after:rounded-full";
 
   const resolvedLogo = logoUrl || "/logo.jpg";
   const displayTitle = t(
@@ -73,7 +73,7 @@ export default function StorefrontHeader({
   return (
     <header className="sticky top-0 z-30 w-full backdrop-blur-xl bg-white/90 border-b border-gray-200/80">
       {/* Top Black & Red Dravidian accent bar */}
-      <div className="h-1 w-full bg-gradient-to-r from-black via-red-600 to-black" />
+      <div className="h-1 w-full bg-gradient-to-r from-black via-brand-red to-black" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
         {/* Back / Brand logo & wordmark */}
         <div className="flex items-center gap-2.5 min-w-0">
@@ -110,7 +110,7 @@ export default function StorefrontHeader({
               className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain bg-white border border-gray-200 p-0.5 flex-shrink-0 shadow-sm"
             />
             <div className="min-w-0">
-              <p className="text-[14px] sm:text-[16px] font-bold tracking-tight text-gray-900 truncate group-hover:text-red-600 transition-colors">
+              <p className="text-[14px] sm:text-[16px] font-bold tracking-tight text-gray-900 truncate group-hover:text-brand-red transition-colors">
                 {displayTitle}
               </p>
               <p className="text-[11px] text-gray-500 truncate hidden sm:block">
@@ -187,7 +187,7 @@ export default function StorefrontHeader({
             aria-current={isActive(`/${tenant}/cart`) ? "page" : undefined}
             className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
               isActive(`/${tenant}/cart`)
-                ? "bg-red-50 text-red-600"
+                ? "bg-brand-red-light text-brand-red"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
@@ -206,7 +206,7 @@ export default function StorefrontHeader({
               <path d="M3 4h2l2.4 9.2a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.5L21 8H6" />
             </svg>
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-red-600 text-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-brand-red text-white">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -218,7 +218,7 @@ export default function StorefrontHeader({
       <div className="flex lg:hidden items-center justify-around border-t border-gray-100 px-3 py-2 text-[12px] font-medium bg-gray-50/70">
         <Link
           href={`/${tenant}`}
-          className={onHome ? "text-red-600 font-semibold" : "text-gray-600"}
+          className={onHome ? "text-brand-red font-semibold" : "text-gray-600"}
         >
           {t("முகப்பு", "Home")}
         </Link>
@@ -226,7 +226,7 @@ export default function StorefrontHeader({
           href={`/${tenant}/products`}
           className={
             isActive(`/${tenant}/products`)
-              ? "text-red-600 font-semibold"
+              ? "text-brand-red font-semibold"
               : "text-gray-600"
           }
         >
@@ -236,7 +236,7 @@ export default function StorefrontHeader({
           href={`/${tenant}/orders`}
           className={
             isActive(`/${tenant}/orders`)
-              ? "text-red-600 font-semibold"
+              ? "text-brand-red font-semibold"
               : "text-gray-600"
           }
         >
@@ -246,7 +246,7 @@ export default function StorefrontHeader({
           href={`/${tenant}/account`}
           className={
             isActive(`/${tenant}/account`)
-              ? "text-red-600 font-semibold"
+              ? "text-brand-red font-semibold"
               : "text-gray-600"
           }
         >

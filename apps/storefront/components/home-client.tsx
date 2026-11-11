@@ -23,11 +23,11 @@ export default function HomeClient({
   return (
     <div className="bg-white">
       {/* HERO BANNER — Black & Red Dravidian Bookstore Theme */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-neutral-950 via-neutral-900 to-red-950 text-white border-b border-red-900/40">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-black via-neutral-900 to-brand-black text-white border-b border-brand-red-dark/40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full bg-red-600/20 border border-red-500/40 px-3.5 py-1 text-[12px] font-bold uppercase tracking-wider text-red-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-red/20 border border-brand-red/40 px-3.5 py-1 text-[12px] font-bold uppercase tracking-wider text-brand-red">
                 <span>
                   {t(
                     "முத்தமிழறிஞர் பதிப்பகம் • அதிகாரப்பூர்வ இணைய நூலகம்",
@@ -42,7 +42,7 @@ export default function HomeClient({
                   "Muthamilarignar Pathipagam",
                 )}
               </h1>
-              <p className="mt-2 text-[18px] sm:text-[22px] font-semibold text-red-400">
+              <p className="mt-2 text-[18px] sm:text-[22px] font-semibold text-brand-red">
                 {t(
                   "திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள்",
                   "Dravidian History, Social Justice & Kalaignar Literature",
@@ -59,7 +59,7 @@ export default function HomeClient({
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href={`/${tenant}/products`}
-                  className="inline-flex h-12 px-7 items-center justify-center rounded-full text-[15px] font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg shadow-red-600/25"
+                  className="inline-flex h-12 px-7 items-center justify-center rounded-full text-[15px] font-bold bg-brand-red text-white hover:bg-brand-red-dark transition-colors shadow-lg shadow-brand-red/25"
                 >
                   {t(
                     `அனைத்து நூல்களையும் காண்க (${products.length})`,
@@ -76,7 +76,7 @@ export default function HomeClient({
 
               <div className="mt-8 pt-6 border-t border-neutral-800/80 grid grid-cols-3 gap-4 max-w-lg text-left">
                 <div>
-                  <p className="text-[22px] font-extrabold text-red-400">
+                  <p className="text-[22px] font-extrabold text-brand-red">
                     {products.length}+
                   </p>
                   <p className="text-[12px] text-neutral-400">
@@ -84,7 +84,7 @@ export default function HomeClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[22px] font-extrabold text-red-400">
+                  <p className="text-[22px] font-extrabold text-brand-red">
                     ₹40 – ₹750
                   </p>
                   <p className="text-[12px] text-neutral-400">
@@ -92,7 +92,7 @@ export default function HomeClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[22px] font-extrabold text-red-400">
+                  <p className="text-[22px] font-extrabold text-brand-red">
                     100%
                   </p>
                   <p className="text-[12px] text-neutral-400">
@@ -104,7 +104,7 @@ export default function HomeClient({
 
             {/* Hero Right — Official Publisher Logo & Flagship Book Showcase */}
             <div className="lg:col-span-5 flex flex-col items-center">
-              <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-neutral-900 to-black p-6 border border-red-500/30 shadow-2xl">
+              <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-neutral-900 to-black p-6 border border-brand-red/30 shadow-2xl">
                 <div className="flex items-center gap-4 pb-5 border-b border-neutral-800">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -113,7 +113,7 @@ export default function HomeClient({
                     className="h-20 w-20 rounded-2xl object-contain bg-white p-1 shadow-md flex-shrink-0"
                   />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-red-400">
+                    <p className="text-xs font-bold uppercase tracking-widest text-brand-red">
                       {t("அதிகாரப்பூர்வ இலச்சினை", "Official Publisher Emblem")}
                     </p>
                     <p className="mt-1 text-lg font-extrabold text-white">
@@ -131,7 +131,7 @@ export default function HomeClient({
                     <Link
                       key={b.id}
                       href={`/${tenant}/products/${b.id}`}
-                      className="group block rounded-xl overflow-hidden bg-neutral-800 p-1.5 border border-neutral-700 hover:border-red-500 transition-all"
+                      className="group block rounded-xl overflow-hidden bg-neutral-800 p-1.5 border border-neutral-700 hover:border-brand-red transition-all"
                     >
                       <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-neutral-900">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -155,7 +155,7 @@ export default function HomeClient({
         <section className="border-b border-gray-100 bg-gray-50/70">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-red-600">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-brand-red">
                 {t("நூல் வகைகள் (Categories):", "Book Categories:")}
               </span>
               <div className="flex flex-wrap gap-2">
@@ -163,7 +163,7 @@ export default function HomeClient({
                   <Link
                     key={cat.id}
                     href={`/${tenant}/products`}
-                    className="px-4 py-1.5 rounded-full text-[13px] font-semibold bg-white border border-gray-200 text-gray-800 hover:border-red-600 hover:text-red-600 transition-colors"
+                    className="px-4 py-1.5 rounded-full text-[13px] font-semibold bg-white border border-gray-200 text-gray-800 hover:border-brand-red hover:text-brand-red transition-colors"
                   >
                     {localizeName(cat.name)}
                   </Link>
@@ -181,7 +181,7 @@ export default function HomeClient({
       >
         <div className="flex flex-wrap items-end justify-between gap-3 mb-8">
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600">
+            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red">
               {t("முத்தமிழறிஞர் பதிப்பகம்", "Muthamilarignar Pathipagam")}
             </p>
             <h2 className="mt-1.5 text-[28px] sm:text-[36px] font-extrabold tracking-tight text-gray-900">
@@ -193,7 +193,7 @@ export default function HomeClient({
           </div>
           <Link
             href={`/${tenant}/products`}
-            className="inline-flex items-center gap-1 text-[14px] font-semibold text-red-600 hover:underline"
+            className="inline-flex items-center gap-1 text-[14px] font-semibold text-brand-red hover:underline"
           >
             {t(
               `அனைத்து ${products.length} நூல்களையும் காண்க →`,
@@ -214,7 +214,7 @@ export default function HomeClient({
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
           <div className="flex flex-wrap items-end justify-between gap-3 mb-8 pt-8 border-t border-gray-100">
             <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600">
+              <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red">
                 {t("முழு நூல் பட்டியல்", "Complete Collection")}
               </p>
               <h2 className="mt-1.5 text-[24px] sm:text-[32px] font-extrabold tracking-tight text-gray-900">
@@ -226,7 +226,7 @@ export default function HomeClient({
             </div>
             <Link
               href={`/${tenant}/products`}
-              className="text-[14px] font-semibold text-red-600 hover:underline"
+              className="text-[14px] font-semibold text-brand-red hover:underline"
             >
               {t("தேடல் & வடிகட்டுதல் →", "Search & Filter Catalog →")}
             </Link>
@@ -243,7 +243,7 @@ export default function HomeClient({
       {/* WHY MUTHAMILARIGNAR PATHIPAGAM */}
       <section className="bg-gray-50 border-y border-gray-200/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-red-600">
+          <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red">
             {t(
               "முத்தமிழறிஞர் பதிப்பகம்",
               "Why Order From Muthamilarignar Pathipagam",
@@ -314,7 +314,7 @@ export default function HomeClient({
           )}
         </p>
         <div className="mt-8">
-          <NewsletterForm storeId={store?.id} themeColor="#dc2626" />
+          <NewsletterForm storeId={store?.id} themeColor="#E52320" />
         </div>
       </section>
     </div>

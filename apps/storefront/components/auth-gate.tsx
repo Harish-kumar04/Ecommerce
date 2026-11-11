@@ -73,7 +73,7 @@ function SignInPrompt({ tenant }: { tenant: string }) {
           <p className="mt-1 text-[13px] text-gray-500">
             Sign in with email and password.
           </p>
-          <p className="mt-4 text-[13px] font-medium text-blue-600">
+          <p className="mt-4 text-[13px] font-medium text-brand-red">
             Sign in →
           </p>
         </Link>
@@ -97,7 +97,7 @@ function SignInPrompt({ tenant }: { tenant: string }) {
         Just looking for an order?{" "}
         <Link
           href={`/${tenant}/track`}
-          className="text-blue-600 hover:underline"
+          className="text-brand-red hover:underline"
         >
           Track your order by ID + email
         </Link>

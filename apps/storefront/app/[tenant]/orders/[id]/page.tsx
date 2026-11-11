@@ -67,7 +67,7 @@ const STATUS_BADGE: Record<string, string> = {
   processing: "bg-indigo-100 text-indigo-800",
   shipped: "bg-purple-100 text-purple-800",
   delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  cancelled: "bg-brand-red-light text-brand-red-dark",
   refunded: "bg-gray-200 text-gray-800",
   returned: "bg-orange-100 text-orange-800",
 };
@@ -272,7 +272,7 @@ function OrderDetail({ tenant, id }: { tenant: string; id: string }) {
       )}
 
       {error && !loading && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+        <div className="bg-brand-red-light border border-brand-red-soft text-brand-red-dark rounded-lg p-3 text-sm">
           {error}
         </div>
       )}
@@ -397,7 +397,7 @@ function OrderDetail({ tenant, id }: { tenant: string; id: string }) {
                           href={`https://www.google.com/search?q=${encodeURIComponent((f.carrier || "") + " tracking " + f.tracking_number)}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-600 underline break-all"
+                          className="text-brand-red underline break-all"
                         >
                           {f.tracking_number}
                         </a>
@@ -444,17 +444,17 @@ function OrderDetail({ tenant, id }: { tenant: string; id: string }) {
                   type="button"
                   onClick={handleCancel}
                   disabled={cancelling}
-                  className="px-4 py-2 rounded-full border border-red-300 text-red-700 text-sm font-semibold hover:bg-red-50 disabled:opacity-50"
+                  className="px-4 py-2 rounded-full border border-brand-red text-brand-red-dark text-sm font-semibold hover:bg-brand-red-light disabled:opacity-50"
                 >
                   {cancelling ? "Cancelling…" : "Cancel order"}
                 </button>
               )}
             </div>
             {cancelError && (
-              <p className="text-sm text-red-700 mt-2">{cancelError}</p>
+              <p className="text-sm text-brand-red-dark mt-2">{cancelError}</p>
             )}
             {downloadError && (
-              <p className="text-sm text-red-700 mt-2">{downloadError}</p>
+              <p className="text-sm text-brand-red-dark mt-2">{downloadError}</p>
             )}
           </div>
         </div>
@@ -510,7 +510,7 @@ function OrderDetail({ tenant, id }: { tenant: string; id: string }) {
             />
 
             {returnError && (
-              <p className="text-sm text-red-700 mt-2">{returnError}</p>
+              <p className="text-sm text-brand-red-dark mt-2">{returnError}</p>
             )}
 
             <div className="flex justify-end gap-2 mt-4">

@@ -90,7 +90,7 @@ function ReturnsList({ tenant }: { tenant: string }) {
       )}
 
       {error && !loading && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[14px] text-red-700">
+        <div className="rounded-2xl border border-brand-red-soft bg-brand-red-light p-4 text-[14px] text-brand-red-dark">
           {error}
         </div>
       )}
@@ -139,7 +139,7 @@ function ReturnsList({ tenant }: { tenant: string }) {
               <div className="mt-3">
                 <Link
                   href={`/${tenant}/orders/${r.order_id}`}
-                  className="text-[12px] text-blue-600 hover:underline"
+                  className="text-[12px] text-brand-red hover:underline"
                 >
                   View order →
                 </Link>

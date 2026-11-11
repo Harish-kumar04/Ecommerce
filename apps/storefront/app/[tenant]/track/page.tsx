@@ -68,7 +68,7 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
             onChange={(e) => setOrderId(e.target.value)}
             placeholder="e.g. 3f2c9a1e-…"
             required
-            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           />
         </div>
         <div>
@@ -81,7 +81,7 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
           />
         </div>
         <button
@@ -94,7 +94,7 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
       </form>
 
       {error && (
-        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
+        <div className="mt-4 rounded-2xl border border-brand-red-soft bg-brand-red-light px-4 py-3 text-[14px] text-brand-red-dark">
           {error}
         </div>
       )}
@@ -149,7 +149,7 @@ export default function TrackOrderPage({ params }: { params: { tenant: string } 
                         href={`https://www.google.com/search?q=${encodeURIComponent((t.carrier || "") + " tracking " + t.tracking_number)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 underline break-all"
+                        className="text-brand-red underline break-all"
                       >
                         {t.tracking_number}
                       </a>

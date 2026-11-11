@@ -76,7 +76,7 @@ function Onboarding({ tenant }: { tenant: string }) {
           <p className="mt-1 text-[13px] text-gray-500">
             Sign in with email and password.
           </p>
-          <p className="mt-4 text-[13px] font-medium text-blue-600">
+          <p className="mt-4 text-[13px] font-medium text-brand-red">
             Sign in →
           </p>
         </Link>
@@ -100,7 +100,7 @@ function Onboarding({ tenant }: { tenant: string }) {
         Just looking for an order?{" "}
         <Link
           href={`/${tenant}/track`}
-          className="text-blue-600 hover:underline"
+          className="text-brand-red hover:underline"
         >
           Track your order by ID + email
         </Link>
@@ -222,7 +222,7 @@ function ProfileSection({ tenant }: { tenant: string }) {
       </p>
       {loading && <p className="mt-6 text-[13px] text-gray-500">Loading…</p>}
       {meError && (
-        <p className="mt-6 text-[13px] text-red-600">{meError}</p>
+        <p className="mt-6 text-[13px] text-brand-red">{meError}</p>
       )}
       {me && (
         <dl className="mt-6 grid sm:grid-cols-2 gap-6 text-[14px]">
@@ -331,7 +331,7 @@ function OrdersSection({ tenant }: { tenant: string }) {
         </h2>
         <Link
           href={`/${tenant}/orders`}
-          className="text-[13px] text-blue-600 hover:underline"
+          className="text-[13px] text-brand-red hover:underline"
         >
           Open full list →
         </Link>
@@ -344,7 +344,7 @@ function OrdersSection({ tenant }: { tenant: string }) {
       )}
 
       {error && !loading && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[14px] text-red-700">
+        <div className="rounded-2xl border border-brand-red-soft bg-brand-red-light p-4 text-[14px] text-brand-red-dark">
           {error}
         </div>
       )}
@@ -539,14 +539,14 @@ function SupportSection({ tenant }: { tenant: string }) {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
-          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
         />
         <input
           type="text"
           placeholder="Order ID (optional)"
           value={orderRef}
           onChange={(e) => setOrderRef(e.target.value)}
-          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
         />
         <textarea
           placeholder="How can we help?"
@@ -554,12 +554,12 @@ function SupportSection({ tenant }: { tenant: string }) {
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
           required
-          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-red"
         />
         <button
           type="submit"
           disabled={sending}
-          className="inline-flex h-11 px-6 items-center justify-center rounded-full bg-blue-600 disabled:bg-gray-300 text-white text-[14px] font-medium hover:bg-blue-700 transition-colors"
+          className="inline-flex h-11 px-6 items-center justify-center rounded-full bg-brand-red disabled:bg-gray-300 text-white text-[14px] font-medium hover:bg-brand-red-dark transition-colors"
         >
           {sending ? "Sending…" : "Send message"}
         </button>
@@ -744,7 +744,7 @@ function ConsentSection({ tenant }: { tenant: string }) {
               onChange={() => {}}
             />
             {feedback && <p className="text-[13px] text-green-700">{feedback}</p>}
-            {error && <p className="text-[13px] text-red-700">{error}</p>}
+            {error && <p className="text-[13px] text-brand-red-dark">{error}</p>}
           </div>
         )}
       </div>
@@ -771,7 +771,7 @@ function ConsentSection({ tenant }: { tenant: string }) {
               type="button"
               onClick={deleteAccount}
               disabled={saving}
-              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-red-200 text-[13px] font-medium text-red-700 hover:bg-red-50"
+              className="inline-flex h-10 px-5 items-center justify-center rounded-full border border-brand-red-soft text-[13px] font-medium text-brand-red-dark hover:bg-brand-red-light"
             >
               Delete my account
             </button>
