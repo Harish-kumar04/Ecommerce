@@ -210,7 +210,7 @@ async def public_list_products(
         # search_products already scopes to tenant; still filter published
         filtered = [
             p for p in items
-            if str(getattr(p, "status", "") or "").lower() in ("active", "published")
+            if str(getattr(getattr(p, "status", None), "value", getattr(p, "status", "")) or "").lower() in ("active", "published")
             or getattr(p, "status", None) is None
         ]
         if cat_uuid:
@@ -221,11 +221,14 @@ async def public_list_products(
                 "name": p.name,
                 "slug": p.slug,
                 "sku": p.sku,
+                "description": getattr(p, "description", None),
                 "price_cents": p.price_cents,
                 "sale_price_cents": getattr(p, "sale_price_cents", None),
+                "inventory": int(getattr(p, "inventory_quantity", None) or getattr(p, "inventory", 0) or 0),
                 "status": str(getattr(p.status, "value", p.status)) if getattr(p, "status", None) else None,
                 "category_id": str(p.category_id) if getattr(p, "category_id", None) else None,
                 "image_url": getattr(p, "image_url", None),
+                "images": [p.image_url] if getattr(p, "image_url", None) else [],
                 "age_suitability": str(getattr(p.age_suitability, "value", getattr(p, "age_suitability", None)) or "") or None,
                 "pregnancy_stage": str(getattr(p.pregnancy_stage, "value", getattr(p, "pregnancy_stage", None)) or "") or None,
             }
@@ -244,15 +247,31 @@ async def public_list_products(
 
 @router.get("/products/{product_id}")
 async def public_get_product(
-    product_id: UUID,
+    product_id: str,
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Single published product for the resolved tenant."""
-    from apps.api.modules.product.services import get_product
+    """Single published product for the resolved tenant (by UUID or slug)."""
+    from apps.api.modules.product.services import get_product, serialize_product
+    from infalette_database.models.product import Product
 
     tenant_id = await _public_tenant_id(request, session)
-    product = await get_product(tenant_id, product_id, session)
+    product = None
+    try:
+        parsed_uuid = UUID(product_id)
+        product = await get_product(tenant_id, parsed_uuid, session)
+    except ValueError:
+        row = (
+            await session.execute(
+                select(Product).where(
+                    Product.tenant_id == tenant_id,
+                    Product.slug == product_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if row is not None:
+            product = serialize_product(row)
+
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     if str(product.get("status", "")).lower() not in ("active", "published") and product.get("status") is not None:

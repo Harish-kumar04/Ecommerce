@@ -623,7 +623,7 @@ async def main() -> None:
             tenant = Tenant(
                 name="Muthamilarignar Pathipagam",
                 slug=TENANT_SLUG,
-                plan="store_automation",
+                plan="store_automation_crm",
                 status=TenantStatus.ACTIVE,
             )
             s.add(tenant)
@@ -631,8 +631,8 @@ async def main() -> None:
             created.append(f"tenant:{TENANT_SLUG}")
         else:
             tenant.name = "Muthamilarignar Pathipagam"
-        if not tenant.plan_id:
-            tenant.plan_id = plan_by_slug["store_automation"].id
+            tenant.plan = "store_automation_crm"
+        tenant.plan_id = plan_by_slug["store_automation_crm"].id
 
         # Owner users (both documented staging owner and legacy test owner)
         owner_accounts = [
@@ -656,6 +656,11 @@ async def main() -> None:
                 s.add(u_row)
                 await s.flush()
                 created.append(f"user:{o_email}")
+            else:
+                u_row.tenant_id = tenant.id
+                u_row.password_hash = PasswordHasher().hash_password(o_pw)
+                u_row.role = "tenant_owner"
+                u_row.status = UserStatus.ACTIVE
 
         # Platform super-admin users (for apps/platform-admin)
         platform_accounts = [
@@ -682,6 +687,11 @@ async def main() -> None:
                 s.add(puser)
                 await s.flush()
                 created.append(f"user:{p_email}")
+            else:
+                puser.tenant_id = None
+                puser.password_hash = PasswordHasher().hash_password(p_pw)
+                puser.role = "platform_owner"
+                puser.status = UserStatus.ACTIVE
 
         # Store
         store = (

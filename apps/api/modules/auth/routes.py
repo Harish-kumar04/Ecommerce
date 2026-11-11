@@ -37,8 +37,12 @@ async def login(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Login with email and password."""
-    from apps.api.modules.auth.services import login
-    return await login(data, session)
+    from apps.api.modules.auth.services import login as _login_svc
+
+    try:
+        return await _login_svc(data, session)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -47,8 +51,12 @@ async def register(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Register a new tenant with admin user."""
-    from apps.api.modules.auth.services import register
-    return await register(data, session)
+    from apps.api.modules.auth.services import register as _register_svc
+
+    try:
+        return await _register_svc(data, session)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/customer/register", response_model=TokenResponse)

@@ -179,7 +179,14 @@ class TenantRead(BaseRead):
 
     name: str
     slug: str
+    plan: Optional[str] = None
     status: TenantStatus
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _norm_tenant_status(cls, v: Any) -> Any:
+        raw = getattr(v, "value", v)
+        return raw.lower() if isinstance(raw, str) else raw
 
 
 # =============================================================================
@@ -203,6 +210,12 @@ class StoreRead(BaseRead):
     description: Optional[str]
     status: StoreStatus
     published_at: Optional[datetime]
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _norm_store_status(cls, v: Any) -> Any:
+        raw = getattr(v, "value", v)
+        return raw.lower() if isinstance(raw, str) else raw
 
 
 # =============================================================================

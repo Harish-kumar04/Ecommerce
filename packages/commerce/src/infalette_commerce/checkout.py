@@ -344,6 +344,22 @@ class CheckoutService:
         if campaign_id:
             attribution_dict["campaign_id"] = str(campaign_id)
 
+        ship_dump = data.shipping_address.model_dump() if hasattr(data.shipping_address, "model_dump") else dict(data.shipping_address or {})
+        bill_dump = data.billing_address.model_dump() if hasattr(data.billing_address, "model_dump") else dict(data.billing_address or {})
+        cust_info = getattr(data, "customer_data", None)
+        if cust_info is not None:
+            c_email = getattr(cust_info, "email", None)
+            c_phone = getattr(cust_info, "phone", None)
+            c_fname = getattr(cust_info, "first_name", None)
+            c_lname = getattr(cust_info, "last_name", None)
+            if c_email and not ship_dump.get("email"):
+                ship_dump["email"] = str(c_email).strip().lower()
+            if c_phone and not ship_dump.get("phone"):
+                ship_dump["phone"] = str(c_phone).strip()
+            full_name = " ".join(x for x in (c_fname, c_lname) if x).strip()
+            if full_name and not ship_dump.get("name"):
+                ship_dump["name"] = full_name
+
         # Create checkout
         checkout = Checkout(
             tenant_id=tenant_id,
@@ -356,8 +372,8 @@ class CheckoutService:
             status=CheckoutStatus.PENDING,
             attribution_json={
                 **attribution_dict,
-                "shipping_address": data.shipping_address.model_dump(),
-                "billing_address": data.billing_address.model_dump(),
+                "shipping_address": ship_dump,
+                "billing_address": bill_dump,
             },
             expires_at=datetime.utcnow() + timedelta(hours=2),
         )

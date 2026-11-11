@@ -17,6 +17,28 @@ from infalette_commerce.schemas import OrderStatusUpdate, FulfillmentCreate, Ref
 router = APIRouter()
 
 
+def _serialize_order(o) -> dict:
+    if isinstance(o, dict):
+        return o
+    ship = getattr(o, "shipping_address_json", None) or {}
+    bill = getattr(o, "billing_address_json", None) or {}
+    return {
+        "id": str(o.id),
+        "tenant_id": str(o.tenant_id),
+        "customer_id": str(o.customer_id) if getattr(o, "customer_id", None) else None,
+        "checkout_id": str(o.checkout_id) if getattr(o, "checkout_id", None) else None,
+        "status": str(getattr(o.status, "value", o.status)),
+        "total_cents": o.total_cents,
+        "currency": getattr(o, "currency", "INR") or "INR",
+        "shipping_address": ship,
+        "billing_address": bill,
+        "shipping_address_json": ship,
+        "billing_address_json": bill,
+        "created_at": o.created_at.isoformat() if getattr(o, "created_at", None) else None,
+        "updated_at": o.updated_at.isoformat() if getattr(o, "updated_at", None) else None,
+    }
+
+
 @router.get("/", response_model=list)
 async def list_orders(
     status: Optional[str] = Query(default=None),
@@ -48,7 +70,8 @@ async def list_orders(
         # Customers can never widen their scope via the query param.
         effective_customer_id = own.id
 
-    return await list_orders(user.tenant_id, session, status, effective_customer_id)
+    orders = await list_orders(user.tenant_id, session, status, effective_customer_id)
+    return [_serialize_order(o) for o in orders]
 
 
 @router.get("/{order_id}")

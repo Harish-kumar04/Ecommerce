@@ -365,11 +365,19 @@ async def adjust_stock(
 
 
 async def search_products(tenant_id: UUID, query: str, session: AsyncSession) -> list[Product]:
-    """Search products by name or SKU."""
+    """Search products across Tamil/English title, slug, SKU, and description."""
+    from sqlalchemy import or_
+
+    pattern = f"%{query}%"
     result = await session.execute(
         select(Product).where(
             Product.tenant_id == tenant_id,
-            Product.name.ilike(f"%{query}%"),
+            or_(
+                Product.name.ilike(pattern),
+                Product.slug.ilike(pattern),
+                Product.sku.ilike(pattern),
+                Product.description.ilike(pattern),
+            ),
         )
     )
     return list(result.scalars().all())
