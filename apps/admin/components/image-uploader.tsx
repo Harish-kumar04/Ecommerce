@@ -171,6 +171,17 @@ export default function ImageUploader({
   };
 
   const currentDisplay = instantPreview || (value && !value.startsWith("data:") && !value.startsWith("blob:") ? value : null);
+  const previewWidth: 1920 | 900 = ratio[0] === 8 && ratio[1] === 3 ? 1920 : 900;
+  const previewSrc =
+    currentDisplay && currentDisplay.includes("/image/upload/")
+      ? (() => {
+          const marker = "/image/upload/";
+          const idx = currentDisplay.indexOf(marker);
+          const after = currentDisplay.slice(idx + marker.length);
+          if (/^(?:[a-z]{1,3}_[^/]+)(?:,[a-z]{1,3}_[^/]+)*\//i.test(after)) return currentDisplay;
+          return `${currentDisplay.slice(0, idx + marker.length)}f_auto,q_auto,w_${previewWidth}/${after}`;
+        })()
+      : currentDisplay;
 
   return (
     <div className="space-y-2">
@@ -240,7 +251,7 @@ export default function ImageUploader({
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-800 bg-[#fafafa]">
               <Image
-                src={currentDisplay}
+                src={previewSrc || currentDisplay}
                 alt={label}
                 fill
                 sizes="80px"

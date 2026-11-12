@@ -173,10 +173,10 @@ class AuthSettings(BaseSettings):
     )
     jwt_algorithm: str = Field(default="HS256", validation_alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(
-        default=30, validation_alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
+        default=480, validation_alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
     )
     refresh_token_expire_days: int = Field(
-        default=7, validation_alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS"
+        default=30, validation_alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS"
     )
     mfa_enabled: bool = Field(default=True, validation_alias="MFA_ENABLED")
     # Roles that must enroll in and verify MFA (spec §5: "MFA for admins").

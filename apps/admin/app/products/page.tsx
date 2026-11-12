@@ -88,7 +88,13 @@ export default function ProductsPage() {
     }
   };
 
-  const imgSrc = (p: Product) => p.image_url || p.images?.[0];
+  const imgSrc = (p: Product) => {
+    const raw = p.image_url || p.images?.[0];
+    if (!raw || !raw.includes("/image/upload/")) return raw;
+    const after = raw.split("/image/upload/")[1] || "";
+    if (/^(f_|q_|w_|c_|ar_)/.test(after)) return raw;
+    return raw.replace("/image/upload/", "/image/upload/f_auto,q_auto,w_900/");
+  };
 
   return (
     <div className="space-y-6">

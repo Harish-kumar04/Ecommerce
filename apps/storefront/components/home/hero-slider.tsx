@@ -4,6 +4,7 @@ import { T } from "../i18n/t";
 import Sunburst from "../brand/sunburst";
 import { ArrowRightIcon } from "../brand/icons";
 import HeroCarousel from "./hero-carousel";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 export interface SlideView {
   image_url?: string | null;
@@ -93,7 +94,7 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
                   key={c.src}
                   className={`relative -mx-4 aspect-[3/4] w-[clamp(150px,13vw,240px)] overflow-hidden rounded-xl bg-white shadow-glow-lg ring-1 ring-black/5 ${tilt[i] ?? ""}`}
                 >
-                  <Img src={c.src} alt={c.alt} fill sizes="(max-width: 1440px) 13vw, 240px" priority={first && i === 1} className="object-cover" />
+                  <Img src={cloudinaryImageUrl(c.src, 900)} alt={c.alt} fill sizes="(max-width: 1440px) 13vw, 240px" priority={first && i === 1} className="object-cover" />
                 </div>
               ))}
             </div>
@@ -108,13 +109,14 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
 function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
   const hasText = Boolean(slide.title_ta || slide.title_en || slide.subtitle_ta || slide.subtitle_en);
   const alt = hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam";
-  const mobileImg = slide.mobile_image_url || slide.image_url;
+  const desktopSrc = cloudinaryImageUrl(slide.image_url, 1920);
+  const mobileSrc = cloudinaryImageUrl(slide.mobile_image_url || slide.image_url, 1920);
   return (
     <div className="relative h-full w-full bg-brand-red-light">
       {/* Desktop (8:3) */}
       <div className="hidden md:block absolute inset-0">
         <Img
-          src={slide.image_url as string}
+          src={desktopSrc}
           alt={alt}
           fill
           sizes="100vw"
@@ -125,7 +127,7 @@ function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
       {/* Mobile (4:5) */}
       <div className="block md:hidden absolute inset-0">
         <Img
-          src={mobileImg as string}
+          src={mobileSrc}
           alt={alt}
           fill
           sizes="100vw"

@@ -13,8 +13,8 @@ function resolveAdminApiUrl(): string {
     const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
     return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
   }
-  const prefix = window.location.pathname.startsWith("/admin") ? "/admin" : "";
-  return `${prefix}/api/v1`;
+  const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/$/, "");
+  return `${basePath}/api/v1`;
 }
 
 const API_URL = resolveAdminApiUrl();
@@ -29,6 +29,7 @@ interface PaginatedResponse<T> {
 class ApiClient {
   private baseUrl: string;
   private token: string | null;
+  private refreshPromise: Promise<string | null> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -36,18 +37,29 @@ class ApiClient {
   }
 
   setToken(token: string | null) {
+    this.setTokens(token, token === null ? null : undefined);
+  }
+
+  setTokens(token: string | null, refreshToken?: string | null) {
     this.token = token;
     if (typeof window !== "undefined") {
       if (token) {
         localStorage.setItem("access_token", token);
         try {
-          document.cookie = `access_token=${token}; path=/; max-age=604800; samesite=lax`;
+          document.cookie = `access_token=${token}; path=/; max-age=2592000; samesite=lax`;
         } catch {}
       } else {
         localStorage.removeItem("access_token");
         try {
           document.cookie = "access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         } catch {}
+      }
+      if (refreshToken !== undefined) {
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        } else {
+          localStorage.removeItem("refresh_token");
+        }
       }
     }
   }
@@ -59,9 +71,58 @@ class ApiClient {
     return this.token;
   }
 
-  private async request<T>(
+  getRefreshToken(): string | null {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("refresh_token");
+    }
+    return null;
+  }
+
+  async tryRefreshToken(): Promise<string | null> {
+    if (typeof window === "undefined") return null;
+    if (this.refreshPromise) return this.refreshPromise;
+
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return null;
+
+    this.refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json().catch(() => null);
+        if (!data?.access_token) return null;
+        this.setTokens(data.access_token, data.refresh_token || refreshToken);
+        return data.access_token as string;
+      } catch {
+        return null;
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
+  }
+
+  handleExpiredSession(): never {
+    this.setTokens(null, null);
+    if (typeof window !== "undefined" && !window.location.pathname.endsWith("/login")) {
+      const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/$/, "");
+      window.location.href = `${basePath}/login?expired=1`;
+    }
+    const err = new Error("Session expired, please log in again");
+    (err as any).status = 401;
+    (err as any).detail = "Session expired, please log in again";
+    throw err;
+  }
+
+  async request<T>(
     endpoint: string,
     options: RequestInit = {},
+    retried = false,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
@@ -80,11 +141,15 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      if (response.status === 401 && typeof window !== "undefined") {
-        this.setToken(null);
-        if (!window.location.pathname.startsWith("/login")) {
-          window.location.href = "/login?expired=1";
+      const isAuthEndpoint = endpoint === "/auth/login" || endpoint === "/auth/refresh";
+      if (response.status === 401 && !isAuthEndpoint) {
+        if (!retried) {
+          const newToken = await this.tryRefreshToken();
+          if (newToken) {
+            return this.request<T>(endpoint, options, true);
+          }
         }
+        this.handleExpiredSession();
       }
       const error = await response.json().catch(() => ({}));
       const rawMsg = error.detail || error.message || response.statusText || "Request failed";
@@ -102,14 +167,29 @@ class ApiClient {
 
   // Auth
   async login(email: string, password: string): Promise<{ access_token: string; refresh_token: string }> {
-    return this.request("/auth/login", {
+    const data = await this.request<{ access_token: string; refresh_token: string }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+    if (data?.access_token) {
+      this.setTokens(data.access_token, data.refresh_token || null);
+    }
+    return data;
+  }
+
+  async refresh(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+    return this.request("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refresh_token: refreshToken }),
     });
   }
 
   async logout(): Promise<void> {
-    return this.request("/auth/logout", { method: "POST" });
+    try {
+      await this.request("/auth/logout", { method: "POST" });
+    } finally {
+      this.setTokens(null, null);
+    }
   }
 
   async getProfile(): Promise<any> {
@@ -615,24 +695,25 @@ export default apiClient;
 
 class AdminApiExtensions {
   private get token(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("access_token");
+    return apiClient.getToken();
   }
 
   private async req(path: string, options: RequestInit = {}): Promise<any> {
-    const base = resolveAdminApiUrl();
-    const url = path.startsWith("http") ? path : `${base}${path}`;
-    const headers: Record<string, string> = {
-      "content-type": "application/json",
-      ...((options.headers as Record<string, string>) || {}),
-    };
-    if (this.token) headers.Authorization = `Bearer ${this.token}`;
-    const res = await fetch(url, { ...options, headers });
-    if (res.status === 204) return null;
-    const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
-    if (!res.ok) throw new Error((data && (data.detail || data.message)) || `Request failed (${res.status})`);
-    return data;
+    if (path.startsWith("http")) {
+      const headers: Record<string, string> = {
+        "content-type": "application/json",
+        ...((options.headers as Record<string, string>) || {}),
+      };
+      if (this.token) headers.Authorization = `Bearer ${this.token}`;
+      const res = await fetch(path, { ...options, headers });
+      if (res.status === 204) return null;
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!res.ok) throw new Error((data && (data.detail || data.message)) || `Request failed (${res.status})`);
+      return data;
+    }
+    const res = await apiClient.request<any>(path, options);
+    return res === undefined ? null : res;
   }
 
   // Team management -------------------------------------------------------

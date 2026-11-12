@@ -13,18 +13,46 @@ from infalette_database.models.product import Product, ProductStatus, ProductVar
 from infalette_validation.schemas import ProductCreate
 
 
+import re as _re
+
+
+def normalize_series_title(name: str) -> str:
+    """Standardize English series volume labels to 'Vol. N' (e.g. 'Part 2' / 'Vol 2' -> 'Vol. 2')."""
+    if not name:
+        return name
+    normalized = _re.sub(r"\b(?:Part|Volume|Vol\.?)\s*(\d+)\b", r"Vol. \1", name, flags=_re.IGNORECASE)
+    return normalized
+
+
+def _merge_cover_and_gallery(cover: str | None, gallery: list[str] | None) -> tuple[str | None, list[str]]:
+    """Ensure cover (`image_url`) is always first in `images`, followed by unique gallery URLs."""
+    clean_cover = (cover or "").strip() or None
+    images: list[str] = []
+    seen: set[str] = set()
+    if clean_cover:
+        images.append(clean_cover)
+        seen.add(clean_cover)
+    for item in gallery or []:
+        if isinstance(item, str):
+            u = item.strip()
+            if u and u not in seen:
+                images.append(u)
+                seen.add(u)
+    effective_cover = clean_cover or (images[0] if images else None)
+    return effective_cover, images
+
+
 def serialize_product(product: Product) -> dict:
     """Map an ORM Product onto the ProductRead shape.
 
-    The ORM stores images as ``images_json`` / ``image_url`` /
-    ``gallery_urls``; ProductRead expects a flat ``images`` list.
+    ``image_url`` (the book cover) is ALWAYS the first item in ``images``,
+    followed by any extra gallery images without duplicates.
     """
     status = getattr(product.status, "value", product.status)
-    images = list(getattr(product, "images_json", None) or [])
-    if not images:
-        images = list(getattr(product, "gallery_urls", None) or [])
-    if not images and getattr(product, "image_url", None):
-        images = [product.image_url]
+    raw_gallery = list(getattr(product, "images_json", None) or []) or list(
+        getattr(product, "gallery_urls", None) or []
+    )
+    cover, images = _merge_cover_and_gallery(getattr(product, "image_url", None), raw_gallery)
     inventory = getattr(product, "inventory_quantity", None)
     if inventory is None:
         inventory = getattr(product, "inventory", 0)
@@ -58,7 +86,7 @@ def serialize_product(product: Product) -> dict:
         ),
         "meta_title": getattr(product, "meta_title", None),
         "meta_description": getattr(product, "meta_description", None),
-        "image_url": getattr(product, "image_url", None),
+        "image_url": cover,
         "created_at": getattr(product, "created_at", None),
         "updated_at": getattr(product, "updated_at", None),
     }
@@ -244,10 +272,13 @@ async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSes
     visibility = getattr(data, "visibility", "published") or "published"
     tags = list(getattr(data, "tags", None) or [])
     dimensions_json = getattr(data, "dimensions_json", None) or {}
+    cover_url, merged_images = _merge_cover_and_gallery(
+        getattr(data, "image_url", None), getattr(data, "images", None)
+    )
 
     product = Product(
         tenant_id=tenant_id,
-        name=data.name,
+        name=normalize_series_title(data.name),
         slug=slug,
         description=data.description,
         category_id=cat_id,
@@ -261,7 +292,8 @@ async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSes
         visibility=visibility,
         tags=tags,
         dimensions_json=dimensions_json,
-        images_json=data.images,
+        image_url=cover_url,
+        images_json=merged_images,
         ingredients=data.ingredients,
         safety_info=data.safety_info,
         age_suitability=data.age_suitability,
@@ -391,7 +423,7 @@ async def update_product(tenant_id: UUID, product_id: UUID, data: Any, session: 
 
     vals: dict[str, Any] = {}
     if "name" in data_dict and data_dict["name"] is not None:
-        vals["name"] = data_dict["name"]
+        vals["name"] = normalize_series_title(data_dict["name"])
     if clean_slug is not None:
         vals["slug"] = clean_slug
     if "description" in data_dict:
@@ -415,10 +447,41 @@ async def update_product(tenant_id: UUID, product_id: UUID, data: Any, session: 
         vals["tags"] = list(data_dict["tags"] or [])
     if "dimensions_json" in data_dict and data_dict["dimensions_json"] is not None:
         vals["dimensions_json"] = data_dict["dimensions_json"] or {}
-    if "images" in data_dict and data_dict["images"] is not None:
-        vals["images_json"] = data_dict["images"]
-        if data_dict["images"]:
-            vals["image_url"] = data_dict["images"][0]
+
+    has_cover_field = "image_url" in data_dict
+    has_images_field = "images" in data_dict and data_dict["images"] is not None
+    if has_cover_field and has_images_field:
+        cover_url, merged_images = _merge_cover_and_gallery(
+            data_dict.get("image_url"), data_dict.get("images")
+        )
+        vals["image_url"] = cover_url
+        vals["images_json"] = merged_images
+    elif has_cover_field:
+        new_cover = (data_dict.get("image_url") or "").strip() or None
+        old_cover = (getattr(existing_row, "image_url", None) or "").strip() or None
+        old_gallery = list(getattr(existing_row, "images_json", None) or [])
+        # Drop the previous cover (or index 0 if it matched old cover / single cover) so stale cover never lingers
+        extras = [
+            u for idx, u in enumerate(old_gallery)
+            if isinstance(u, str) and u.strip() and u.strip() != old_cover and not (old_cover is None and idx == 0)
+        ]
+        if new_cover is None:
+            vals["image_url"] = extras[0] if extras else None
+            vals["images_json"] = extras
+        else:
+            _, merged_images = _merge_cover_and_gallery(new_cover, extras)
+            vals["image_url"] = new_cover
+            vals["images_json"] = merged_images
+    elif has_images_field:
+        raw_imgs = data_dict["images"] or []
+        if not raw_imgs:
+            vals["image_url"] = None
+            vals["images_json"] = []
+        else:
+            cover_url, merged_images = _merge_cover_and_gallery(raw_imgs[0], raw_imgs[1:])
+            vals["image_url"] = cover_url
+            vals["images_json"] = merged_images
+
     if "ingredients" in data_dict:
         vals["ingredients"] = data_dict["ingredients"]
     if "safety_info" in data_dict:
@@ -454,7 +517,11 @@ async def update_product(tenant_id: UUID, product_id: UUID, data: Any, session: 
             tenant_id=tenant_id,
             actor_id=None,
             event_type="product.updated",
-            payload={"product_id": str(product_id), "name": data.name, "sku": data.sku},
+            payload={
+                "product_id": str(product_id),
+                "name": vals.get("name", existing_row.name),
+                "sku": vals.get("sku", existing_row.sku),
+            },
             session=session,
         )
     except Exception:

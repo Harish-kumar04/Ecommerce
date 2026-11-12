@@ -18,12 +18,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const tenant = body.tenant || "demo-store";
     const productId = body.productId || body.id;
+    const slug = body.slug;
 
     // Revalidate specific tenant paths
     revalidatePath(`/${tenant}`, "page");
     revalidatePath(`/${tenant}/products`, "page");
     if (productId) {
       revalidatePath(`/${tenant}/products/${productId}`, "page");
+    }
+    if (slug && slug !== productId) {
+      revalidatePath(`/${tenant}/products/${slug}`, "page");
     }
     // Also revalidate layout and pattern paths
     revalidatePath("/[tenant]", "layout");
@@ -37,6 +41,7 @@ export async function POST(req: NextRequest) {
         `/${tenant}`,
         `/${tenant}/products`,
         productId ? `/${tenant}/products/${productId}` : null,
+        slug && slug !== productId ? `/${tenant}/products/${slug}` : null,
       ].filter(Boolean),
     });
   } catch (err: any) {

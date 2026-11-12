@@ -144,18 +144,18 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
 
       setCategoryId(initialProduct.category_id || "");
 
-      // Images
-      const images: string[] = Array.isArray(initialProduct.images)
+      // Images: always prefer image_url as primary cover, followed by unique gallery images
+      const rawList: string[] = Array.isArray(initialProduct.images)
         ? initialProduct.images
         : Array.isArray(initialProduct.images_json)
         ? initialProduct.images_json
-        : initialProduct.image_url
-        ? [initialProduct.image_url]
         : [];
+      const primaryCover = (initialProduct.image_url || rawList[0] || "").trim();
+      const extraGallery = rawList.filter((u) => u && u !== primaryCover).slice(0, 4);
 
-      if (images.length > 0) {
-        setCoverUrl(images[0]);
-        setGalleryUrls(images.slice(1, 5));
+      if (primaryCover) {
+        setCoverUrl(primaryCover);
+        setGalleryUrls(extraGallery);
       }
 
       // Tags
@@ -187,6 +187,9 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
       setYear(new Date().getFullYear().toString());
     }
   }, [initialProduct]);
+
+  const normalizeSeriesWording = (val: string) =>
+    val.replace(/\b(?:Part|Volume|Vol\.?)\s*(\d+)\b/gi, "Vol. $1");
 
   // Handle titleEn change and slug auto-generation
   const handleTitleEnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,14 +259,20 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
         ? Math.round(parseFloat(salePriceRupees) * 100)
         : null;
 
-      const combinedName = `${titleTa.trim()}|${titleEn.trim()}`;
+      const cleanTitleEn = normalizeSeriesWording(titleEn.trim());
+      const combinedName = `${titleTa.trim()}|${cleanTitleEn}`;
       const combinedDesc =
         descTa.trim() && descEn.trim()
           ? `${descTa.trim()}|${descEn.trim()}`
           : descTa.trim() || descEn.trim() || null;
 
-      const allImages = [coverUrl, ...galleryUrls.filter(Boolean)].filter(
-        (url) => !url.startsWith("blob:") && !url.startsWith("data:")
+      const cleanCover = coverUrl.trim();
+      const allImages = Array.from(
+        new Set(
+          [cleanCover, ...galleryUrls.map((u) => u.trim()).filter(Boolean)].filter(
+            (url) => url && !url.startsWith("blob:") && !url.startsWith("data:")
+          )
+        )
       );
 
       const existingTags: string[] = Array.isArray(initialProduct?.tags)
@@ -283,7 +292,7 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
 
       const payload: any = {
         name: combinedName,
-        slug: slug.trim() || toKebabCase(titleEn),
+        slug: slug.trim() || toKebabCase(cleanTitleEn),
         sku: sku.trim(),
         price_cents: priceCents,
         sale_price_cents: salePriceCents,
@@ -296,7 +305,7 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
         visibility: visibility,
         tags: existingTags,
         description: combinedDesc,
-        image_url: coverUrl,
+        image_url: cleanCover,
         images: allImages,
         dimensions_json: {
           ...(initialProduct?.dimensions_json || {}),
@@ -305,20 +314,28 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
       };
 
       if (isEdit && initialProduct?.id) {
-        await adminApi.updateProduct(initialProduct.id, payload);
-        fetch("/api/revalidate-storefront", {
+        const updated = await adminApi.updateProduct(initialProduct.id, payload);
+        await fetch("/api/revalidate-storefront", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenant: "demo-store", productId: payload.slug }),
+          body: JSON.stringify({
+            tenant: "demo-store",
+            productId: updated?.id || initialProduct.id,
+            slug: payload.slug,
+          }),
         }).catch(() => {});
         toast({ kind: "success", title: "Book updated successfully" });
         router.push("/products");
       } else {
-        await adminApi.createProduct(payload);
-        fetch("/api/revalidate-storefront", {
+        const created = await adminApi.createProduct(payload);
+        await fetch("/api/revalidate-storefront", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenant: "demo-store", productId: payload.slug }),
+          body: JSON.stringify({
+            tenant: "demo-store",
+            productId: created?.id || payload.slug,
+            slug: payload.slug,
+          }),
         }).catch(() => {});
         toast({ kind: "success", title: "Book created successfully" });
         if (andAnother) {
@@ -417,13 +434,16 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Kaalam Thorum Kalaignar"
+                placeholder="e.g. Dravida Cinema (Vol. 1)"
                 value={titleEn}
                 onChange={handleTitleEnChange}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500 ${
                   errors.titleEn ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
                 }`}
               />
+              <p className="text-[11px] text-gray-500 dark:text-neutral-400 mt-1">
+                For multi-volume series, use <strong>&ldquo;Vol. 1&rdquo;</strong>, <strong>&ldquo;Vol. 2&rdquo;</strong> (automatically standardized on save).
+              </p>
               {errors.titleEn && <p className="text-xs text-red-500 mt-1">{errors.titleEn}</p>}
             </div>
 

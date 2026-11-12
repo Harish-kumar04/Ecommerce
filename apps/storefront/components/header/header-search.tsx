@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/language-provider";
 import Img from "@/components/ui/img";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 export interface SearchBookItem {
   id: string;
@@ -109,7 +110,7 @@ export default function HeaderSearch({
                     <div className="relative h-14 w-11 flex-shrink-0 overflow-hidden rounded bg-[#fafafa] border border-black/[0.06]">
                       {book.image_url ? (
                         <Img
-                          src={book.image_url}
+                          src={cloudinaryImageUrl(book.image_url, 900)}
                           alt={book.name}
                           fill
                           sizes="44px"

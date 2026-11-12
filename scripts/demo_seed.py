@@ -221,7 +221,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/tamilnadu-poradum-tamilnadu-vellum_FrontImage_976.jpg",
     ),
     dict(
-        name="திராவிட சினிமா (பாகம் - 2) | Dravida Cinema (Part 2)",
+        name="திராவிட சினிமா (பாகம் - 2) | Dravida Cinema (Vol. 2)",
         slug="dravida-cinema-paagam-2",
         sku="MP-BOOK-009",
         category_slug="dravidian-cinema-culture",
@@ -230,7 +230,7 @@ PRODUCTS = [
         inventory_quantity=120,
         description=(
             "தமிழ்த் திரையுலகில் திராவிட இயக்கப் படைப்பாளிகள் ஏற்படுத்திய சமூக மாற்றம் மற்றும் பகுத்தறிவுக் கருத்துக்களின் வரலாறு — பாகம் 2. || "
-            "Dravida Cinema (Part 2) — Volume 2 examining how Dravidian movement screenwriters, lyricists, and filmmakers "
+            "Dravida Cinema (Vol. 2) — Volume 2 examining how Dravidian movement screenwriters, lyricists, and filmmakers "
             "transformed Tamil cinema into a medium for social reform, Tamil pride, and rationalist thought."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -238,7 +238,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-cinema-paagam-2_FrontImage_476.jpg",
     ),
     dict(
-        name="திராவிட மாடல் அரசு (பாகம் 2) | Dravida Model Arasu (Part 2)",
+        name="திராவிட மாடல் அரசு (பாகம் 2) | Dravida Model Arasu (Vol. 2)",
         slug="dravida-model-arasu-paagam-2",
         sku="MP-BOOK-010",
         category_slug="dravidian-model-social-justice",
@@ -247,7 +247,7 @@ PRODUCTS = [
         inventory_quantity=100,
         description=(
             "முத்துவேல் கருணாநிதி ஸ்டாலின் தலைமையிலான திராவிட மாடல் அரசின் முத்திரைத் திட்டங்கள் மற்றும் சாதனைகளின் விரிவான தொகுப்பு — பாகம் 2. || "
-            "Dravida Model Arasu (Part 2) — Comprehensive documentation of the flagship welfare schemes, policy innovations, "
+            "Dravida Model Arasu (Vol. 2) — Comprehensive documentation of the flagship welfare schemes, policy innovations, "
             "and socio-economic milestones of the Dravidian Model government (Volume 2)."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -255,7 +255,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu-paagam-2_FrontImage_339.jpg",
     ),
     dict(
-        name="திராவிடப் போராளிகள் (பாகம் 2) | Dravida Poraligal (Part 2)",
+        name="திராவிடப் போராளிகள் (பாகம் 2) | Dravida Poraligal (Vol. 2)",
         slug="dravida-poraligal-paagam-2",
         sku="MP-BOOK-011",
         category_slug="dravidian-history",
@@ -264,7 +264,7 @@ PRODUCTS = [
         inventory_quantity=120,
         description=(
             "திராவிட இயக்கத்திற்காகத் தம் வாழ்வை அர்ப்பணித்த களப் போராளிகள் மற்றும் முன்னோடிகளின் வாழ்க்கை வரலாறு — பாகம் 2. || "
-            "Dravida Poraligal (Part 2) — Inspiring biographical portraits of the unsung warriors, leaders, and grassroots "
+            "Dravida Poraligal (Vol. 2) — Inspiring biographical portraits of the unsung warriors, leaders, and grassroots "
             "stalwarts who built and defended the Dravidian movement (Volume 2)."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -272,7 +272,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-poraligal-paagam-2_FrontImage_992.jpg",
     ),
     dict(
-        name="உடன் பிறப்பே (பாகம் 2) | Udan Pireppe (Part 2)",
+        name="உடன் பிறப்பே (பாகம் 2) | Udan Pireppe (Vol. 2)",
         slug="udan-pireppe-paagam-2",
         sku="MP-BOOK-012",
         category_slug="kalaignar-works",
@@ -281,7 +281,7 @@ PRODUCTS = [
         inventory_quantity=130,
         description=(
             "முத்தமிழறிஞர் கலைஞர் அவர்கள் கழக உடன்பிறப்புகளுக்கு எழுதிய வரலாற்றுச் சிறப்புமிக்க கடிதங்களின் தேர்ந்தெடுக்கப்பட்ட தொகுப்பு — பாகம் 2. || "
-            "Udan Pireppe (Part 2) — Volume 2 of Muthamilarignar Kalaignar's iconic 'Dear Brethren' epistolary essays, "
+            "Udan Pireppe (Vol. 2) — Volume 2 of Muthamilarignar Kalaignar's iconic 'Dear Brethren' epistolary essays, "
             "blending political philosophy, literature, history, and organizational guidance."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -289,7 +289,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/udan-pireppe-paagam-2_FrontImage_577.jpg",
     ),
     dict(
-        name="இடம் பொருள் கலைஞர் (பாகம் 2) | Idam Porul Kalaignar (Part 2)",
+        name="இடம் பொருள் கலைஞர் (பாகம் 2) | Idam Porul Kalaignar (Vol. 2)",
         slug="idam-porul-kalaignar-paagam-2",
         sku="MP-BOOK-013",
         category_slug="kalaignar-works",
@@ -298,7 +298,7 @@ PRODUCTS = [
         inventory_quantity=140,
         description=(
             "முத்தமிழறிஞர் கலைஞரின் அரசியல், இலக்கியம் மற்றும் ஆளுமைத் திறனைப் பல்வேறு கோணங்களில் ஆராயும் கட்டுரைத் தொகுப்பு — பாகம் 2. || "
-            "Idam Porul Kalaignar (Part 2) — Volume 2 capturing the wit, statesmanship, literary mastery, and historical "
+            "Idam Porul Kalaignar (Vol. 2) — Volume 2 capturing the wit, statesmanship, literary mastery, and historical "
             "interventions of Kalaignar M. Karunanidhi across decades of public life."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -323,7 +323,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignar-iyakkaviyal_FrontImage_350.jpg",
     ),
     dict(
-        name="கலைஞரும் நானும் (பாகம் 2) | Kalaignarum Naanum (Part 2)",
+        name="கலைஞரும் நானும் (பாகம் 2) | Kalaignarum Naanum (Vol. 2)",
         slug="kalaignarum-naanum-paagam-2",
         sku="MP-BOOK-015",
         category_slug="kalaignar-works",
@@ -332,7 +332,7 @@ PRODUCTS = [
         inventory_quantity=125,
         description=(
             "முத்தமிழறிஞர் கலைஞருடனான மறக்க முடியாத அனுபவங்களையும் நினைவுகளையும் ஆளுமைகள் பகிர்ந்து கொள்ளும் நூல் — பாகம் 2. || "
-            "Kalaignarum Naanum (Part 2) — Personal memoirs and intimate recollections by eminent leaders, writers, and "
+            "Kalaignarum Naanum (Vol. 2) — Personal memoirs and intimate recollections by eminent leaders, writers, and "
             "contemporaries on their journey alongside Muthamilarignar Kalaignar (Volume 2)."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -357,7 +357,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dmk-ilaignarani-athiyayam-1_FrontImage_756.jpg",
     ),
     dict(
-        name="திராவிடத்தால் வாழ்கிறோம் 3 | Dravidaththaal Vaazhkirom 3",
+        name="திராவிடத்தால் வாழ்கிறோம் 3 | Dravidaththaal Vaazhkirom (Vol. 3)",
         slug="dravidaththaal-vaazhkirom-3",
         sku="MP-BOOK-017",
         category_slug="dravidian-history",
@@ -366,7 +366,7 @@ PRODUCTS = [
         inventory_quantity=115,
         description=(
             "திராவிட இயக்கம் தமிழ்ச் சமூகத்தின் கல்வி, வேலைவாய்ப்பு மற்றும் சுயமரியாதையை எவ்வாறு உயர்த்தியது என்பதை விளக்கும் கட்டுரைத் தொகுப்பு — பாகம் 3. || "
-            "Dravidaththaal Vaazhkirom 3 (We Live by Dravidam Vol. 3) — Volume 3 of essays illustrating how a century of "
+            "Dravidaththaal Vaazhkirom (Vol. 3) — Volume 3 of essays illustrating how a century of "
             "Dravidian movement policies uplifted Tamil society through education, social dignity, and equitable growth."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -391,7 +391,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu_FrontImage_297.gif",
     ),
     dict(
-        name="திராவிடத்தால் வாழ்கிறோம் 2 | Dravidaththaal Vaazhkirom 2",
+        name="திராவிடத்தால் வாழ்கிறோம் 2 | Dravidaththaal Vaazhkirom (Vol. 2)",
         slug="dravidaththaal-vaazhkirom-2",
         sku="MP-BOOK-019",
         category_slug="dravidian-history",
@@ -400,7 +400,7 @@ PRODUCTS = [
         inventory_quantity=120,
         description=(
             "தமிழ்நாட்டின் நவீன வளர்ச்சிக்கும் சமூக முன்னேற்றத்திற்கும் திராவிட இயக்கம் ஆற்றிய பங்களிப்புகள் — பாகம் 2. || "
-            "Dravidaththaal Vaazhkirom 2 (We Live by Dravidam Vol. 2) — Volume 2 exploring the transformative impact of "
+            "Dravidaththaal Vaazhkirom (Vol. 2) — Volume 2 exploring the transformative impact of "
             "Dravidian thought on modern Tamil Nadu's social justice and human development indicators."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
@@ -493,7 +493,7 @@ PRODUCTS = [
         image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/d-m-k-varalaru-1949-1967_FrontImage_778.jpg",
     ),
     dict(
-        name="திராவிடத்தால் வாழ்கிறோம் 1 | Dravidaththaal Vaazhkirom 1",
+        name="திராவிடத்தால் வாழ்கிறோம் 1 | Dravidaththaal Vaazhkirom (Vol. 1)",
         slug="dravidaththaal-vaazhkirom-1",
         sku="MP-BOOK-025",
         category_slug="dravidian-history",
@@ -502,7 +502,7 @@ PRODUCTS = [
         inventory_quantity=125,
         description=(
             "திராவிட இயக்கம் தமிழ்ச் சமூகத்திற்குப் பெற்றுத் தந்த உரிமைகளையும் சமூக மாற்றங்களையும் விவரிக்கும் தொகுப்பு — பாகம் 1. || "
-            "Dravidaththaal Vaazhkirom 1 (We Live by Dravidam Vol. 1) — Volume 1 of the acclaimed series detailing how "
+            "Dravidaththaal Vaazhkirom (Vol. 1) — Volume 1 of the acclaimed series detailing how "
             "Dravidian governance reshaped social mobility, education, and progressive politics in Tamil Nadu."
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",

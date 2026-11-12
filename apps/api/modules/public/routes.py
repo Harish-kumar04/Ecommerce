@@ -217,6 +217,8 @@ async def public_list_products(
                 cat_uuid = cat_row
 
     if search:
+        from apps.api.modules.product.services import serialize_product
+
         items = await search_products(tenant_id, search, session)
         filtered = [
             p for p in items
@@ -226,28 +228,7 @@ async def public_list_products(
         ]
         if cat_uuid:
             filtered = [p for p in filtered if str(getattr(p, "category_id", None)) == str(cat_uuid)]
-        return [
-            {
-                "id": str(p.id),
-                "name": p.name,
-                "slug": p.slug,
-                "sku": p.sku,
-                "description": getattr(p, "description", None),
-                "price_cents": p.price_cents,
-                "sale_price_cents": getattr(p, "sale_price_cents", None),
-                "inventory": int(getattr(p, "inventory_quantity", None) or getattr(p, "inventory", 0) or 0),
-                "status": str(getattr(p.status, "value", p.status)) if getattr(p, "status", None) else None,
-                "visibility": getattr(p, "visibility", "published"),
-                "tags": list(getattr(p, "tags", None) or []),
-                "dimensions_json": getattr(p, "dimensions_json", None) or {},
-                "category_id": str(p.category_id) if getattr(p, "category_id", None) else None,
-                "image_url": getattr(p, "image_url", None),
-                "images": [p.image_url] if getattr(p, "image_url", None) else [],
-                "age_suitability": str(getattr(p.age_suitability, "value", getattr(p, "age_suitability", None)) or "") or None,
-                "pregnancy_stage": str(getattr(p.pregnancy_stage, "value", getattr(p, "pregnancy_stage", None)) or "") or None,
-            }
-            for p in filtered
-        ]
+        return [serialize_product(p) for p in filtered]
 
     result = await list_products(tenant_id, session, per_page=200, category_id=cat_uuid)
     items = result["data"] if isinstance(result, dict) else result
@@ -265,24 +246,34 @@ async def public_get_product(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Single published product for the resolved tenant (by UUID or slug)."""
+    """Single published product for the resolved tenant (by UUID, slug, or SKU)."""
     from apps.api.modules.product.services import get_product, serialize_product
     from infalette_database.models.product import Product
 
     tenant_id = await _public_tenant_id(request, session)
     product = None
+    clean_id = product_id.strip()
     try:
-        parsed_uuid = UUID(product_id)
+        parsed_uuid = UUID(clean_id)
         product = await get_product(tenant_id, parsed_uuid, session)
     except ValueError:
         row = (
             await session.execute(
                 select(Product).where(
                     Product.tenant_id == tenant_id,
-                    Product.slug == product_id,
+                    Product.slug.ilike(clean_id),
                 )
             )
         ).scalar_one_or_none()
+        if row is None:
+            row = (
+                await session.execute(
+                    select(Product).where(
+                        Product.tenant_id == tenant_id,
+                        Product.sku.ilike(clean_id),
+                    )
+                )
+            ).scalar_one_or_none()
         if row is not None:
             product = serialize_product(row)
 

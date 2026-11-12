@@ -266,9 +266,26 @@ export function isExternal(href: string): boolean {
 }
 
 /**
+ * If an image URL is hosted on Cloudinary (`/image/upload/`), inject
+ * `f_auto,q_auto,w_<width>` immediately after `upload/` for fast WebP/AVIF delivery.
+ */
+export function cloudinaryImageUrl(src?: string | null, width: 1920 | 900 = 900): string {
+  if (!src) return "";
+  const marker = "/image/upload/";
+  const idx = src.indexOf(marker);
+  if (idx === -1) return src;
+  const after = src.slice(idx + marker.length);
+  // Avoid double-transforming if Cloudinary transformation params are already present
+  if (/^(?:[a-z]{1,3}_[^/]+)(?:,[a-z]{1,3}_[^/]+)*\//i.test(after)) {
+    return src;
+  }
+  return `${src.slice(0, idx + marker.length)}f_auto,q_auto,w_${width}/${after}`;
+}
+
+/**
  * Whether next/image may optimize this src. Must mirror `images.remotePatterns` in
- * next.config.js; anything else (e.g. an admin-pasted URL on another host) is rendered
- * with `unoptimized` instead of throwing at runtime.
+ * next.config.js; Cloudinary URLs use Cloudinary's own `f_auto,q_auto,w_*` edge transform
+ * directly, and unknown hosts fall back to `unoptimized` instead of throwing at runtime.
  */
 export function canOptimize(src?: string | null): boolean {
   if (!src) return false;
@@ -276,6 +293,7 @@ export function canOptimize(src?: string | null): boolean {
   try {
     const { protocol, hostname } = new URL(src);
     if (protocol !== "https:") return false;
+    if (hostname === "res.cloudinary.com") return false;
     return (
       hostname === "s3.ap-south-1.amazonaws.com" ||
       hostname.endsWith(".public.blob.vercel-storage.com") ||

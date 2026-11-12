@@ -242,6 +242,7 @@ class ProductCreate(BaseSchema):
     sale_price_cents: Optional[int] = Field(default=None, ge=0)
     tax_class: str = Field(default="standard")
     inventory: int = Field(default=0, ge=0)
+    image_url: Optional[str] = None
     images: list[str] = Field(default_factory=list)
     ingredients: Optional[str] = None
     safety_info: Optional[str] = None
@@ -266,6 +267,7 @@ class ProductUpdate(BaseSchema):
     sale_price_cents: Optional[int] = Field(default=None, ge=0)
     tax_class: Optional[str] = None
     inventory: Optional[int] = Field(default=None, ge=0)
+    image_url: Optional[str] = None
     images: Optional[list[str]] = None
     ingredients: Optional[str] = None
     safety_info: Optional[str] = None
@@ -283,14 +285,21 @@ class ProductRead(BaseRead):
     """Schema for reading a product."""
 
     tenant_id: UUID
+    category_id: Optional[UUID] = None
     name: str
     slug: str
     sku: str
+    description: Optional[str] = None
     price_cents: int
-    sale_price_cents: Optional[int]
+    sale_price_cents: Optional[int] = None
     inventory: int
-    images: list[str]
+    image_url: Optional[str] = None
+    images: list[str] = Field(default_factory=list)
     status: ProductStatus
+    visibility: Optional[str] = "published"
+    tags: list[str] = Field(default_factory=list)
+    dimensions_json: dict[str, Any] = Field(default_factory=dict)
+    tax_class: Optional[str] = None
 
 
 # =============================================================================

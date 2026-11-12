@@ -10,6 +10,7 @@ import { notifyCartChanged, openMiniCart } from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import ProductCard, { toCardProduct } from "@/components/product/product-card";
 import { CartIcon } from "@/components/brand/icons";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 function formatPrice(cents?: number | null) {
   return `₹${Math.round((cents || 0) / 100).toLocaleString("en-IN")}`;
@@ -26,12 +27,15 @@ export default function BookDetailClient({
 }) {
   const router = useRouter();
   const { lang, t, localizeName, localizeSubName } = useLanguage();
-  const [selectedImage, setSelectedImage] = useState<string>(
-    product.images?.[0] || product.image_url || ""
-  );
+  const primaryCover = product.image_url || product.images?.[0] || "";
+  const [selectedImage, setSelectedImage] = useState<string>(primaryCover);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
+
+  useEffect(() => {
+    setSelectedImage(product.image_url || product.images?.[0] || "");
+  }, [product.id, product.image_url, product.images]);
 
   const onSale = Boolean(product.sale_price_cents && product.sale_price_cents < product.price_cents);
   const price = onSale ? (product.sale_price_cents as number) : product.price_cents;
@@ -60,7 +64,7 @@ export default function BookDetailClient({
   const isbn = bookMeta.isbn || product.sku || null;
   const year = bookMeta.year || null;
 
-  // Images gallery
+  // Images gallery: image_url ALWAYS first, followed by deduplicated gallery images
   const allImages = Array.from(
     new Set([product.image_url, ...(product.images || [])].filter(Boolean))
   ) as string[];
@@ -144,7 +148,7 @@ export default function BookDetailClient({
               )}
               {selectedImage ? (
                 <Image
-                  src={selectedImage}
+                  src={cloudinaryImageUrl(selectedImage, 900)}
                   alt={primaryTitle}
                   fill
                   priority
@@ -169,7 +173,7 @@ export default function BookDetailClient({
                       selectedImage === img ? "border-brand-red shadow-glow" : "border-black/10 hover:border-black/30"
                     }`}
                   >
-                    <Image src={img} alt="" fill sizes="64px" className="object-contain p-1" />
+                    <Image src={cloudinaryImageUrl(img, 900)} alt="" fill sizes="64px" className="object-contain p-1" />
                   </button>
                 ))}
               </div>

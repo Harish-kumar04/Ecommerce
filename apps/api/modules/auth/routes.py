@@ -119,8 +119,15 @@ async def refresh_token(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Refresh access token."""
-    from apps.api.modules.auth.services import refresh_token
-    return await refresh_token(data, session)
+    from apps.api.modules.auth.services import refresh_token as _refresh_svc
+
+    try:
+        return await _refresh_svc(data, session)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired, please log in again",
+        )
 
 
 @router.post("/mfa/verify", response_model=TokenResponse)

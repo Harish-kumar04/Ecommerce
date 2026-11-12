@@ -2,6 +2,7 @@
 const isDev = process.env.NODE_ENV !== "production";
 
 const IMAGE_HOSTS = [
+  "https://res.cloudinary.com",
   "https://s3.ap-south-1.amazonaws.com",
   "https://*.public.blob.vercel-storage.com",
   "https://cdn.infalette.com",
@@ -16,6 +17,7 @@ module.exports = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "s3.ap-south-1.amazonaws.com" },
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
       { protocol: "https", hostname: "cdn.infalette.com" },
@@ -37,7 +39,8 @@ module.exports = {
           `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
           "style-src 'self' 'unsafe-inline'",
           "font-src 'self' data:",
-          "connect-src 'self' https:" + (isDev ? " http://localhost:8000 ws:" : ""),
+          "connect-src 'self' https: https://res.cloudinary.com https://*.public.blob.vercel-storage.com" +
+            (isDev ? " http://localhost:8000 ws:" : ""),
           "frame-src 'self'",
           "worker-src 'self' blob:",
           "frame-ancestors 'none'",

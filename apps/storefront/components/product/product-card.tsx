@@ -3,6 +3,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { BiName, BiSubName, T } from "@/components/i18n/t";
 import { splitBilingual } from "@/lib/i18n";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 const CardAddButton = dynamic(() => import("./card-add-button"), {
   ssr: false,
@@ -39,7 +40,8 @@ export function toCardProduct(p: any): CardProduct {
     price_cents: Number(p.price_cents) || 0,
     sale_price_cents: p.sale_price_cents ?? null,
     inventory: p.inventory !== undefined ? Number(p.inventory) : Number(p.inventory_quantity ?? 10),
-    image_url: p.images?.[0] || p.image_url || null,
+    image_url: p.image_url || p.images?.[0] || null,
+    images: Array.isArray(p.images) ? p.images : null,
   };
 }
 
@@ -63,7 +65,8 @@ export default function ProductCard({
   const inStock = product.inventory === undefined || product.inventory > 0;
   const onSale = Boolean(product.sale_price_cents && product.sale_price_cents < product.price_cents);
   const price = onSale ? (product.sale_price_cents as number) : product.price_cents;
-  const imgSrc = product.images?.[0] || product.image_url;
+  const rawImg = product.image_url || product.images?.[0];
+  const imgSrc = rawImg ? cloudinaryImageUrl(rawImg, 900) : null;
   const alt = splitBilingual(product.name, "|").join(" — ");
 
   return (

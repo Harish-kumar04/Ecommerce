@@ -174,61 +174,61 @@ const RAW_BOOKS: Array<{
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/tamilnadu-poradum-tamilnadu-vellum_FrontImage_976.jpg",
   },
   {
-    name: "திராவிட சினிமா (பாகம் - 2) | Dravida Cinema (Part 2)",
+    name: "திராவிட சினிமா (பாகம் - 2) | Dravida Cinema (Vol. 2)",
     slug: "dravida-cinema-paagam-2",
     sku: "MP-BOOK-009",
     category_id: "cat-dravidian-cinema",
     price_cents: 15000,
     description:
-      "தமிழ்த் திரையுலகில் திராவிட இயக்கப் படைப்பாளிகள் ஏற்படுத்திய சமூக மாற்றம் மற்றும் பகுத்தறிவுக் கருத்துக்களின் வரலாறு — பாகம் 2. || Dravida Cinema (Part 2) — Volume 2 examining how Dravidian movement screenwriters, lyricists, and filmmakers transformed Tamil cinema into a medium for social reform, Tamil pride, and rationalist thought.",
+      "தமிழ்த் திரையுலகில் திராவிட இயக்கப் படைப்பாளிகள் ஏற்படுத்திய சமூக மாற்றம் மற்றும் பகுத்தறிவுக் கருத்துக்களின் வரலாறு — பாகம் 2. || Dravida Cinema (Vol. 2) — Volume 2 examining how Dravidian movement screenwriters, lyricists, and filmmakers transformed Tamil cinema into a medium for social reform, Tamil pride, and rationalist thought.",
     safety_info: "Paperback • Tamil • Cinema & Culture Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-cinema-paagam-2_FrontImage_476.jpg",
   },
   {
-    name: "திராவிட மாடல் அரசு (பாகம் 2) | Dravida Model Arasu (Part 2)",
+    name: "திராவிட மாடல் அரசு (பாகம் 2) | Dravida Model Arasu (Vol. 2)",
     slug: "dravida-model-arasu-paagam-2",
     sku: "MP-BOOK-010",
     category_id: "cat-dravidian-model",
     price_cents: 30000,
     description:
-      "முத்துவேல் கருணாநிதி ஸ்டாலின் தலைமையிலான திராவிட மாடல் அரசின் முத்திரைத் திட்டங்கள் மற்றும் சாதனைகளின் விரிவான தொகுப்பு — பாகம் 2. || Dravida Model Arasu (Part 2) — Comprehensive documentation of the flagship welfare schemes, policy innovations, and socio-economic milestones of the Dravidian Model government (Volume 2).",
+      "முத்துவேல் கருணாநிதி ஸ்டாலின் தலைமையிலான திராவிட மாடல் அரசின் முத்திரைத் திட்டங்கள் மற்றும் சாதனைகளின் விரிவான தொகுப்பு — பாகம் 2. || Dravida Model Arasu (Vol. 2) — Comprehensive documentation of the flagship welfare schemes, policy innovations, and socio-economic milestones of the Dravidian Model government (Volume 2).",
     safety_info: "Paperback • Tamil • Governance & Policy Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu-paagam-2_FrontImage_339.jpg",
   },
   {
-    name: "திராவிடப் போராளிகள் (பாகம் 2) | Dravida Poraligal (Part 2)",
+    name: "திராவிடப் போராளிகள் (பாகம் 2) | Dravida Poraligal (Vol. 2)",
     slug: "dravida-poraligal-paagam-2",
     sku: "MP-BOOK-011",
     category_id: "cat-dravidian-history",
     price_cents: 15000,
     description:
-      "திராவிட இயக்கத்திற்காகத் தம் வாழ்வை அர்ப்பணித்த களப் போராளிகள் மற்றும் முன்னோடிகளின் வாழ்க்கை வரலாறு — பாகம் 2. || Dravida Poraligal (Part 2) — Inspiring biographical portraits of the unsung warriors, leaders, and grassroots stalwarts who built and defended the Dravidian movement (Volume 2).",
+      "திராவிட இயக்கத்திற்காகத் தம் வாழ்வை அர்ப்பணித்த களப் போராளிகள் மற்றும் முன்னோடிகளின் வாழ்க்கை வரலாறு — பாகம் 2. || Dravida Poraligal (Vol. 2) — Inspiring biographical portraits of the unsung warriors, leaders, and grassroots stalwarts who built and defended the Dravidian movement (Volume 2).",
     safety_info: "Paperback • Tamil • Biographies Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-poraligal-paagam-2_FrontImage_992.jpg",
   },
   {
-    name: "உடன் பிறப்பே (பாகம் 2) | Udan Pireppe (Part 2)",
+    name: "உடன் பிறப்பே (பாகம் 2) | Udan Pireppe (Vol. 2)",
     slug: "udan-pireppe-paagam-2",
     sku: "MP-BOOK-012",
     category_id: "cat-kalaignar-works",
     price_cents: 20000,
     description:
-      "முத்தமிழறிஞர் கலைஞர் அவர்கள் கழக உடன்பிறப்புகளுக்கு எழுதிய வரலாற்றுச் சிறப்புமிக்க கடிதங்களின் தேர்ந்தெடுக்கப்பட்ட தொகுப்பு — பாகம் 2. || Udan Pireppe (Part 2) — Volume 2 of Muthamilarignar Kalaignar's iconic 'Dear Brethren' epistolary essays, blending political philosophy, literature, history, and organizational guidance.",
+      "முத்தமிழறிஞர் கலைஞர் அவர்கள் கழக உடன்பிறப்புகளுக்கு எழுதிய வரலாற்றுச் சிறப்புமிக்க கடிதங்களின் தேர்ந்தெடுக்கப்பட்ட தொகுப்பு — பாகம் 2. || Udan Pireppe (Vol. 2) — Volume 2 of Muthamilarignar Kalaignar's iconic 'Dear Brethren' epistolary essays, blending political philosophy, literature, history, and organizational guidance.",
     safety_info: "Paperback • Tamil • Kalaignar Letters Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/udan-pireppe-paagam-2_FrontImage_577.jpg",
   },
   {
-    name: "இடம் பொருள் கலைஞர் (பாகம் 2) | Idam Porul Kalaignar (Part 2)",
+    name: "இடம் பொருள் கலைஞர் (பாகம் 2) | Idam Porul Kalaignar (Vol. 2)",
     slug: "idam-porul-kalaignar-paagam-2",
     sku: "MP-BOOK-013",
     category_id: "cat-kalaignar-works",
     price_cents: 15000,
     description:
-      "முத்தமிழறிஞர் கலைஞரின் அரசியல், இலக்கியம் மற்றும் ஆளுமைத் திறனைப் பல்வேறு கோணங்களில் ஆராயும் கட்டுரைத் தொகுப்பு — பாகம் 2. || Idam Porul Kalaignar (Part 2) — Volume 2 capturing the wit, statesmanship, literary mastery, and historical interventions of Kalaignar M. Karunanidhi across decades of public life.",
+      "முத்தமிழறிஞர் கலைஞரின் அரசியல், இலக்கியம் மற்றும் ஆளுமைத் திறனைப் பல்வேறு கோணங்களில் ஆராயும் கட்டுரைத் தொகுப்பு — பாகம் 2. || Idam Porul Kalaignar (Vol. 2) — Volume 2 capturing the wit, statesmanship, literary mastery, and historical interventions of Kalaignar M. Karunanidhi across decades of public life.",
     safety_info: "Paperback • Tamil • Kalaignar Studies Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/idam-porul-kalaignar-paagam-2_FrontImage_282.jpg",
@@ -246,13 +246,13 @@ const RAW_BOOKS: Array<{
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignar-iyakkaviyal_FrontImage_350.jpg",
   },
   {
-    name: "கலைஞரும் நானும் (பாகம் 2) | Kalaignarum Naanum (Part 2)",
+    name: "கலைஞரும் நானும் (பாகம் 2) | Kalaignarum Naanum (Vol. 2)",
     slug: "kalaignarum-naanum-paagam-2",
     sku: "MP-BOOK-015",
     category_id: "cat-kalaignar-works",
     price_cents: 15000,
     description:
-      "முத்தமிழறிஞர் கலைஞருடனான மறக்க முடியாத அனுபவங்களையும் நினைவுகளையும் ஆளுமைகள் பகிர்ந்து கொள்ளும் நூல் — பாகம் 2. || Kalaignarum Naanum (Part 2) — Personal memoirs and intimate recollections by eminent leaders, writers, and contemporaries on their journey alongside Muthamilarignar Kalaignar (Volume 2).",
+      "முத்தமிழறிஞர் கலைஞருடனான மறக்க முடியாத அனுபவங்களையும் நினைவுகளையும் ஆளுமைகள் பகிர்ந்து கொள்ளும் நூல் — பாகம் 2. || Kalaignarum Naanum (Vol. 2) — Personal memoirs and intimate recollections by eminent leaders, writers, and contemporaries on their journey alongside Muthamilarignar Kalaignar (Volume 2).",
     safety_info: "Paperback • Tamil • Memoirs Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignarum-naanum-paagam-2_FrontImage_139.jpg",
@@ -270,13 +270,13 @@ const RAW_BOOKS: Array<{
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dmk-ilaignarani-athiyayam-1_FrontImage_756.jpg",
   },
   {
-    name: "திராவிடத்தால் வாழ்கிறோம் 3 | Dravidaththaal Vaazhkirom 3",
+    name: "திராவிடத்தால் வாழ்கிறோம் 3 | Dravidaththaal Vaazhkirom (Vol. 3)",
     slug: "dravidaththaal-vaazhkirom-3",
     sku: "MP-BOOK-017",
     category_id: "cat-dravidian-history",
     price_cents: 25000,
     description:
-      "திராவிட இயக்கம் தமிழ்ச் சமூகத்தின் கல்வி, வேலைவாய்ப்பு மற்றும் சுயமரியாதையை எவ்வாறு உயர்த்தியது என்பதை விளக்கும் கட்டுரைத் தொகுப்பு — பாகம் 3. || Dravidaththaal Vaazhkirom 3 (We Live by Dravidam Vol. 3) — Volume 3 of essays illustrating how a century of Dravidian movement policies uplifted Tamil society through education, social dignity, and equitable growth.",
+      "திராவிட இயக்கம் தமிழ்ச் சமூகத்தின் கல்வி, வேலைவாய்ப்பு மற்றும் சுயமரியாதையை எவ்வாறு உயர்த்தியது என்பதை விளக்கும் கட்டுரைத் தொகுப்பு — பாகம் 3. || Dravidaththaal Vaazhkirom (Vol. 3) — Volume 3 of essays illustrating how a century of Dravidian movement policies uplifted Tamil society through education, social dignity, and equitable growth.",
     safety_info: "Paperback • Tamil • Ideology Series Vol. 3",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom-3_FrontImage_946.jpg",
@@ -294,13 +294,13 @@ const RAW_BOOKS: Array<{
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu_FrontImage_297.gif",
   },
   {
-    name: "திராவிடத்தால் வாழ்கிறோம் 2 | Dravidaththaal Vaazhkirom 2",
+    name: "திராவிடத்தால் வாழ்கிறோம் 2 | Dravidaththaal Vaazhkirom (Vol. 2)",
     slug: "dravidaththaal-vaazhkirom-2",
     sku: "MP-BOOK-019",
     category_id: "cat-dravidian-history",
     price_cents: 25000,
     description:
-      "தமிழ்நாட்டின் நவீன வளர்ச்சிக்கும் சமூக முன்னேற்றத்திற்கும் திராவிட இயக்கம் ஆற்றிய பங்களிப்புகள் — பாகம் 2. || Dravidaththaal Vaazhkirom 2 (We Live by Dravidam Vol. 2) — Volume 2 exploring the transformative impact of Dravidian thought on modern Tamil Nadu's social justice and human development indicators.",
+      "தமிழ்நாட்டின் நவீன வளர்ச்சிக்கும் சமூக முன்னேற்றத்திற்கும் திராவிட இயக்கம் ஆற்றிய பங்களிப்புகள் — பாகம் 2. || Dravidaththaal Vaazhkirom (Vol. 2) — Volume 2 exploring the transformative impact of Dravidian thought on modern Tamil Nadu's social justice and human development indicators.",
     safety_info: "Paperback • Tamil • Ideology Series Vol. 2",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom-2_FrontImage_655.gif",
@@ -366,13 +366,13 @@ const RAW_BOOKS: Array<{
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/d-m-k-varalaru-1949-1967_FrontImage_778.jpg",
   },
   {
-    name: "திராவிடத்தால் வாழ்கிறோம் 1 | Dravidaththaal Vaazhkirom 1",
+    name: "திராவிடத்தால் வாழ்கிறோம் 1 | Dravidaththaal Vaazhkirom (Vol. 1)",
     slug: "dravidaththaal-vaazhkirom-1",
     sku: "MP-BOOK-025",
     category_id: "cat-dravidian-history",
     price_cents: 25000,
     description:
-      "திராவிட இயக்கம் தமிழ்ச் சமூகத்திற்குப் பெற்றுத் தந்த உரிமைகளையும் சமூக மாற்றங்களையும் விவரிக்கும் தொகுப்பு — பாகம் 1. || Dravidaththaal Vaazhkirom 1 (We Live by Dravidam Vol. 1) — Volume 1 of the acclaimed series detailing how Dravidian governance reshaped social mobility, education, and progressive politics in Tamil Nadu.",
+      "திராவிட இயக்கம் தமிழ்ச் சமூகத்திற்குப் பெற்றுத் தந்த உரிமைகளையும் சமூக மாற்றங்களையும் விவரிக்கும் தொகுப்பு — பாகம் 1. || Dravidaththaal Vaazhkirom (Vol. 1) — Volume 1 of the acclaimed series detailing how Dravidian governance reshaped social mobility, education, and progressive politics in Tamil Nadu.",
     safety_info: "Paperback • Tamil • Ideology Series Vol. 1",
     image:
       "https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom_FrontImage_660.gif",
@@ -488,34 +488,81 @@ export async function getStoreWithFallback(tenant: string) {
   return FALLBACK_STORE;
 }
 
+export type BookLookupResult =
+  | { status: "ok"; product: any }
+  | { status: "not_found" }
+  | { status: "error"; httpStatus?: number };
+
+export async function fetchBookById(
+  tenant: string,
+  productIdOrSlug: string,
+): Promise<BookLookupResult> {
+  const url = `${getServerApiUrl()}/public/products/${encodeURIComponent(productIdOrSlug)}`;
+  let lastHttpStatus: number | undefined;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "X-Tenant": tenant },
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(8000),
+      });
+      console.info(
+        `[getBookById] tenant=${tenant} id=${productIdOrSlug} status=${res.status} attempt=${attempt}`,
+      );
+
+      if (res.ok) {
+        const prod = await res.json();
+        if (prod?.id) {
+          return { status: "ok", product: prod };
+        }
+      }
+
+      if (res.status === 404) {
+        return { status: "not_found" };
+      }
+
+      lastHttpStatus = res.status;
+      if (res.status >= 500 && attempt === 1) {
+        await new Promise((r) => setTimeout(r, 350));
+        continue;
+      }
+      return { status: "error", httpStatus: res.status };
+    } catch (err: any) {
+      console.warn(
+        `[getBookById] tenant=${tenant} id=${productIdOrSlug} status=NETWORK_OR_TIMEOUT attempt=${attempt} error=${err?.message || err}`,
+      );
+      if (attempt === 1) {
+        await new Promise((r) => setTimeout(r, 350));
+        continue;
+      }
+    }
+  }
+
+  // If the single-book endpoint timed out or hit a 5xx burst (e.g. during SSG),
+  // check the cached live API list (never the static fallback) before showing "try again".
+  const listRes = await fetchBooksSafe(tenant);
+  if (!listRes.isFallback) {
+    const key = productIdOrSlug.toLowerCase();
+    const match = listRes.books.find(
+      (b: any) =>
+        String(b?.id || "").toLowerCase() === key ||
+        String(b?.slug || "").toLowerCase() === key,
+    );
+    if (match?.id) {
+      return { status: "ok", product: match };
+    }
+  }
+
+  return { status: "error", httpStatus: lastHttpStatus };
+}
+
 export async function getBookByIdWithFallback(
   tenant: string,
   productIdOrSlug: string,
 ) {
-  try {
-    const res = await fetch(`${getServerApiUrl()}/public/products/${encodeURIComponent(productIdOrSlug)}`, {
-      headers: { "X-Tenant": tenant },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.ok) {
-      const prod = await res.json();
-      if (prod?.id) return prod;
-    }
-    if (res.status === 404) {
-      return null;
-    }
-  } catch {
-    // Fallback ONLY on network error or serverless timeout
-    return (
-      FALLBACK_BOOKS.find(
-        (b) =>
-          b.id === productIdOrSlug ||
-          b.slug === productIdOrSlug ||
-          b.sku.toLowerCase() === productIdOrSlug.toLowerCase(),
-      ) || null
-    );
-  }
+  const res = await fetchBookById(tenant, productIdOrSlug);
+  if (res.status === "ok") return res.product;
   return null;
 }
 

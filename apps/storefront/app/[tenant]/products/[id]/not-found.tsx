@@ -1,10 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { DEFAULT_TENANT } from "@/lib/site-defaults";
 
 export default function BookNotFound() {
+  const params = useParams<{ tenant?: string }>();
+  const tenant = params?.tenant || DEFAULT_TENANT;
+
   return (
     <div className="container-site py-20 text-center">
       <div className="mx-auto max-w-md rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-[#E52320]">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-brand-red">
           <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
@@ -15,7 +22,7 @@ export default function BookNotFound() {
         <h1 className="text-[22px] font-extrabold text-[#111]">
           நூல் கிடைக்கவில்லை
         </h1>
-        <p className="mt-1 text-[15px] font-semibold text-[#E52320]">
+        <p className="mt-1 text-[15px] font-semibold text-brand-red">
           Book Not Found
         </p>
         <p className="mt-3 text-[13.5px] leading-relaxed text-black/60">
@@ -25,8 +32,8 @@ export default function BookNotFound() {
         </p>
         <div className="mt-6">
           <Link
-            href="/demo-store/products"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[#E52320] px-6 text-[13.5px] font-bold text-white hover:bg-black transition-colors shadow-sm"
+            href={`/${tenant}/products`}
+            className="inline-flex h-11 items-center justify-center rounded-full bg-brand-red px-6 text-[13.5px] font-bold text-white hover:bg-brand-red-dark transition-colors shadow-sm"
           >
             நூல்களைப் பார்வையிடுக / Browse All Books &rarr;
           </Link>

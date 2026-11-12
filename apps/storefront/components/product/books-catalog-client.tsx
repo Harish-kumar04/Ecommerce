@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProductCard, { toCardProduct } from "@/components/product/product-card";
 import { useLanguage } from "@/components/language-provider";
 import { T } from "@/components/i18n/t";
 
 type Category = { id: string; name: string; slug?: string };
+type SortKey = "default" | "newest" | "price-asc" | "price-desc";
+const VALID_SORTS: readonly SortKey[] = ["default", "newest", "price-asc", "price-desc"];
 
 /** `?category=` may hold a category slug (preferred) or id. */
 function findCategory(categories: Category[], key: string | null): Category | undefined {
@@ -26,17 +28,36 @@ export default function BooksCatalogClient({
   const { t, localizeName } = useLanguage();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"default" | "newest" | "price-asc" | "price-desc">("default");
+  const [sortBy, setSortBy] = useState<SortKey>("default");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [saleOnly, setSaleOnly] = useState(false);
 
-  // Sync category, sale, and search from URL params without making the page dynamic
+  const sortOptions: { value: SortKey; label: string }[] = useMemo(
+    () => [
+      { value: "default", label: t("பரிந்துரை", "Featured") },
+      { value: "newest", label: t("புதிய வரவுகள்", "Newest First") },
+      { value: "price-asc", label: t("விலை: குறைந்தது முதல்", "Price: Low to High") },
+      { value: "price-desc", label: t("விலை: அதிகம் முதல்", "Price: High to Low") },
+    ],
+    [t],
+  );
+
+  const selectedSortLabel =
+    sortOptions.find((opt) => opt.value === sortBy)?.label ?? sortOptions[0].label;
+
+  // Sync category, sale, sort, and search from URL params without making the page dynamic
   useEffect(() => {
     const apply = () => {
       const params = new URLSearchParams(window.location.search);
       const catKey = params.get("category");
       setSelectedCategory(findCategory(categories, catKey)?.id ?? "all");
 
+      const sortParam = params.get("sort") as SortKey | null;
+      if (sortParam && VALID_SORTS.includes(sortParam)) {
+        setSortBy(sortParam);
+      }
       if (params.get("sale") === "1") setSaleOnly(true);
       const q = params.get("search");
       if (q && q !== "1") setSearch(q);
@@ -45,6 +66,33 @@ export default function BooksCatalogClient({
     window.addEventListener("popstate", apply);
     return () => window.removeEventListener("popstate", apply);
   }, [categories]);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [sortOpen]);
+
+  const selectSort = (value: SortKey) => {
+    setSortBy(value);
+    setSortOpen(false);
+    const url = new URL(window.location.href);
+    if (value !== "default") url.searchParams.set("sort", value);
+    else url.searchParams.delete("sort");
+    window.history.replaceState(window.history.state, "", url.toString());
+  };
 
   const selectCategory = useCallback(
     (id: string) => {
@@ -151,18 +199,72 @@ export default function BooksCatalogClient({
           </svg>
         </div>
 
-        {/* Sort selector */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          aria-label={t("வரிசைப்படுத்து", "Sort books")}
-          className="h-12 w-full sm:w-auto rounded-full border border-black/15 bg-white px-5 text-[14px] font-semibold text-black focus:border-brand-red focus:outline-none"
-        >
-          <option value="default">{t("வரிசை: பரிந்துரை", "Sort: Featured")}</option>
-          <option value="newest">{t("வரிசை: புதிய வரவுகள்", "Sort: Newest First")}</option>
-          <option value="price-asc">{t("விலை: குறைந்தது முதல்", "Price: Low to High")}</option>
-          <option value="price-desc">{t("விலை: அதிகம் முதல்", "Price: High to Low")}</option>
-        </select>
+        {/* Sort selector showing selected option */}
+        <div ref={sortRef} className="relative w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setSortOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={sortOpen}
+            aria-label={t("வரிசைப்படுத்து", "Sort books")}
+            className={`flex h-12 w-full sm:w-auto items-center justify-between gap-2.5 rounded-full border px-5 text-[14px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-red/20 ${
+              sortBy !== "default"
+                ? "border-brand-red bg-brand-red/5 text-brand-red"
+                : "border-black/15 bg-white text-black hover:border-black/35"
+            }`}
+          >
+            <span className="truncate">
+              <span className="text-black/55 font-medium mr-1">
+                {t("வரிசை:", "Sort:")}
+              </span>
+              <span>{selectedSortLabel}</span>
+            </span>
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              className={`h-4 w-4 flex-shrink-0 transition-transform ${sortOpen ? "rotate-180" : ""}`}
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          {sortOpen && (
+            <ul
+              role="listbox"
+              aria-label={t("வரிசைப்படுத்து", "Sort options")}
+              className="absolute right-0 z-30 mt-2 w-full sm:w-64 overflow-hidden rounded-2xl border border-black/10 bg-white py-1.5 shadow-xl"
+            >
+              {sortOptions.map((opt) => {
+                const active = opt.value === sortBy;
+                return (
+                  <li key={opt.value} role="option" aria-selected={active}>
+                    <button
+                      type="button"
+                      onClick={() => selectSort(opt.value)}
+                      className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+                        active
+                          ? "bg-brand-red/10 font-bold text-brand-red"
+                          : "font-medium text-black/80 hover:bg-black/[0.04]"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {active && (
+                        <span aria-hidden="true" className="text-brand-red font-extrabold">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Category Chips and Toggles Row */}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BookDetailClient from "@/components/product/book-detail-client";
-import { getBookByIdWithFallback, getBooksWithFallback } from "@/lib/catalog-fallback";
+import { fetchBookById, getBooksWithFallback } from "@/lib/catalog-fallback";
 import { splitBilingual } from "@/lib/i18n";
 import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
 
@@ -22,14 +22,15 @@ export async function generateMetadata({
 }: {
   params: { tenant: string; id: string };
 }): Promise<Metadata> {
-  const product = await getBookByIdWithFallback(params.tenant, params.id);
-  if (!product) return { title: `Book | ${BRAND.nameEn}` };
+  const lookup = await fetchBookById(params.tenant, params.id);
+  if (lookup.status !== "ok") return { title: `Book | ${BRAND.nameEn}` };
+  const product = lookup.product;
   const [ta, en] = splitBilingual(product.name, "|");
   const [descTa, descEn] = splitBilingual(product.description, "||");
   const title = product.meta_title || `${ta}${en && en !== ta ? ` | ${en}` : ""} — ${BRAND.nameTa}`;
   const description = (product.meta_description || descTa || descEn || `Buy ${en} from ${BRAND.nameEn}`).slice(0, 300);
   const url = `${SITE_URL}/${params.tenant}/products/${product.id}`;
-  const image = absolute(product.images?.[0] || product.image_url) || `${SITE_URL}/logo.jpg`;
+  const image = absolute(product.image_url || product.images?.[0]) || `${SITE_URL}/logo.jpg`;
   return {
     title,
     description,
@@ -46,36 +47,47 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({ params }: { params: { tenant: string; id: string } }) {
-  const product = await getBookByIdWithFallback(params.tenant, params.id);
-  if (!product) {
+  const lookup = await fetchBookById(params.tenant, params.id);
+
+  // Only call notFound() when the API explicitly answered 404
+  if (lookup.status === "not_found") {
+    notFound();
+  }
+
+  // Timeout or 5xx after retry -> friendly "try again" state (not 404)
+  if (lookup.status !== "ok") {
     return (
       <div className="container-site py-20 text-center">
-        <div className="mx-auto max-w-md rounded-2xl border border-black/10 bg-white p-8 shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-brand-red">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-500/30 bg-white p-8 shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-700">
             <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-              <line x1="15" y1="9" x2="9" y2="15" />
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
             </svg>
           </div>
           <h1 className="text-[22px] font-extrabold text-[#111]">
-            நூல் கிடைக்கவில்லை
+            நூல் விவரம் ஏற்றப்படுகிறது
           </h1>
           <p className="mt-1 text-[15px] font-semibold text-brand-red">
-            Book Not Found
+            Please Try Again in a Moment
           </p>
           <p className="mt-3 text-[13.5px] leading-relaxed text-black/60">
-            மன்னிக்கவும், நீங்கள் தேடும் நூல் தற்போது கிடைக்கவில்லை அல்லது நீக்கப்பட்டிருக்கலாம்.
+            சேவையகம் தற்காலிகமாகப் பதிலளிக்கத் தாமதமாகிறது. சில நொடிகளில் மீண்டும் முயற்சிக்கவும்.
             <br />
-            The book you are looking for is currently unavailable or may have been moved.
+            The catalog server took too long to respond{lookup.httpStatus ? ` (HTTP ${lookup.httpStatus})` : ""}. Please retry.
           </p>
-          <div className="mt-6">
-            <Link
-              href={`/${params.tenant}/products`}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={`/${params.tenant}/products/${encodeURIComponent(params.id)}`}
               className="inline-flex h-11 items-center justify-center rounded-full bg-brand-red px-6 text-[13.5px] font-bold text-white hover:bg-brand-red-dark transition-colors shadow-sm"
             >
-              நூல்களைப் பார்வையிடுக / Browse All Books &rarr;
+              மீண்டும் முயற்சி / Try Again
+            </a>
+            <Link
+              href={`/${params.tenant}/products`}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-black/15 px-5 text-[13.5px] font-semibold text-black hover:border-brand-red hover:text-brand-red transition-colors"
+            >
+              அனைத்து நூல்கள் / All Books
             </Link>
           </div>
         </div>
@@ -83,11 +95,12 @@ export default async function ProductDetailPage({ params }: { params: { tenant: 
     );
   }
 
+  const product = lookup.product;
   const price = product.sale_price_cents || product.price_cents;
   const [nameTa, nameEn] = splitBilingual(product.name, "|");
   const [descTa, descEn] = splitBilingual(product.description, "||");
   const url = `${SITE_URL}/${params.tenant}/products/${product.id}`;
-  const image = absolute(product.images?.[0] || product.image_url);
+  const image = absolute(product.image_url || product.images?.[0]);
   const inStock = (product.inventory_quantity ?? product.inventory ?? 1) > 0;
 
   // Note: the old per-render analytics ping (POST /public/track) was removed; it made

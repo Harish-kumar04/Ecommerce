@@ -308,14 +308,27 @@ async def refresh_token(data: RefreshTokenRequest, session: AsyncSession) -> Tok
     if not user:
         raise ValueError("User not found")
 
+    if not user.tenant_id:
+        primary_tid = (
+            await session.execute(select(Tenant.id).order_by(Tenant.created_at))
+        ).scalar_one_or_none()
+        if primary_tid:
+            user.tenant_id = primary_tid
+            await session.commit()
+
+    eff_tid = user.tenant_id or UUID("00000000-0000-0000-0000-000000000000")
     access_token = token_manager.create_access_token(
         subject=str(user.id),
-        tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+        tenant_id=eff_tid,
+    )
+    new_refresh_token = token_manager.create_refresh_token(
+        subject=str(user.id),
+        tenant_id=eff_tid,
     )
 
     return TokenResponse(
         access_token=access_token,
-        refresh_token=data.refresh_token,
+        refresh_token=new_refresh_token,
     )
 
 

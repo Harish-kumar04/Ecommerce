@@ -22,8 +22,8 @@ function LoginForm() {
     setErrorMessage(null);
     try {
       const data = await adminApi.login(email.trim(), password);
-      AuthManager.setToken(data.access_token);
-      adminApi.setToken(data.access_token);
+      AuthManager.setToken(data.access_token, data.refresh_token);
+      adminApi.setTokens(data.access_token, data.refresh_token);
       window.location.href = "/dashboard";
     } catch (error: any) {
       const msg = error?.message || error?.detail || "Invalid email or password. Please verify credentials or backend status.";

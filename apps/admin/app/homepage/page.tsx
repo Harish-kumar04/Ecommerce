@@ -365,7 +365,12 @@ export default function HomepageOffersPage() {
                     {slide.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={slide.image_url}
+                        src={
+                          slide.image_url.includes("/image/upload/") &&
+                          !/\/image\/upload\/(?:[a-z]{1,3}_[^/]+)(?:,[a-z]{1,3}_[^/]+)*\//i.test(slide.image_url)
+                            ? slide.image_url.replace("/image/upload/", "/image/upload/f_auto,q_auto,w_1920/")
+                            : slide.image_url
+                        }
                         alt={slide.alt_en || slide.alt_ta || "Slide"}
                         className="w-full h-full object-cover"
                       />
