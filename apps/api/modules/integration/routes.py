@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ router = APIRouter()
 async def list_integrations(
     provider: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List integrations for the tenant."""
     from apps.api.modules.integration.services import list_integrations
@@ -29,7 +29,7 @@ async def list_integrations(
 async def create_integration(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new integration."""
     from apps.api.modules.integration.services import create_integration
@@ -40,7 +40,7 @@ async def create_integration(
 @router.get("/providers/available")
 async def get_available_providers(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get list of available integration providers."""
     from apps.api.modules.integration.services import get_available_providers
@@ -50,7 +50,7 @@ async def get_available_providers(
 async def get_integration(
     integration_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get an integration by ID."""
     from apps.api.modules.integration.services import get_integration
@@ -65,7 +65,7 @@ async def update_integration(
     integration_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update an integration."""
     from apps.api.modules.integration.services import update_integration
@@ -76,7 +76,7 @@ async def update_integration(
 async def delete_integration(
     integration_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete an integration."""
     from apps.api.modules.integration.services import delete_integration
@@ -88,7 +88,7 @@ async def delete_integration(
 async def test_integration(
     integration_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Test an integration connection."""
     from apps.api.modules.integration.services import test_integration

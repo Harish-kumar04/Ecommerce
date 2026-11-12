@@ -11,10 +11,53 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
+from infalette_auth.rbac import RBACService
 from infalette_commerce.schemas import OrderStatusUpdate, FulfillmentCreate, RefundCreate
 
 router = APIRouter()
+_rbac = RBACService()
+
+
+def _is_merchant_staff(user) -> bool:
+    return any(_rbac.check_role(user, r) for r in ("owner", "admin", "staff"))
+
+
+async def _customer_owned_ids(user, session: AsyncSession) -> set[UUID]:
+    owned: set[UUID] = set()
+    if getattr(user, "id", None):
+        try:
+            owned.add(UUID(str(user.id)))
+        except Exception:
+            pass
+    email = (getattr(user, "email", None) or "").strip()
+    if email and getattr(user, "tenant_id", None):
+        from infalette_database.models.customer import Customer
+
+        rows = (
+            await session.execute(
+                select(Customer.id).where(
+                    Customer.tenant_id == user.tenant_id,
+                    Customer.email.ilike(email),
+                )
+            )
+        ).scalars().all()
+        owned.update(rows)
+    return owned
+
+
+async def _assert_order_access(order_id: UUID, user, session: AsyncSession):
+    from apps.api.modules.order.services import get_order as svc_get_order
+
+    order = await svc_get_order(user.tenant_id, order_id, session)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if _is_merchant_staff(user):
+        return order
+    owned_ids = await _customer_owned_ids(user, session)
+    if not getattr(order, "customer_id", None) or order.customer_id not in owned_ids:
+        raise HTTPException(status_code=403, detail="Forbidden: access denied to this order")
+    return order
 
 
 def _serialize_order(o) -> dict:
@@ -44,48 +87,34 @@ async def list_orders(
     status: Optional[str] = Query(default=None),
     customer_id: Optional[UUID] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """List orders for the tenant.
+    """List orders for the tenant (customers see only their own orders)."""
+    from apps.api.modules.order.services import list_orders as svc_list_orders
 
-    Customer-role tokens are scoped to their own orders (they may only
-    ever see what they bought); staff tokens see the whole tenant.
-    """
-    from apps.api.modules.order.services import list_orders
+    if _is_merchant_staff(user):
+        orders = await svc_list_orders(user.tenant_id, session, status, customer_id)
+        return [_serialize_order(o) for o in orders]
 
-    effective_customer_id = customer_id
-    if str(getattr(user, "role", "") or "").lower() == "customer":
-        from infalette_database.models.customer import Customer
-
-        own = (
-            await session.execute(
-                select(Customer).where(
-                    Customer.tenant_id == user.tenant_id,
-                    Customer.email == user.email,
-                )
-            )
-        ).scalar_one_or_none()
-        if own is None:
-            return []
-        # Customers can never widen their scope via the query param.
-        effective_customer_id = own.id
-
-    orders = await list_orders(user.tenant_id, session, status, effective_customer_id)
-    return [_serialize_order(o) for o in orders]
+    owned_ids = await _customer_owned_ids(user, session)
+    if not owned_ids:
+        return []
+    orders = await svc_list_orders(user.tenant_id, session, status, None)
+    return [
+        _serialize_order(o)
+        for o in orders
+        if getattr(o, "customer_id", None) in owned_ids
+    ]
 
 
 @router.get("/{order_id}")
 async def get_order(
     order_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """Get an order by ID."""
-    from apps.api.modules.order.services import get_order
-    order = await get_order(user.tenant_id, order_id, session)
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    """Get an order by ID (with customer ownership verification)."""
+    return await _assert_order_access(order_id, user, session)
 
 
 @router.patch("/{order_id}/status")
@@ -93,9 +122,9 @@ async def update_order_status(
     order_id: UUID,
     data: OrderStatusUpdate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
-    """Update order status."""
+    """Update order status (merchant roles only)."""
     from apps.api.modules.order.services import update_order_status
     return await update_order_status(user.tenant_id, order_id, data, session)
 
@@ -105,7 +134,7 @@ async def create_fulfillment(
     order_id: UUID,
     data: FulfillmentCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a fulfillment for an order – tenant isolated."""
     from apps.api.modules.order.services import create_fulfillment
@@ -116,9 +145,10 @@ async def create_fulfillment(
 async def get_order_fulfillments(
     order_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """Get fulfillments for an order – tenant isolated."""
+    """Get fulfillments for an order – tenant and customer isolated."""
+    await _assert_order_access(order_id, user, session)
     from apps.api.modules.order.services import get_order_fulfillments
     return await get_order_fulfillments(order_id, session, tenant_id=user.tenant_id)
 
@@ -129,9 +159,10 @@ async def create_return(
     items: list[dict],
     reason: str,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """Create a return request for an order – tenant isolated."""
+    """Create a return request for an order – tenant and customer isolated."""
+    await _assert_order_access(order_id, user, session)
     from apps.api.modules.order.services import create_return
     return await create_return(order_id, items, reason, session, tenant_id=user.tenant_id)
 
@@ -140,7 +171,7 @@ async def create_return(
 async def process_refund(
     data: RefundCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Process a refund – tenant isolated."""
     from apps.api.modules.order.services import process_refund
@@ -159,7 +190,7 @@ async def refund_order(
     order_id: UUID,
     data: OrderRefundRequest,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Refund an order — resolves its succeeded payment automatically."""
     from sqlalchemy import select as _select
@@ -190,11 +221,7 @@ async def refund_order(
             detail="No succeeded payment found for this order (COD orders are refunded offline)",
         )
 
-    from fastapi import HTTPException as _HTTPException
-
-    _RefundCreate = RefundCreate  # already imported at module top (infalette_commerce.schemas)
-
-    refund_data = _RefundCreate(
+    refund_data = RefundCreate(
         payment_id=payment.id,
         amount_cents=data.amount_cents if data.amount_cents is not None else payment.amount_cents,
         reason=data.reason,
@@ -207,9 +234,10 @@ async def refund_order(
 async def get_order_refunds(
     order_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """Get refunds for an order – tenant isolated."""
+    """Get refunds for an order – tenant and customer isolated."""
+    await _assert_order_access(order_id, user, session)
     from apps.api.modules.order.services import get_order_refunds
     return await get_order_refunds(order_id, session, tenant_id=user.tenant_id)
 
@@ -218,8 +246,9 @@ async def get_order_refunds(
 async def get_order_payments(
     order_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff", "customer")),
 ):
-    """Get payments for an order – tenant isolated."""
+    """Get payments for an order – tenant and customer isolated."""
+    await _assert_order_access(order_id, user, session)
     from apps.api.modules.order.services import get_order_payments
     return await get_order_payments(order_id, session, tenant_id=user.tenant_id)

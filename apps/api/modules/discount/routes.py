@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature
 
 router = APIRouter()
@@ -18,7 +18,7 @@ router = APIRouter()
 async def list_discounts(
     active_only: bool = Query(default=False),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import list_discounts
     return await list_discounts(user.tenant_id, session, active_only=active_only)
@@ -27,7 +27,7 @@ async def list_discounts(
 async def get_discount(
     discount_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import get_discount
     dc = await get_discount(user.tenant_id, discount_id, session)
@@ -39,7 +39,7 @@ async def get_discount(
 async def create_discount(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import create_discount
     try:
@@ -52,7 +52,7 @@ async def update_discount(
     discount_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import update_discount
     dc = await update_discount(user.tenant_id, discount_id, data, session)
@@ -64,7 +64,7 @@ async def update_discount(
 async def delete_discount(
     discount_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import delete_discount
     await delete_discount(user.tenant_id, discount_id, session)
@@ -75,7 +75,7 @@ async def validate_discount(
     code: str,
     payload: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Validate a coupon for a given order total — used by checkout preview."""
     from infalette_commerce.discounts import DiscountService

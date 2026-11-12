@@ -89,11 +89,12 @@ class TenantResolver:
             token = auth_header[7:]
             try:
                 payload = self._token_manager.decode_token(token)
-                tid = UUID(payload.tenant_id)
-                return TenantContext(
-                    tenant_id=tid,
-                    is_platform=(payload.sub == "platform" or str(tid) == PLATFORM_TENANT_ID),
-                )
+                if payload.token_type == "access":
+                    tid = UUID(payload.tenant_id)
+                    return TenantContext(
+                        tenant_id=tid,
+                        is_platform=(payload.sub == "platform" or str(tid) == PLATFORM_TENANT_ID),
+                    )
             except Exception:
                 # Try Clerk token if configured
                 try:

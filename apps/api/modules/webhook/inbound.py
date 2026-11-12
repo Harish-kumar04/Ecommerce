@@ -239,18 +239,21 @@ async def clerk_webhook(
     webhook_secret = getattr(getattr(settings, "clerk", None), "webhook_secret", None)
     secret_value = webhook_secret.get_secret_value() if webhook_secret else None
 
-    if secret_value:
-        verified = _verify_svix(
-            secret_value,
-            request.headers.get("svix-id", ""),
-            request.headers.get("svix-timestamp", ""),
-            request.headers.get("svix-signature", ""),
-            raw,
+    if not secret_value:
+        raise HTTPException(
+            status_code=503,
+            detail="CLERK_WEBHOOK_SECRET is not configured",
         )
-        if not verified:
-            raise HTTPException(status_code=403, detail="Invalid Clerk webhook signature")
-    else:
-        logger.warning("CLERK_WEBHOOK_SECRET unset — accepting Clerk webhook unverified (dev only)")
+
+    verified = _verify_svix(
+        secret_value,
+        request.headers.get("svix-id", ""),
+        request.headers.get("svix-timestamp", ""),
+        request.headers.get("svix-signature", ""),
+        raw,
+    )
+    if not verified:
+        raise HTTPException(status_code=403, detail="Invalid Clerk webhook signature")
 
     event_type = payload.get("type", "")
     data = payload.get("data", {}) or {}

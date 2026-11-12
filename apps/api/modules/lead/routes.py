@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ async def list_leads(
     status: Optional[str] = Query(default=None),
     source: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List leads for the tenant."""
     from apps.api.modules.lead.services import list_leads
@@ -31,7 +31,7 @@ async def list_leads(
 async def create_lead(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new lead."""
     from apps.api.modules.lead.services import create_lead
@@ -42,7 +42,7 @@ async def create_lead(
 async def get_lead(
     lead_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a lead by ID."""
     from apps.api.modules.lead.services import get_lead
@@ -57,7 +57,7 @@ async def update_lead(
     lead_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a lead."""
     from apps.api.modules.lead.services import update_lead
@@ -69,7 +69,7 @@ async def update_lead_stage(
     lead_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update only a lead's stage (admin leads page stage dropdown)."""
     from apps.api.modules.lead.services import update_lead
@@ -116,7 +116,7 @@ async def _import_rows(tenant_id: UUID, rows: list[dict], session):
 async def import_leads_multipart(
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """CSV upload import (multipart/form-data) from the admin leads page."""
     raw = await file.read()
@@ -131,7 +131,7 @@ async def import_leads_multipart(
 async def bulk_import_leads_json(
     leads: list[dict],
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Bulk import leads (JSON array)."""
     return await _import_rows(user.tenant_id, leads, session)
@@ -141,7 +141,7 @@ async def bulk_import_leads_json(
 async def delete_lead(
     lead_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a lead."""
     from apps.api.modules.lead.services import delete_lead
@@ -153,7 +153,7 @@ async def delete_lead(
 async def convert_lead(
     lead_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Convert a lead to a customer."""
     from apps.api.modules.lead.services import convert_lead
@@ -164,7 +164,7 @@ async def convert_lead(
 async def get_lead_timeline(
     lead_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get CRM timeline for a lead – events filtered by lead_id."""
     from apps.api.modules.lead.services import get_lead_timeline, get_lead
@@ -189,7 +189,7 @@ async def get_lead_timeline(
 async def bulk_import_leads_json_legacy(
     leads: list[dict],
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Legacy alias — JSON bulk import."""
     return await _import_rows(user.tenant_id, leads, session)

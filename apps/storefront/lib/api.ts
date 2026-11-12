@@ -65,7 +65,7 @@ export function getCartSessionId(): string {
 }
 
 function tenantHeaders(tenant: string): Record<string, string> {
-  const auth = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const auth = typeof window !== "undefined" ? localStorage.getItem("store_access_token") : null;
   const h: Record<string, string> = { "X-Tenant": tenant, "X-Cart-Session-ID": getCartSessionId() };
   if (auth) h.Authorization = `Bearer ${auth}`;
   return h;
@@ -435,7 +435,7 @@ export class StorefrontApi {
 
   async getCurrentUser() {
     // /auth/me returns the UserRead for the bearer token's user.
-    const auth = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    const auth = typeof window !== "undefined" ? localStorage.getItem("store_access_token") : null;
     const headers: Record<string, string> = auth ? { Authorization: `Bearer ${auth}` } : {};
     const response = await api.get(`/auth/me`, { headers });
     return response.data;

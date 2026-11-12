@@ -7,22 +7,20 @@ export default function ForgotPasswordPage() {
   const params = useParams<{ tenant: string }>();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sent" | "error">("idle");
-  const [devToken, setDevToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const base = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
       const res = await fetch(`${base}/auth/forgot-password`, {
         method: "POST",
         headers: { "content-type": "application/json", "X-Tenant": params.tenant },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json().catch(() => ({}));
+      await res.json().catch(() => ({}));
       setStatus(res.ok ? "sent" : "error");
-      setDevToken(data?.reset_token || null);
     } catch {
       setStatus("error");
     } finally {
@@ -35,17 +33,7 @@ export default function ForgotPasswordPage() {
       <form onSubmit={submit} className="bg-white p-8 rounded-2xl shadow w-full max-w-md space-y-4">
         <h1 className="text-2xl font-bold">Forgot password</h1>
         {status === "sent" ? (
-          <>
-            <p className="text-green-700 text-sm">If the account exists, a reset link has been sent.</p>
-            {devToken && (
-              <p className="text-xs text-gray-500 break-all">
-                Dev token (non-production):{" "}
-                <a className="underline" href={`/${params.tenant}/reset-password?token=${devToken}`}>
-                  open reset page
-                </a>
-              </p>
-            )}
-          </>
+          <p className="text-green-700 text-sm">If the account exists, a reset link has been sent.</p>
         ) : (
           <>
             {status === "error" && <p className="text-brand-red text-sm">Something went wrong.</p>}

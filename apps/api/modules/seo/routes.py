@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("/")
 async def list_seo_pages(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List SEO pages for the tenant."""
     from apps.api.modules.seo.services import list_seo_pages
@@ -27,7 +27,7 @@ async def list_seo_pages(
 async def create_seo_page(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new SEO page."""
     from apps.api.modules.seo.services import create_seo_page
@@ -38,7 +38,7 @@ async def create_seo_page(
 @router.get("/redirects")
 async def list_redirects(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List URL redirects for the tenant."""
     from sqlalchemy import select
@@ -55,7 +55,7 @@ async def list_redirects(
 async def create_redirect(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a redirect (old_path -> new_path, 301|302)."""
     from infalette_database.models.seo_redirect import SeoRedirect
@@ -99,7 +99,7 @@ async def create_redirect(
 async def delete_redirect(
     redirect_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a redirect."""
     from sqlalchemy import delete as sa_delete
@@ -131,7 +131,7 @@ def _redirect_dict(r) -> dict:
 async def get_seo_page(
     page_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get an SEO page by ID."""
     from apps.api.modules.seo.services import get_seo_page
@@ -146,7 +146,7 @@ async def update_seo_page(
     page_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update an SEO page."""
     from apps.api.modules.seo.services import update_seo_page
@@ -157,7 +157,7 @@ async def update_seo_page(
 async def delete_seo_page(
     page_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete an SEO page."""
     from apps.api.modules.seo.services import delete_seo_page
@@ -168,7 +168,7 @@ async def delete_seo_page(
 @router.post("/sitemap/generate")
 async def generate_sitemap(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Generate a sitemap for the tenant."""
     from apps.api.modules.seo.services import generate_sitemap
@@ -179,7 +179,7 @@ async def generate_sitemap(
 async def generate_meta_tags(
     page_data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Generate meta tags for a page."""
     from apps.api.modules.seo.services import generate_meta_tags

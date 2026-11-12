@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/")
 async def list_webhook_endpoints(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List webhook endpoints for the tenant."""
     from apps.api.modules.webhook.services import list_webhook_endpoints
@@ -28,7 +28,7 @@ async def list_webhook_endpoints(
 async def create_webhook_endpoint(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new webhook endpoint."""
     from apps.api.modules.webhook.services import create_webhook_endpoint
@@ -39,7 +39,7 @@ async def create_webhook_endpoint(
 async def get_webhook_endpoint(
     endpoint_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a webhook endpoint by ID."""
     from apps.api.modules.webhook.services import get_webhook_endpoint
@@ -54,7 +54,7 @@ async def update_webhook_endpoint(
     endpoint_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a webhook endpoint."""
     from apps.api.modules.webhook.services import update_webhook_endpoint
@@ -65,7 +65,7 @@ async def update_webhook_endpoint(
 async def delete_webhook_endpoint(
     endpoint_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a webhook endpoint."""
     from apps.api.modules.webhook.services import delete_webhook_endpoint
@@ -78,7 +78,7 @@ async def get_webhook_deliveries(
     endpoint_id: UUID,
     limit: int = 100,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get webhook deliveries for an endpoint."""
     from apps.api.modules.webhook.services import get_webhook_deliveries
@@ -89,7 +89,7 @@ async def get_webhook_deliveries(
 async def send_test_webhook(
     endpoint_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Send a test webhook to an endpoint."""
     from apps.api.modules.webhook.services import send_test_webhook

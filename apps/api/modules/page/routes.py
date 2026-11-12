@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def list_pages(
     store_id: Optional[UUID] = Query(default=None),
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List pages for the current tenant."""
     from apps.api.modules.page.services import list_pages as svc_list
@@ -48,7 +48,7 @@ async def list_pages(
 async def create_page(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new page."""
     from apps.api.modules.page.services import create_page as svc_create
@@ -72,7 +72,7 @@ async def create_page(
 async def get_page(
     page_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a page by ID."""
     from apps.api.modules.page.services import get_page as svc_get
@@ -101,7 +101,7 @@ async def update_page(
     page_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a page."""
     from apps.api.modules.page.services import update_page as svc_update
@@ -125,7 +125,7 @@ async def update_page(
 async def delete_page(
     page_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a page."""
     from apps.api.modules.page.services import delete_page as svc_delete
@@ -137,7 +137,7 @@ async def delete_page(
 async def publish_page(
     page_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Publish a page (set status to published)."""
     from apps.api.modules.page.services import publish_page as svc_publish
@@ -159,7 +159,7 @@ async def publish_page(
 async def list_store_pages_via_page_router(
     store_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List pages for a specific store (via page router nested path)."""
     from apps.api.modules.page.services import list_store_pages

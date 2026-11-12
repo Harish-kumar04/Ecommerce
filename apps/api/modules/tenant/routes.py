@@ -135,7 +135,7 @@ async def onboard_tenant(
 async def get_tenant(
     tenant_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a tenant by ID."""
     await _ensure_tenant_access(tenant_id, user, None)
@@ -161,7 +161,7 @@ async def update_tenant(
     tenant_id: UUID,
     data: TenantCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a tenant."""
     await _ensure_tenant_access(tenant_id, user, None)
@@ -187,7 +187,7 @@ async def delete_tenant(
 async def list_domains(
     tenant_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List domains for a tenant."""
     from apps.api.modules.tenant.services import list_domains
@@ -210,7 +210,7 @@ async def create_domain(
     tenant_id: UUID,
     data: DomainCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a domain for a tenant (unverified until DNS check passes)."""
     from apps.api.modules.tenant.services import create_domain
@@ -229,7 +229,7 @@ async def verify_domain(
     tenant_id: UUID,
     domain_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Verify a tenant's custom domain by resolving its DNS records."""
     from apps.api.modules.tenant.services import verify_domain

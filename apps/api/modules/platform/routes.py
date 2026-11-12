@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import require_role
 
 router = APIRouter()
 
@@ -42,7 +42,7 @@ def _require_platform(user) -> None:
 @router.get("/plans")
 async def list_plans(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Plan catalog (slug, pricing, feature matrix)."""
     from infalette_database.models.plan import Plan
@@ -68,7 +68,7 @@ async def list_plans(
 async def list_subscriptions(
     status_filter: str | None = None,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """All tenant subscriptions with their plan (platform owner only)."""
     _require_platform(user)
@@ -108,7 +108,7 @@ class SubscriptionCreate(BaseModel):
 async def create_subscription(
     data: SubscriptionCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Put a tenant on a plan (creating or renewing its subscription)."""
     _require_platform(user)
@@ -177,7 +177,7 @@ async def create_subscription(
 async def cancel_subscription(
     subscription_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Cancel a subscription immediately."""
     _require_platform(user)

@@ -117,6 +117,13 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if payload.token_type != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type: access token required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # Load user from database
     result = await session.execute(
         select(User).where(User.id == UUID(payload.sub))
@@ -213,6 +220,8 @@ async def get_optional_user(
     try:
         payload = token_manager.decode_token(token)
     except Exception:
+        return None
+    if payload.token_type != "access":
         return None
     try:
         result = await session.execute(

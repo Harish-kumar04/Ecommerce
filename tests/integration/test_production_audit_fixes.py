@@ -215,10 +215,12 @@ async def test_password_reset_and_public_customer_dpdp_resolution(db_session):
     assert eff_tenant == tenant.id
     assert resolved_cid == cust_row.id
 
-    # Forgot + reset password round-trip
+    # Forgot + reset password round-trip (reset_token is never echoed in response)
+    auth_services._RESET_TOKENS.clear()
     forgot = await auth_services.forgot_password("shopper@dpdp.test", db_session, tenant_id=tenant.id)
-    assert forgot["reset_token"]
-    reset_res = await auth_services.reset_password(forgot["reset_token"], "NewSecurePass456!", db_session)
+    assert "reset_token" not in forgot
+    stored_token = next(iter(auth_services._RESET_TOKENS.keys()))
+    reset_res = await auth_services.reset_password(stored_token, "NewSecurePass456!", db_session)
     assert reset_res["status"] == "password_reset"
 
 

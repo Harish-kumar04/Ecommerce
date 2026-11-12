@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature
 
 router = APIRouter(dependencies=[Depends(require_feature(Feature.CSV_EXPORTS))])
@@ -17,7 +17,7 @@ router = APIRouter(dependencies=[Depends(require_feature(Feature.CSV_EXPORTS))])
 @router.get("/")
 async def list_report_schedules(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List scheduled reports for the tenant."""
     from apps.api.modules.reports.services import list_schedules
@@ -28,7 +28,7 @@ async def list_report_schedules(
 async def create_report_schedule(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Schedule a recurring report. Body: {report_type, frequency, recipients, name}."""
     from apps.api.modules.reports.services import create_schedule
@@ -42,7 +42,7 @@ async def create_report_schedule(
 async def get_report_schedule(
     schedule_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.reports.services import get_schedule
     schedule = await get_schedule(user.tenant_id, schedule_id, session)
@@ -56,7 +56,7 @@ async def update_report_schedule(
     schedule_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.reports.services import update_schedule
     schedule = await update_schedule(user.tenant_id, schedule_id, data, session)
@@ -69,7 +69,7 @@ async def update_report_schedule(
 async def delete_report_schedule(
     schedule_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.reports.services import delete_schedule
     deleted = await delete_schedule(user.tenant_id, schedule_id, session)
@@ -94,7 +94,7 @@ def _serialize(s) -> dict:
 async def export_report_csv(
     report_type: str,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """On-demand CSV export (orders | customers | leads) for the tenant."""
     from fastapi.responses import Response

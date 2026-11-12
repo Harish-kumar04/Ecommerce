@@ -184,6 +184,21 @@ async def _ensure_required_categories() -> None:
         logging.getLogger(__name__).warning("Category check skipped or failed: %s", exc)
 
 
+DEFAULT_SECRET_KEY = "change-me-to-a-long-random-string"
+
+
+def _assert_production_secrets(settings) -> None:
+    """Refuse startup if SECRET_KEY is still the default outside development."""
+    env = (getattr(settings, "app_env", None) or "development").strip().lower()
+    if env != "development":
+        secret_val = settings.auth.secret_key.get_secret_value()
+        if not secret_val or secret_val == DEFAULT_SECRET_KEY:
+            raise RuntimeError(
+                f"Refusing to start with default SECRET_KEY when APP_ENV={env!r}. "
+                "Set a strong random SECRET_KEY environment variable."
+            )
+
+
 async def _ensure_runtime_ready() -> None:
     """Idempotent startup initializer safe for both ASGI lifespan and cold serverless invocations."""
     global _RUNTIME_READY, _RUNTIME_LOCK
@@ -196,7 +211,19 @@ async def _ensure_runtime_ready() -> None:
             return
 
         settings = get_settings()
-        if not os.getenv("VERCEL"):
+        _assert_production_secrets(settings)
+
+        if os.getenv("VERCEL"):
+            pooled = (
+                getattr(settings.database, "pooled_url", None)
+                or os.getenv("DATABASE_URL_POOLED")
+                or ""
+            ).strip()
+            if not pooled:
+                raise RuntimeError(
+                    "DATABASE_URL_POOLED is missing on Vercel. Configure Neon pooled connection string."
+                )
+        else:
             configure_logging(debug=settings.debug)
 
         from infalette_database import session as _db_session
@@ -204,23 +231,11 @@ async def _ensure_runtime_ready() -> None:
         try:
             await _db_session.init_db()
         except Exception as db_exc:
-            if not os.getenv("VERCEL"):
-                raise
-            import logging
-            import tempfile
-
-            logging.getLogger(__name__).warning(
-                "Primary DATABASE_URL unreachable on Vercel (%s); falling back to /tmp SQLite staging DB",
-                db_exc.__class__.__name__,
-            )
-            tmp_db = (Path(tempfile.gettempdir()) / "muthamilarignar_staging.db").as_posix()
-            os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tmp_db}"
-            os.environ.pop("DATABASE_URL_POOLED", None)
-            get_settings.cache_clear()
-            settings = get_settings()
-            _db_session._engine = None
-            _db_session._session_factory = None
-            await _db_session.init_db()
+            if os.getenv("VERCEL"):
+                raise RuntimeError(
+                    f"Database initialization failed on Vercel (DATABASE_URL_POOLED unreachable): {db_exc}"
+                ) from db_exc
+            raise
 
         await _auto_seed_if_empty()
         await _ensure_required_categories()
@@ -294,6 +309,7 @@ def create_app() -> FastAPI:
         Configured FastAPI application instance.
     """
     settings = get_settings()
+    _assert_production_secrets(settings)
 
     app = FastAPI(
         title="Infalette API",

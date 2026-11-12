@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ router = APIRouter()
 async def list_categories(
     parent_id: Optional[UUID] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List categories for the tenant."""
     from apps.api.modules.category.services import list_categories
@@ -29,7 +29,7 @@ async def list_categories(
 async def create_category(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new category."""
     from apps.api.modules.category.services import create_category
@@ -40,7 +40,7 @@ async def create_category(
 async def get_category(
     category_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a category by ID."""
     from apps.api.modules.category.services import get_category
@@ -55,7 +55,7 @@ async def update_category(
     category_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a category."""
     from apps.api.modules.category.services import update_category
@@ -66,7 +66,7 @@ async def update_category(
 async def delete_category(
     category_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a category."""
     from apps.api.modules.category.services import delete_category
@@ -78,7 +78,7 @@ async def delete_category(
 async def get_category_products(
     category_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get all products in a category."""
     from apps.api.modules.category.services import get_category_products
@@ -89,7 +89,7 @@ async def get_category_products(
 @router.get("/tree/all")
 async def get_category_tree(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get the category tree (``/tree`` and legacy ``/tree/all``)."""
     from apps.api.modules.category.services import get_category_tree

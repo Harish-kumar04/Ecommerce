@@ -75,18 +75,37 @@ class RBACService:
         "customer": set(),
     }
 
-    def check_permission(self, user: User, permission: str) -> bool:
-        """Check if a user has a specific permission.
+    ROLE_ALIASES: dict[str, UserRole] = {
+        "owner": UserRole.TENANT_OWNER,
+        "admin": UserRole.STORE_MANAGER,
+        "store_admin": UserRole.STORE_MANAGER,
+        "super_admin": UserRole.PLATFORM_OWNER,
+        "staff": UserRole.SUPPORT_AGENT,
+    }
 
-        Roles are plain strings on ``User.role`` (matching the DB column).
-        Permissions are derived from ROLE_PERMISSIONS plus hierarchy.
-        """
+    @classmethod
+    def _resolve_role_enum(cls, role: "UserRole | str") -> Optional[UserRole]:
+        if isinstance(role, UserRole):
+            return role
+        raw = str(getattr(role, "value", role) or "").strip().lower()
+        if not raw:
+            return None
+        if raw in cls.ROLE_ALIASES:
+            return cls.ROLE_ALIASES[raw]
+        try:
+            return UserRole(raw)
+        except ValueError:
+            return None
+
+    def check_permission(self, user: User, permission: str) -> bool:
+        """Check if a user has a specific permission."""
         if not user.role:
             return False
-        role_value = getattr(user.role, "value", str(user.role))
-        perms = set(self.ROLE_PERMISSIONS.get(role_value, set()))
-        # inherit from subordinate roles
-        for sub in self.ROLE_HIERARCHY.get(UserRole(role_value), []):
+        resolved = self._resolve_role_enum(user.role)
+        if resolved is None:
+            return False
+        perms = set(self.ROLE_PERMISSIONS.get(resolved.value, set()))
+        for sub in self.ROLE_HIERARCHY.get(resolved, []):
             perms |= set(self.ROLE_PERMISSIONS.get(sub.value, set()))
         return permission in perms
 
@@ -94,15 +113,18 @@ class RBACService:
         """Check if a user has a required role or higher (hierarchy-aware)."""
         if not user.role:
             return False
-        user_role = getattr(user.role, "value", str(user.role))
-        req_value = getattr(required_role, "value", str(required_role))
-        if user_role == req_value:
+        user_raw = str(getattr(user.role, "value", user.role) or "").strip().lower()
+        req_raw = str(getattr(required_role, "value", required_role) or "").strip().lower()
+        if user_raw == req_raw:
             return True
-        try:
-            higher = self.ROLE_HIERARCHY.get(UserRole(user_role), [])
-        except ValueError:
+        user_enum = self._resolve_role_enum(user_raw)
+        req_enum = self._resolve_role_enum(req_raw)
+        if user_enum is None or req_enum is None:
             return False
-        return UserRole(req_value) in higher
+        if user_enum == req_enum:
+            return True
+        higher = self.ROLE_HIERARCHY.get(user_enum, [])
+        return req_enum in higher
 
     def require_role(self, required_role: UserRole):
         """FastAPI dependency for role checking.

@@ -68,10 +68,11 @@ export default function OrderDetailPage() {
 
   const handleInvoice = async (format: "html" | "pdf" = "html") => {
     try {
-      // Use direct fetch to handle binary pdf
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const url = `${base.replace(/\/$/, "")}/invoices/${orderId}/download?format=${format}`;
+      const token = typeof window !== "undefined" ? localStorage.getItem("admin_access_token") : null;
+      const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/$/, "");
+      const rawBase = (process.env.NEXT_PUBLIC_API_URL || `${basePath}/api/v1`).replace(/\/$/, "");
+      const base = rawBase.endsWith("/api/v1") ? rawBase : `${rawBase}/api/v1`;
+      const url = `${base}/invoices/${orderId}/download?format=${format}`;
       const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (!res.ok) throw new Error(await res.text());
       if (format === "pdf") {

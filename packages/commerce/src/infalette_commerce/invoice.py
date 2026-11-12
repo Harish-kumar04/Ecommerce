@@ -252,32 +252,47 @@ class InvoiceService:
 
     def render_html(self, invoice_data: dict) -> str:
         """Render invoice data as HTML string."""
+        import html as _html
+
+        def _esc(val: object) -> str:
+            return _html.escape("" if val is None else str(val), quote=True)
+
         items_rows = ""
         for item in invoice_data.get("line_items", []):
             items_rows += f"""
             <tr>
-                <td>{item.get('name','')}</td>
-                <td>{item.get('sku','')}</td>
-                <td style="text-align:center;">{item.get('quantity','')}</td>
-                <td style="text-align:right;">{item.get('price_display','')}</td>
-                <td style="text-align:right;">{item.get('line_total_display','')}</td>
-                <td style="text-align:right;">{item.get('tax_display','')}</td>
+                <td>{_esc(item.get('name', ''))}</td>
+                <td>{_esc(item.get('sku', ''))}</td>
+                <td style="text-align:center;">{_esc(item.get('quantity', ''))}</td>
+                <td style="text-align:right;">{_esc(item.get('price_display', ''))}</td>
+                <td style="text-align:right;">{_esc(item.get('line_total_display', ''))}</td>
+                <td style="text-align:right;">{_esc(item.get('tax_display', ''))}</td>
             </tr>
             """
 
         shipping = invoice_data.get("shipping_address", {}) or {}
         billing = invoice_data.get("billing_address", {}) or {}
-        totals = invoice_data.get("totals", {})
-        gst = invoice_data.get("gst_breakdown", {})
+        totals = invoice_data.get("totals", {}) or {}
+        gst = invoice_data.get("gst_breakdown", {}) or {}
         customer = invoice_data.get("customer", {}) or {}
 
-        customer_name = f"{customer.get('first_name','') or ''} {customer.get('last_name','') or ''}".strip() or customer.get('email','') or "Customer"
+        raw_customer_name = (
+            f"{customer.get('first_name', '') or ''} {customer.get('last_name', '') or ''}".strip()
+            or customer.get("email", "")
+            or "Customer"
+        )
+        raw_from_name = (
+            invoice_data.get("tenant_name")
+            or f"Tenant {str(invoice_data.get('tenant_id', '') or '')[:8]}"
+        )
+        currency_esc = _esc(invoice_data.get("currency", "INR"))
+        inv_num_esc = _esc(invoice_data.get("invoice_number", ""))
 
-        html = f"""<!DOCTYPE html>
+        rendered = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Invoice {invoice_data.get('invoice_number','')}</title>
+<title>Invoice {inv_num_esc}</title>
 <style>
 body {{ font-family: Arial, sans-serif; margin: 40px; color: #333; }}
 .header {{ border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }}
@@ -297,33 +312,33 @@ th {{ background-color: #f5f5f5; text-align: left; }}
 <div class="header">
 <div class="invoice-title">INVOICE</div>
 <div class="meta">
-<div><strong>Invoice Number:</strong> {invoice_data.get('invoice_number','')}</div>
-<div><strong>Order ID:</strong> {invoice_data.get('order_id','')}</div>
-<div><strong>Invoice Date:</strong> {invoice_data.get('invoice_date','')}</div>
-<div><strong>Order Date:</strong> {invoice_data.get('created_at','')}</div>
-<div><strong>Order Status:</strong> {invoice_data.get('order_status','')}</div>
-<div><strong>Currency:</strong> {invoice_data.get('currency','INR')}</div>
+<div><strong>Invoice Number:</strong> {inv_num_esc}</div>
+<div><strong>Order ID:</strong> {_esc(invoice_data.get('order_id', ''))}</div>
+<div><strong>Invoice Date:</strong> {_esc(invoice_data.get('invoice_date', ''))}</div>
+<div><strong>Order Date:</strong> {_esc(invoice_data.get('created_at', ''))}</div>
+<div><strong>Order Status:</strong> {_esc(invoice_data.get('order_status', ''))}</div>
+<div><strong>Currency:</strong> {currency_esc}</div>
 </div>
 </div>
 
 <div class="addresses">
 <div class="address-box">
 <h4>Bill To</h4>
-<p>{customer_name}<br>
-{billing.get('line1','')}<br>
-{billing.get('line2','') or ''}<br>
-{billing.get('city','')}, {billing.get('state','')} {billing.get('postal_code','')}<br>
-{billing.get('country','')}<br>
-{customer.get('email','') or ''}<br>
-{customer.get('phone','') or ''}
+<p>{_esc(raw_customer_name)}<br>
+{_esc(billing.get('line1', ''))}<br>
+{_esc(billing.get('line2', '') or '')}<br>
+{_esc(billing.get('city', ''))}, {_esc(billing.get('state', ''))} {_esc(billing.get('postal_code', ''))}<br>
+{_esc(billing.get('country', ''))}<br>
+{_esc(customer.get('email', '') or '')}<br>
+{_esc(customer.get('phone', '') or '')}
 </p>
 </div>
 <div class="address-box">
 <h4>Ship To</h4>
-<p>{shipping.get('line1','')}<br>
-{shipping.get('line2','') or ''}<br>
-{shipping.get('city','')}, {shipping.get('state','')} {shipping.get('postal_code','')}<br>
-{shipping.get('country','')}<br>
+<p>{_esc(shipping.get('line1', ''))}<br>
+{_esc(shipping.get('line2', '') or '')}<br>
+{_esc(shipping.get('city', ''))}, {_esc(shipping.get('state', ''))} {_esc(shipping.get('postal_code', ''))}<br>
+{_esc(shipping.get('country', ''))}<br>
 </p>
 </div>
 </div>
@@ -331,16 +346,16 @@ th {{ background-color: #f5f5f5; text-align: left; }}
 <div class="addresses">
 <div class="address-box">
 <h4>From</h4>
-<p>{invoice_data.get('tenant_name') or f"Tenant {invoice_data.get('tenant_id','')[:8]}"}<br>
+<p>{_esc(raw_from_name)}<br>
 Infalette Commerce<br>
 </p>
 </div>
 <div class="address-box">
 <h4>GST Breakdown</h4>
-<p>CGST: {gst.get('cgst_display','0.00')} {invoice_data.get('currency','INR')}<br>
-SGST: {gst.get('sgst_display','0.00')} {invoice_data.get('currency','INR')}<br>
-IGST: {gst.get('igst_display','0.00')} {invoice_data.get('currency','INR')}<br>
-Total Tax: {totals.get('tax_total_display','0.00')}<br>
+<p>CGST: {_esc(gst.get('cgst_display', '0.00'))} {currency_esc}<br>
+SGST: {_esc(gst.get('sgst_display', '0.00'))} {currency_esc}<br>
+IGST: {_esc(gst.get('igst_display', '0.00'))} {currency_esc}<br>
+Total Tax: {_esc(totals.get('tax_total_display', '0.00'))}<br>
 </p>
 </div>
 </div>
@@ -362,20 +377,20 @@ Total Tax: {totals.get('tax_total_display','0.00')}<br>
 </table>
 
 <div class="totals">
-<p>Subtotal: {totals.get('subtotal_display','0.00')}</p>
-<p>Tax: {totals.get('tax_total_display','0.00')}</p>
-<p>Shipping: {totals.get('shipping_display','0.00')}</p>
-<p class="total-row">Grand Total: {totals.get('grand_total_display','0.00')}</p>
+<p>Subtotal: {_esc(totals.get('subtotal_display', '0.00'))}</p>
+<p>Tax: {_esc(totals.get('tax_total_display', '0.00'))}</p>
+<p>Shipping: {_esc(totals.get('shipping_display', '0.00'))}</p>
+<p class="total-row">Grand Total: {_esc(totals.get('grand_total_display', '0.00'))}</p>
 </div>
 
 <div class="footer">
 <p>This is a computer-generated invoice. No signature required.</p>
-<p>Invoice {invoice_data.get('invoice_number','')} • Generated by Infalette</p>
+<p>Invoice {inv_num_esc} • Generated by Infalette</p>
 </div>
 </body>
 </html>
 """
-        return html
+        return rendered
 
     def generate_pdf(self, invoice_data: dict) -> bytes:
         """Generate PDF bytes for invoice.

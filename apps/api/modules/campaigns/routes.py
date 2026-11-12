@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature
 
 # Campaign analytics is part of the Advanced sales dashboard (spec §2)
@@ -18,7 +18,7 @@ router = APIRouter(dependencies=[Depends(require_feature(Feature.ADVANCED_DASHBO
 @router.get("/")
 async def list_campaigns(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List campaigns for the tenant."""
     from apps.api.modules.campaigns.services import list_campaigns
@@ -29,7 +29,7 @@ async def list_campaigns(
 async def create_campaign(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new campaign."""
     from apps.api.modules.campaigns.services import create_campaign
@@ -40,7 +40,7 @@ async def create_campaign(
 async def get_campaign(
     campaign_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a campaign by ID."""
     from apps.api.modules.campaigns.services import get_campaign
@@ -55,7 +55,7 @@ async def update_campaign(
     campaign_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a campaign."""
     from apps.api.modules.campaigns.services import update_campaign
@@ -66,7 +66,7 @@ async def update_campaign(
 async def delete_campaign(
     campaign_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a campaign."""
     from apps.api.modules.campaigns.services import delete_campaign
@@ -77,7 +77,7 @@ async def delete_campaign(
 async def get_campaign_performance(
     campaign_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get lead and revenue performance for a campaign."""
     from apps.api.modules.campaigns.services import get_campaign_performance

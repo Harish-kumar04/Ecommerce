@@ -10,7 +10,7 @@ const base = API_URL.endsWith("/api/v1")
   : API_URL.replace(/\/$/, "") + "/api/v1";
 
 async function req(path: string, init?: RequestInit) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("admin_access_token") : null;
   const res = await fetch(base + path, {
     ...init,
     headers: {

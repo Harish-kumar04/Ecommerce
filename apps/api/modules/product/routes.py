@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Upl
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from infalette_validation.schemas import ProductCreate, ProductUpdate, ProductRead
 from apps.api.core.feature_flags import enforce_quota
 
@@ -20,7 +20,7 @@ router = APIRouter()
 async def create_product(
     data: ProductCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
     quota=Depends(enforce_quota("products")),
 ):
     """Create a new product (plan quota enforced)."""
@@ -33,7 +33,7 @@ async def import_products(
     request: Request,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Bulk import/update products from a CSV file (onboarding imports).
 
@@ -53,7 +53,7 @@ async def import_products(
 async def get_product(
     product_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a product by ID."""
     from apps.api.modules.product.services import get_product
@@ -70,7 +70,7 @@ async def list_products(
     search: Optional[str] = Query(default=None),
     category_id: Optional[UUID] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List products for the tenant (paginated + searchable)."""
     from apps.api.modules.product.services import list_products
@@ -89,7 +89,7 @@ async def put_product(
     product_id: UUID,
     data: ProductCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Full update of a product."""
     from apps.api.modules.product.services import update_product
@@ -104,7 +104,7 @@ async def patch_product(
     product_id: UUID,
     data: ProductUpdate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Partial update of a product."""
     from apps.api.modules.product.services import update_product
@@ -119,7 +119,7 @@ async def adjust_product_stock(
     product_id: UUID,
     payload: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Partial update for inventory adjustments.
 
@@ -156,7 +156,7 @@ async def adjust_product_stock(
 async def delete_product(
     product_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a product."""
     from apps.api.modules.product.services import delete_product
@@ -167,7 +167,7 @@ async def delete_product(
 async def list_variants(
     product_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List all variants for a product."""
     from apps.api.modules.product.services import get_product, list_variants
@@ -182,7 +182,7 @@ async def create_variant(
     product_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new variant for a product."""
     from apps.api.modules.product.services import create_variant
@@ -197,7 +197,7 @@ async def get_variant(
     product_id: UUID,
     variant_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a variant by ID."""
     from apps.api.modules.product.services import get_variant
@@ -213,7 +213,7 @@ async def update_variant(
     variant_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a variant."""
     from apps.api.modules.product.services import update_variant
@@ -228,7 +228,7 @@ async def delete_variant(
     product_id: UUID,
     variant_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a variant."""
     from apps.api.modules.product.services import delete_variant

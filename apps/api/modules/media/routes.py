@@ -54,7 +54,7 @@ def _ensure_tenant_key(tenant_id: UUID, key: str) -> str:
 async def upload_media(
     file: UploadFile = File(...),
     tenant_id: UUID = Depends(resolve_tenant_id),
-    user: User = Depends(require_role("tenant_owner", "store_manager", "admin")),
+    user: User = Depends(require_role("owner", "admin", "staff")),
 ):
     """Upload a media file to S3 under the current tenant prefix."""
     content_type = (file.content_type or "application/octet-stream").lower()
@@ -82,7 +82,7 @@ async def upload_media(
 async def create_presigned_upload(
     body: PresignRequest,
     tenant_id: UUID = Depends(resolve_tenant_id),
-    user: User = Depends(require_role("tenant_owner", "store_manager", "admin")),
+    user: User = Depends(require_role("owner", "admin", "staff")),
 ):
     """Generate a presigned POST payload for direct browser upload to S3."""
     if body.content_type.lower() not in ALLOWED_CONTENT_TYPES:
@@ -109,7 +109,7 @@ async def get_media_signed_url(
     key: str = Query(...),
     expires_in: int = Query(3600, ge=60, le=86400),
     tenant_id: UUID = Depends(resolve_tenant_id),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a temporary signed download URL for a tenant media key."""
     safe_key = _ensure_tenant_key(tenant_id, key)
@@ -126,7 +126,7 @@ async def list_media(
     max_keys: int = Query(100, ge=1, le=500),
     continuation_token: str | None = Query(None),
     tenant_id: UUID = Depends(resolve_tenant_id),
-    user: User = Depends(require_role("tenant_owner", "store_manager", "admin")),
+    user: User = Depends(require_role("owner", "admin", "staff")),
 ):
     """List media objects under the current tenant prefix."""
     prefix = f"tenants/{tenant_id}/"
@@ -145,7 +145,7 @@ async def list_media(
 async def delete_media(
     key: str,
     tenant_id: UUID = Depends(resolve_tenant_id),
-    user: User = Depends(require_role("tenant_owner", "store_manager", "admin")),
+    user: User = Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a media object belonging to the current tenant."""
     safe_key = _ensure_tenant_key(tenant_id, key)

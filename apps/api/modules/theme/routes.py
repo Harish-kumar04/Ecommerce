@@ -8,14 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
 
 @router.get("/presets")
 async def get_presets(
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get 3 theme presets from packages/themes."""
     from apps.api.modules.theme.services import get_presets as svc_presets
@@ -27,7 +27,7 @@ async def get_presets(
 async def apply_theme(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Apply a theme preset or custom theme to a store."""
     from apps.api.modules.theme.services import apply_theme as svc_apply
@@ -37,7 +37,7 @@ async def apply_theme(
 @router.get("/", response_model=list[dict])
 async def list_themes(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List themes for the current tenant."""
     from apps.api.modules.theme.services import list_themes as svc_list
@@ -61,7 +61,7 @@ async def list_themes(
 async def create_theme(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new theme."""
     from apps.api.modules.theme.services import create_theme as svc_create
@@ -80,7 +80,7 @@ async def create_theme(
 async def get_theme(
     theme_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a theme by ID."""
     from apps.api.modules.theme.services import get_theme as svc_get
@@ -104,7 +104,7 @@ async def update_theme(
     theme_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a theme."""
     from apps.api.modules.theme.services import update_theme as svc_update
@@ -123,7 +123,7 @@ async def update_theme(
 async def delete_theme(
     theme_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a theme."""
     from apps.api.modules.theme.services import delete_theme as svc_delete

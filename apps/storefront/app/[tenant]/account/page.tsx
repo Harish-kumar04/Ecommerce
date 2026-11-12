@@ -264,11 +264,12 @@ function OrdersSection({ tenant }: { tenant: string }) {
       setLoading(true);
       setError(null);
       try {
+        const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/orders`,
+          `${apiBase}/orders`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+              Authorization: `Bearer ${localStorage.getItem("store_access_token")}`,
               "X-Tenant": tenant,
             },
           }
@@ -434,11 +435,9 @@ function SupportSection({ tenant }: { tenant: string }) {
     setSending(true);
     setFeedback(null);
     try {
-      // The support message is logged via the analytics event bus so the
-      // store can route it later. No PII leaves the browser other than
-      // the text the user typed.
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/public/track`,
+        `${apiBase}/public/track`,
         {
           event_type: "support.message",
           subject,

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from infalette_validation.schemas import StoreCreate, StoreRead
 
 router = APIRouter()
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/settings")
 async def get_store_settings(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get store settings for current tenant (first store)."""
     from apps.api.modules.store.services import get_store_settings
@@ -32,7 +32,7 @@ async def get_store_settings(
 async def update_store_settings(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update store settings for current tenant (first store)."""
     from apps.api.modules.store.services import update_store_settings
@@ -46,7 +46,7 @@ async def update_store_settings(
 async def get_store_pages(
     store_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get pages for a specific store (proxy to page service)."""
     from apps.api.modules.page.services import list_store_pages
@@ -74,7 +74,7 @@ async def get_store_pages(
 async def create_store(
     data: StoreCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new store."""
     from apps.api.modules.store.services import create_store
@@ -86,7 +86,7 @@ async def create_store(
 async def get_store(
     store_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a store by ID – tenant isolated."""
     from apps.api.modules.store.services import get_store
@@ -99,7 +99,7 @@ async def get_store(
 @router.get("/", response_model=list[StoreRead])
 async def list_stores(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List all stores for the current tenant."""
     from apps.api.modules.store.services import list_stores
@@ -112,7 +112,7 @@ async def update_store(
     store_id: UUID,
     data: StoreCreate,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a store – tenant isolated."""
     from apps.api.modules.store.services import update_store
@@ -126,7 +126,7 @@ async def update_store(
 async def delete_store(
     store_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a store – tenant isolated."""
     from apps.api.modules.store.services import delete_store

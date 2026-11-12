@@ -151,8 +151,8 @@ export default function ConsentPage({ params }: { params: { tenant: string } }) 
       await storefrontApi.eraseCustomerData(tenant, customerId);
       // Wipe local auth and bounce back to the storefront home.
       try {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("store_access_token");
+        localStorage.removeItem("store_refresh_token");
       } catch {
         /* ignore storage failures */
       }

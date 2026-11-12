@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ router = APIRouter()
 async def list_collections(
     status: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List collections for the tenant."""
     from apps.api.modules.collection.services import list_collections
@@ -29,7 +29,7 @@ async def list_collections(
 async def create_collection(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new collection."""
     from apps.api.modules.collection.services import create_collection
@@ -40,7 +40,7 @@ async def create_collection(
 async def get_collection(
     collection_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a collection by ID."""
     from apps.api.modules.collection.services import get_collection
@@ -55,7 +55,7 @@ async def update_collection(
     collection_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a collection."""
     from apps.api.modules.collection.services import update_collection
@@ -66,7 +66,7 @@ async def update_collection(
 async def delete_collection(
     collection_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a collection."""
     from apps.api.modules.collection.services import delete_collection
@@ -78,7 +78,7 @@ async def delete_collection(
 async def get_collection_products(
     collection_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get all products in a collection."""
     from apps.api.modules.collection.services import get_collection_products

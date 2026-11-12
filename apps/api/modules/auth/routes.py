@@ -90,7 +90,6 @@ async def customer_register(
 
 class _PasswordResetStatus(BaseModel):
     status: str
-    reset_token: str | None = None
 
 
 @router.post("/forgot-password", response_model=_PasswordResetStatus)
@@ -98,7 +97,7 @@ async def forgot_password(
     data: ForgotPasswordRequest,
     session: AsyncSession = Depends(get_async_session),
 ):
-    """Issue a password-reset token (emailed; token echoed only in non-prod dev)."""
+    """Issue a password-reset token via configured email channel."""
     from apps.api.modules.auth.services import forgot_password as _svc
     return await _svc(data.email, session)
 

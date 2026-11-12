@@ -33,7 +33,7 @@ class ApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    this.token = typeof window !== "undefined" ? localStorage.getItem("admin_access_token") : null;
   }
 
   setToken(token: string | null) {
@@ -44,21 +44,21 @@ class ApiClient {
     this.token = token;
     if (typeof window !== "undefined") {
       if (token) {
-        localStorage.setItem("access_token", token);
+        localStorage.setItem("admin_access_token", token);
         try {
-          document.cookie = `access_token=${token}; path=/; max-age=2592000; samesite=lax`;
+          document.cookie = `admin_access_token=${token}; path=/; max-age=2592000; samesite=lax`;
         } catch {}
       } else {
-        localStorage.removeItem("access_token");
+        localStorage.removeItem("admin_access_token");
         try {
-          document.cookie = "access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie = "admin_access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         } catch {}
       }
       if (refreshToken !== undefined) {
         if (refreshToken) {
-          localStorage.setItem("refresh_token", refreshToken);
+          localStorage.setItem("admin_refresh_token", refreshToken);
         } else {
-          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("admin_refresh_token");
         }
       }
     }
@@ -66,14 +66,14 @@ class ApiClient {
 
   getToken(): string | null {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("access_token");
+      return localStorage.getItem("admin_access_token");
     }
     return this.token;
   }
 
   getRefreshToken(): string | null {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("refresh_token");
+      return localStorage.getItem("admin_refresh_token");
     }
     return null;
   }

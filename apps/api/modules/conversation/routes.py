@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import enforce_quota, require_feature, Feature
 
 router = APIRouter(dependencies=[Depends(require_feature(Feature.UNIFIED_INBOX))])
@@ -40,7 +40,7 @@ async def list_conversations(
     status: Optional[str] = Query(default=None),
     channel: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List conversations for the tenant."""
     from apps.api.modules.conversation.services import list_conversations
@@ -52,7 +52,7 @@ async def list_conversations(
 async def create_conversation(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new conversation."""
     from apps.api.modules.conversation.services import create_conversation
@@ -64,7 +64,7 @@ async def create_conversation(
 async def get_conversation(
     conversation_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a conversation by ID."""
     from apps.api.modules.conversation.services import get_conversation
@@ -79,7 +79,7 @@ async def send_message(
     conversation_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
     quota=Depends(enforce_quota("messages_per_month")),
 ):
     """Send a message in a conversation (plan quota enforced)."""
@@ -100,7 +100,7 @@ async def send_message(
 async def get_conversation_messages(
     conversation_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get all messages for a conversation (full thread across channels)."""
     from apps.api.modules.conversation.services import get_conversation_messages
@@ -133,7 +133,7 @@ async def assign_conversation(
     body: AssignRequest | None = None,
     agent_id: Optional[UUID] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Assign a conversation to an agent.
 
@@ -155,7 +155,7 @@ async def assign_conversation(
 async def close_conversation(
     conversation_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Close a conversation."""
     from apps.api.modules.conversation.services import close_conversation

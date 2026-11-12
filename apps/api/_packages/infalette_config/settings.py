@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import os
 from pathlib import Path
 from typing import Any
 
@@ -109,27 +110,24 @@ class DatabaseSettings(BaseSettings):
         """Return the runtime DSN.
 
         Prefers ``DATABASE_URL_POOLED`` (Neon pooled), then explicit
-        ``DATABASE_URL``. On Vercel Serverless (``VERCEL=1``), if no external
-        cloud database URL was configured (or if a local/Docker hostname such
-        as ``localhost`` or ``postgres`` was left over), falls back to an
-        ephemeral writable SQLite staging database in ``/tmp``.
+        ``DATABASE_URL`` outside Vercel. On Vercel Serverless (``VERCEL`` set),
+        ``DATABASE_URL_POOLED`` is mandatory and never falls back to SQLite.
         """
-        import os
-
         is_vercel = bool(os.environ.get("VERCEL"))
         local_hosts = ("@localhost", "@127.0.0.1", "@postgres:", "@postgres/", "@db:")
 
-        if self.pooled_url and not (is_vercel and any(h in self.pooled_url for h in local_hosts)):
-            return self.pooled_url
-        if (os.environ.get("DATABASE_URL") or _ENV_FILE) and not (
-            is_vercel and any(h in self.url for h in local_hosts)
-        ):
-            return self.url
         if is_vercel:
-            import tempfile
+            pooled = (self.pooled_url or os.environ.get("DATABASE_URL_POOLED") or "").strip()
+            if not pooled or any(h in pooled for h in local_hosts):
+                raise RuntimeError(
+                    "DATABASE_URL_POOLED is missing or invalid on Vercel; refusing to fall back to SQLite."
+                )
+            return pooled
 
-            tmp_db = (Path(tempfile.gettempdir()) / "muthamilarignar_staging.db").as_posix()
-            return f"sqlite+aiosqlite:///{tmp_db}"
+        if self.pooled_url:
+            return self.pooled_url
+        if os.environ.get("DATABASE_URL") or _ENV_FILE:
+            return self.url
         return self.url
 
     def migration_url(self) -> str:
@@ -406,8 +404,8 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "Muthamilarignar Pathipagam"
     app_env: str = Field(
-        default="development",
-        validation_alias=AliasChoices("APP_ENV", "VERCEL_ENV", "NODE_ENV"),
+        default_factory=lambda: "production" if os.environ.get("VERCEL") else "development",
+        validation_alias="APP_ENV",
     )
     debug: bool = Field(default=False, validation_alias="DEBUG")
     api_url: str = Field(default="http://localhost:8000", validation_alias="API_URL")

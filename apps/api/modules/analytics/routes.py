@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature
 
 router = APIRouter()
@@ -19,7 +19,7 @@ router = APIRouter()
 async def get_dashboard_metrics(
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Full dashboard payload (spec §3's 13 metrics).
 
@@ -95,7 +95,7 @@ async def get_dashboard_metrics(
 async def get_low_inventory_route(
     threshold: int = Query(default=10),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Products at/below their low-stock threshold."""
     from infalette_analytics.dashboard import DashboardService
@@ -108,7 +108,7 @@ async def get_low_inventory_route(
 @router.get("/repeat-customers")
 async def get_repeat_customers_route(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Customers with more than one order."""
     from infalette_analytics.dashboard import DashboardService
@@ -120,7 +120,7 @@ async def get_repeat_customers_route(
 async def get_sales_analytics(
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Sales over time, wrapped as ``{series: [...]}`` for the charts.
 
@@ -147,7 +147,7 @@ async def get_sales_analytics(
 async def get_top_products(
     limit: int = Query(default=10),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get top selling products."""
     from apps.api.modules.analytics.services import get_top_products
@@ -157,7 +157,7 @@ async def get_top_products(
 @router.get("/customers")
 async def get_customer_analytics(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get customer analytics."""
     from apps.api.modules.analytics.services import get_customer_analytics
@@ -168,7 +168,7 @@ async def get_customer_analytics(
 async def get_conversion_funnel(
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get website conversion funnel data (plan-gated)."""
     from apps.api.modules.analytics.services import get_conversion_funnel
@@ -182,7 +182,7 @@ async def get_conversion_funnel(
 async def get_social_funnel(
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Social funnel: Comment/DM -> Reply -> View -> Checkout -> Paid (plan-gated)."""
     from infalette_analytics.funnel import FunnelAnalyzer
@@ -198,7 +198,7 @@ async def get_abandoned_segments(
     hours: int = Query(default=24),
     limit: int = Query(default=50),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Abandoned carts + abandoned social checkouts (CRM plan only)."""
     from apps.api.modules.analytics.services import get_abandoned_segments
@@ -212,7 +212,7 @@ async def get_abandoned_segments(
 async def get_channel_attribution(
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Channel attribution breakdown for the tenant."""
     from apps.api.modules.analytics.services import get_channel_attribution
@@ -224,7 +224,7 @@ async def get_event_analytics(
     event_type: Optional[str] = Query(default=None),
     days: int = Query(default=30),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get event analytics."""
     from apps.api.modules.analytics.services import get_event_analytics

@@ -10,7 +10,7 @@ from sqlalchemy import select as _select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature
 
 router = APIRouter()
@@ -21,7 +21,7 @@ async def list_customers(
     search: Optional[str] = Query(default=None),
     status: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """List customers for the tenant."""
     from apps.api.modules.customer.services import list_customers
@@ -32,7 +32,7 @@ async def list_customers(
 async def create_customer(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Create a new customer."""
     from apps.api.modules.customer.services import create_customer
@@ -43,7 +43,7 @@ async def create_customer(
 async def get_customer(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get a customer by ID."""
     from apps.api.modules.customer.services import get_customer
@@ -58,7 +58,7 @@ async def update_customer(
     customer_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update a customer."""
     from apps.api.modules.customer.services import update_customer
@@ -69,7 +69,7 @@ async def update_customer(
 async def delete_customer(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete a customer."""
     from apps.api.modules.customer.services import delete_customer
@@ -81,7 +81,7 @@ async def delete_customer(
 async def get_customer_orders(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get all orders for a customer."""
     from apps.api.modules.customer.services import get_customer_orders
@@ -91,7 +91,7 @@ async def get_customer_orders(
 @router.get("/stats/overview", dependencies=[Depends(require_feature(Feature.CUSTOMER_PROFILES))])
 async def get_customers_overview_stats(
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Aggregate customer stats for the admin customers page.
 
@@ -139,7 +139,7 @@ async def get_customers_overview_stats(
 async def get_customer_stats(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get customer statistics."""
     from apps.api.modules.customer.services import get_customer_stats
@@ -150,7 +150,7 @@ async def get_customer_stats(
 async def get_customer_timeline(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get CRM timeline for a customer – events filtered by customer_id."""
     from apps.api.modules.customer.services import get_customer, get_customer_timeline
@@ -175,7 +175,7 @@ async def get_customer_timeline(
 async def withdraw_consent_alias(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """DPDP withdrawal alias — revokes all marketing consent flags."""
     from apps.api.modules.customer.services import update_customer_consent
@@ -194,7 +194,7 @@ async def update_consent(
     customer_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update marketing consent flags (DPDP). Body: {"consent": {...}}."""
     consent = data.get("consent") or {}
@@ -214,7 +214,7 @@ async def update_consent(
 async def export_customer(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Export all personal data held for this customer (DPDP portability)."""
     from apps.api.modules.customer.services import export_customer_data
@@ -228,7 +228,7 @@ async def export_customer(
 async def erase_customer(
     customer_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Anonymize this customer's personal data (DPDP right to erasure)."""
     from apps.api.modules.customer.services import erase_customer_data

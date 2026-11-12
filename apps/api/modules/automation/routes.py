@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
-from infalette_auth.dependencies import get_current_user
+from infalette_auth.dependencies import get_current_user, require_role
 from apps.api.core.feature_flags import Feature, require_feature, enforce_quota
 
 router = APIRouter()
@@ -19,7 +19,7 @@ router = APIRouter()
 async def list_automation_rules(
     status: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
     plan=Depends(require_feature(Feature.INSTAGRAM_AUTOMATION)),
 ):
     """List automation rules for the tenant."""
@@ -31,7 +31,7 @@ async def list_automation_rules(
 async def create_automation_rule(
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
     plan=Depends(require_feature(Feature.INSTAGRAM_AUTOMATION)),
     quota=Depends(enforce_quota("automations")),
 ):
@@ -44,7 +44,7 @@ async def create_automation_rule(
 async def get_automation_rule(
     rule_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get an automation rule by ID."""
     from apps.api.modules.automation.services import get_automation_rule
@@ -59,7 +59,7 @@ async def update_automation_rule(
     rule_id: UUID,
     data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Update an automation rule."""
     from apps.api.modules.automation.services import update_automation_rule
@@ -70,7 +70,7 @@ async def update_automation_rule(
 async def delete_automation_rule(
     rule_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Delete an automation rule."""
     from apps.api.modules.automation.services import delete_automation_rule
@@ -83,7 +83,7 @@ async def toggle_automation_rule(
     rule_id: UUID,
     enabled: bool,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Enable or disable an automation rule."""
     from apps.api.modules.automation.services import toggle_automation_rule
@@ -95,7 +95,7 @@ async def test_automation_rule(
     rule_id: UUID,
     test_data: dict,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Test an automation rule with sample data."""
     from apps.api.modules.automation.services import test_automation_rule
@@ -106,7 +106,7 @@ async def test_automation_rule(
 async def list_rule_actions(
     rule_id: UUID,
     session: AsyncSession = Depends(get_async_session),
-    user=Depends(get_current_user),
+    user=Depends(require_role("owner", "admin", "staff")),
 ):
     """Get all actions for an automation rule."""
     from apps.api.modules.automation.services import list_rule_actions

@@ -668,7 +668,6 @@ async def main() -> None:
                 os.environ.get("DEMO_PLATFORM_EMAIL", "admin@infalette.com"),
                 os.environ.get("DEMO_PLATFORM_PASSWORD", "PlatformAdmin!2026"),
             ),
-            ("admin@demo.test", "admin1234"),
         ]
         for p_email, p_pw in platform_accounts:
             puser = (

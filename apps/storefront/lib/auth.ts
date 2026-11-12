@@ -9,8 +9,8 @@
  * everywhere.
  */
 
-export const STOREFRONT_TOKEN_KEY = "access_token";
-export const STOREFRONT_REFRESH_KEY = "refresh_token";
+export const STOREFRONT_TOKEN_KEY = "store_access_token";
+export const STOREFRONT_REFRESH_KEY = "store_refresh_token";
 
 export function getStorefrontToken(): string | null {
   if (typeof window === "undefined") return null;

@@ -55,6 +55,10 @@ def _mfa_required_for(user: User) -> bool:
     return str(getattr(user, "role", "") or "").lower() in roles
 
 
+def _user_role_str(user: User) -> str:
+    return str(getattr(user.role, "value", user.role) or "")
+
+
 def _create_enrollment_token(user: User) -> str:
     """Short-lived token restricted to /auth/mfa/* endpoints."""
     from datetime import timedelta
@@ -65,74 +69,21 @@ def _create_enrollment_token(user: User) -> str:
         tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
         expires_delta=timedelta(minutes=15),
         scope="mfa_enrollment",
+        role=_user_role_str(user),
     )
 
 
 async def login(data: LoginRequest, session: AsyncSession) -> TokenResponse:
-    """Login with email and password, enforcing MFA if enabled.
-
-    Args:
-        data: Login request data (may include mfa_code).
-        session: Database session.
-
-    Returns:
-        Token response with access and refresh tokens.
-
-    Raises:
-        ValueError: if credentials invalid or MFA required/invalid.
-    """
+    """Login with email and password, enforcing MFA if enabled."""
     email_clean = (data.email or "").strip().lower()
     result = await session.execute(
         select(User).where(User.email.ilike(email_clean))
     )
     user = result.scalar_one_or_none()
 
-    # Known built-in administrators for development/staging access
-    KNOWN_ADMIN_EMAILS = (
-        "admin@infalette.com",
-        "owner@demo.test",
-        "owner@demo.infalette.com",
-        "admin@demo.test",
-    )
-    ACCEPTED_ADMIN_PASSWORDS = (
-        "demo1234",
-        "PlatformAdmin!2026",
-        "admin1234",
-        "DemoOwner!2026",
-    )
-
     hasher = PasswordHasher()
-
-    if not user:
-        if email_clean in KNOWN_ADMIN_EMAILS and data.password in ACCEPTED_ADMIN_PASSWORDS:
-            # Auto-provision admin user to primary tenant so admin is never locked out
-            primary_tid = (
-                await session.execute(select(Tenant.id).order_by(Tenant.created_at))
-            ).scalar_one_or_none()
-            user = User(
-                tenant_id=primary_tid,
-                email=email_clean,
-                password_hash=hasher.hash_password(data.password),
-                first_name="Muthamilarignar",
-                last_name="Pathipagam",
-                role="tenant_owner",
-                status="active",
-            )
-            session.add(user)
-            await session.commit()
-            await session.refresh(user)
-        else:
-            raise ValueError("Invalid email or password")
-    else:
-        is_valid_pw = hasher.verify_password(data.password, user.password_hash)
-        if not is_valid_pw and email_clean in KNOWN_ADMIN_EMAILS and data.password in ACCEPTED_ADMIN_PASSWORDS:
-            # Reset to accepted demo password
-            user.password_hash = hasher.hash_password(data.password)
-            is_valid_pw = True
-            await session.commit()
-
-        if not is_valid_pw:
-            raise ValueError("Invalid email or password")
+    if not user or not user.password_hash or not hasher.verify_password(data.password, user.password_hash):
+        raise ValueError("Invalid email or password")
 
     # If user has no tenant_id, attach to primary bookstore tenant
     if not user.tenant_id:
@@ -171,14 +122,17 @@ async def login(data: LoginRequest, session: AsyncSession) -> TokenResponse:
             scope="mfa_enrollment",
         )
 
+    role_claim = _user_role_str(user)
     token_manager = TokenManager()
     access_token = token_manager.create_access_token(
         subject=str(user.id),
         tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+        role=role_claim,
     )
     refresh_token = token_manager.create_refresh_token(
         subject=str(user.id),
         tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+        role=role_claim,
     )
 
     return TokenResponse(
@@ -190,12 +144,7 @@ async def login(data: LoginRequest, session: AsyncSession) -> TokenResponse:
 async def confirm_mfa_enrollment(
     user: User, mfa_code: str, session: AsyncSession
 ) -> TokenResponse:
-    """Confirm TOTP enrollment and exchange the restricted token for full ones.
-
-    Called from ``POST /auth/mfa/confirm-enrollment`` with the enrollment-
-    scoped token issued at login. Verifies the code against the secret
-    created by ``setup_mfa``, enables MFA, and issues normal tokens.
-    """
+    """Confirm TOTP enrollment and exchange the restricted token for full ones."""
     mfa_service = MFAService()
     secret = getattr(user, "mfa_secret", None)
     if not secret:
@@ -206,15 +155,18 @@ async def confirm_mfa_enrollment(
     user.mfa_enabled = True
     await session.commit()
 
+    role_claim = _user_role_str(user)
     token_manager = TokenManager()
     return TokenResponse(
         access_token=token_manager.create_access_token(
             subject=str(user.id),
             tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+            role=role_claim,
         ),
         refresh_token=token_manager.create_refresh_token(
             subject=str(user.id),
             tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+            role=role_claim,
         ),
     )
 
@@ -267,14 +219,17 @@ async def register(data: RegisterRequest, session: AsyncSession) -> TokenRespons
 
     await session.commit()
 
+    role_claim = _user_role_str(admin_user)
     token_manager = TokenManager()
     access_token = token_manager.create_access_token(
         subject=str(admin_user.id),
         tenant_id=tenant.id,
+        role=role_claim,
     )
     refresh_token = token_manager.create_refresh_token(
         subject=str(admin_user.id),
         tenant_id=tenant.id,
+        role=role_claim,
     )
 
     return TokenResponse(
@@ -284,15 +239,7 @@ async def register(data: RegisterRequest, session: AsyncSession) -> TokenRespons
 
 
 async def refresh_token(data: RefreshTokenRequest, session: AsyncSession) -> TokenResponse:
-    """Refresh access token.
-
-    Args:
-        data: Refresh token request.
-        session: Database session.
-
-    Returns:
-        Token response with new access token.
-    """
+    """Refresh access token."""
     token_manager = TokenManager()
     payload = token_manager.decode_token(data.refresh_token)
 
@@ -316,14 +263,17 @@ async def refresh_token(data: RefreshTokenRequest, session: AsyncSession) -> Tok
             user.tenant_id = primary_tid
             await session.commit()
 
+    role_claim = _user_role_str(user)
     eff_tid = user.tenant_id or UUID("00000000-0000-0000-0000-000000000000")
     access_token = token_manager.create_access_token(
         subject=str(user.id),
         tenant_id=eff_tid,
+        role=role_claim,
     )
     new_refresh_token = token_manager.create_refresh_token(
         subject=str(user.id),
         tenant_id=eff_tid,
+        role=role_claim,
     )
 
     return TokenResponse(
@@ -333,12 +283,7 @@ async def refresh_token(data: RefreshTokenRequest, session: AsyncSession) -> Tok
 
 
 async def verify_mfa(data: MFAVerifyRequest, session: AsyncSession) -> TokenResponse:
-    """Verify MFA code (also verifies password).
-
-    Handles both login MFA verification and setup confirmation.
-    If user has mfa_secret but mfa_enabled is False, successful verification
-    will enable MFA.
-    """
+    """Verify MFA code (also verifies password)."""
     result = await session.execute(
         select(User).where(User.email == data.email)
     )
@@ -365,14 +310,17 @@ async def verify_mfa(data: MFAVerifyRequest, session: AsyncSession) -> TokenResp
         await session.commit()
         await session.refresh(user)
 
+    role_claim = _user_role_str(user)
     token_manager = TokenManager()
     access_token = token_manager.create_access_token(
         subject=str(user.id),
         tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+        role=role_claim,
     )
     refresh_token = token_manager.create_refresh_token(
         subject=str(user.id),
         tenant_id=user.tenant_id or UUID("00000000-0000-0000-0000-000000000000"),
+        role=role_claim,
     )
 
     return TokenResponse(
@@ -502,10 +450,11 @@ async def customer_register(
 
     await session.commit()
 
+    role_claim = _user_role_str(user)
     token_manager = TokenManager()
     return TokenResponse(
-        access_token=token_manager.create_access_token(str(user.id), tenant_id),
-        refresh_token=token_manager.create_refresh_token(str(user.id), tenant_id),
+        access_token=token_manager.create_access_token(str(user.id), tenant_id, role=role_claim),
+        refresh_token=token_manager.create_refresh_token(str(user.id), tenant_id, role=role_claim),
     )
 
 
@@ -549,7 +498,7 @@ async def forgot_password(email: str, session: AsyncSession, tenant_id=None) -> 
     if not stored:
         return result
 
-    # Email the reset link when delivery is configured
+    # Email the reset link when delivery is configured (never echo reset_token in API response)
     try:
         from infalette_integrations.email.client import EmailClient
 
@@ -563,17 +512,9 @@ async def forgot_password(email: str, session: AsyncSession, tenant_id=None) -> 
             ),
             tenant_id=user.tenant_id,
         )
-        emailed = True
     except Exception:
-        emailed = False
+        pass
 
-    # Dev convenience: surface the token only outside production when no
-    # email delivery is configured, so the flow can complete end-to-end.
-    if (
-        (settings.app_env or "").lower() != "production"
-        and not _email_delivery_configured(settings)
-    ):
-        result["reset_token"] = token
     return result
 
 
