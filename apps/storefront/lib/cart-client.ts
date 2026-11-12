@@ -15,23 +15,20 @@ function resolveClientApiBase(): string {
   return "http://localhost:8000/api/v1";
 }
 
-const LOCAL_CART_KEY = "mp_fallback_cart";
+export const PRODUCT_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function readLocalCart(): any[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(LOCAL_CART_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+export function isUuidProductId(id: unknown): boolean {
+  return typeof id === "string" && PRODUCT_UUID_RE.test(id.trim());
 }
 
-function writeLocalCart(items: any[]) {
+function purgeLegacyLocalCart() {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(items));
-  } catch {}
+    window.localStorage.removeItem("mp_fallback_cart");
+  } catch {
+    // ignore storage errors
+  }
 }
 
 /**
@@ -39,34 +36,53 @@ function writeLocalCart(items: any[]) {
  * keeping the critical JS bundle on home and catalog pages under 100 kB.
  */
 export async function quickAddToCart(tenant: string, productId: string, quantity = 1) {
-  try {
-    const apiBase = resolveClientApiBase();
-    const res = await fetch(`${apiBase}/cart/items`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Tenant": tenant,
-        "X-Cart-Session-ID": getCartSessionId(),
-      },
-      body: JSON.stringify({ product_id: productId, quantity }),
-    });
-    if (res.ok) return await res.json();
-  } catch {
-    // offline / fallback
+  purgeLegacyLocalCart();
+
+  if (!isUuidProductId(productId)) {
+    throw new Error("Store is temporarily unavailable, try again");
   }
 
-  // Local storage offline fallback
-  const items = readLocalCart();
-  const existing = items.find((it) => it.product_id === productId);
-  if (existing) {
-    existing.quantity = (existing.quantity || 1) + quantity;
-  } else {
-    items.push({
-      id: `item-${productId}`,
-      product_id: productId,
-      quantity,
-    });
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Tenant": tenant,
+    "X-Cart-Session-ID": getCartSessionId(),
+  };
+  if (typeof window !== "undefined") {
+    try {
+      const token = window.localStorage.getItem("store_access_token");
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {
+      // ignore storage errors
+    }
   }
-  writeLocalCart(items);
-  return { items };
+
+  let res: Response;
+  try {
+    const apiBase = resolveClientApiBase();
+    res = await fetch(`${apiBase}/cart/items`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ product_id: productId, quantity }),
+    });
+  } catch {
+    throw new Error("Store is temporarily unavailable, try again");
+  }
+
+  if (!res.ok) {
+    let errMsg = "Store is temporarily unavailable, try again";
+    try {
+      const body = await res.json();
+      const raw = body?.error || body?.detail || body?.message;
+      if (Array.isArray(raw)) {
+        errMsg = raw.map((d: any) => d?.msg || JSON.stringify(d)).join(", ");
+      } else if (typeof raw === "string" && raw.trim()) {
+        errMsg = raw;
+      }
+    } catch {
+      // ignore JSON parse failure
+    }
+    throw new Error(errMsg);
+  }
+
+  return await res.json();
 }

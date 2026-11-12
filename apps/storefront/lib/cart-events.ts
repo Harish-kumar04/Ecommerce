@@ -70,8 +70,12 @@ export async function refreshCartCount(tenant?: string): Promise<CartSummary> {
       const sessionKey = typeof window !== "undefined"
         ? (window.localStorage.getItem("cart_session_id") || window.localStorage.getItem("infalette-cart-session-id") || "")
         : "";
+      const token = typeof window !== "undefined"
+        ? (window.localStorage.getItem("store_access_token") || "")
+        : "";
       const headers: Record<string, string> = {};
       if (sessionKey) headers["X-Cart-Session-ID"] = sessionKey;
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch(`/api/cart-summary?tenant=${encodeURIComponent(t)}`, {
         cache: "no-store",
         headers,

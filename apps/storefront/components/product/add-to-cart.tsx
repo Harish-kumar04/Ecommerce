@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { storefrontApi, getCartSessionId } from "@/lib/api";
+import { isUuidProductId } from "@/lib/cart-client";
 import { notifyCartChanged, openMiniCart } from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import { useLanguage } from "@/components/language-provider";
@@ -22,8 +23,10 @@ export default function AddToCart({
   const [variantsLoading, setVariantsLoading] = useState(false);
   const [variantError, setVariantError] = useState<string | null>(null);
   const maxQty = Number(product.inventory ?? product.inventory_quantity ?? 99);
+  const isFallback = Boolean(product.is_fallback) || !isUuidProductId(product.id);
 
   useEffect(() => {
+    if (isFallback) return;
     let cancelled = false;
     setVariantsLoading(true);
     setVariantError(null);
@@ -49,11 +52,22 @@ export default function AddToCart({
     return () => {
       cancelled = true;
     };
-  }, [tenant, product.id]);
+  }, [tenant, product.id, isFallback]);
 
   const hasVariants = variants.length > 0;
   const canAdd =
-    !variantsLoading && (!hasVariants || !!selectedVariant) && maxQty > 0;
+    !isFallback && !variantsLoading && (!hasVariants || !!selectedVariant) && maxQty > 0;
+
+  if (isFallback) {
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13.5px] font-medium text-amber-900">
+        {t(
+          "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+          "Store is temporarily unavailable, try again",
+        )}
+      </div>
+    );
+  }
 
   const handleAdd = async () => {
     if (!canAdd) return;

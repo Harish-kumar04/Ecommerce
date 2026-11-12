@@ -47,6 +47,12 @@ export const FALLBACK_STORE = {
   status: "published",
 };
 
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isDatabaseProductId(id: unknown): boolean {
+  return typeof id === "string" && UUID_RE.test(id.trim());
+}
+
 export interface CatalogBook {
   id: string;
   name: string;
@@ -64,6 +70,7 @@ export interface CatalogBook {
   image_url: string;
   images: string[];
   status: string;
+  is_fallback?: boolean;
 }
 
 const RAW_BOOKS: Array<{
@@ -421,6 +428,7 @@ export const FALLBACK_BOOKS: CatalogBook[] = RAW_BOOKS.map((b) => ({
   image_url: b.image,
   images: [b.image],
   status: "active",
+  is_fallback: true,
 }));
 
 export async function fetchBooksSafe(tenant: string): Promise<{ books: any[]; isFallback: boolean }> {

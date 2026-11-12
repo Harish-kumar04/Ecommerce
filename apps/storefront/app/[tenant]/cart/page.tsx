@@ -7,6 +7,7 @@ import Image from "@/components/ui/img";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
 import { useLanguage } from "@/components/language-provider";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 export default function CartPage({ params }: { params: { tenant: string } }) {
   const { t, localizeName } = useLanguage();
@@ -40,7 +41,10 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       const sub =
         c?.total_cents ??
         list.reduce(
-          (sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1),
+          (sum: number, it: any) =>
+            sum +
+            (it.line_total_cents ??
+              (it.unit_price_cents ?? it.price_cents ?? 0) * (it.quantity ?? 1)),
           0,
         );
       if (typeof window !== "undefined" && sub > 0) {
@@ -179,7 +183,10 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   const total =
     cart?.total_cents ??
     items.reduce(
-      (sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1),
+      (sum: number, it: any) =>
+        sum +
+        (it.line_total_cents ??
+          (it.unit_price_cents ?? it.price_cents ?? 0) * (it.quantity ?? 1)),
       0,
     );
   const discountCents = appliedCoupon ? Math.min(appliedCoupon.discount_cents || 0, total) : 0;
@@ -234,16 +241,28 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
           <div className="lg:col-span-2 rounded-2xl bg-white divide-y divide-gray-100">
             {items.map((it: any) => {
               const rawName =
-                it.product?.name || it.name || it.product_name || "Book";
+                it.name || it.product?.name || it.product_name || "Book";
+              const rawImg =
+                it.image_url || it.product?.image_url || it.product?.images?.[0] || null;
+              const coverSrc = rawImg ? cloudinaryImageUrl(rawImg, 900) : null;
+              const unitPrice =
+                it.unit_price_cents ??
+                it.price_cents ??
+                it.product?.sale_price_cents ??
+                it.product?.price_cents ??
+                0;
+              const lineTotalCents =
+                it.line_total_cents ?? unitPrice * (it.quantity ?? 1);
+              const maxStock = it.stock ?? it.inventory_quantity;
               return (
                 <div key={it.id} className="flex gap-4 py-6 first:pt-0">
                   <Link
                     href={`/${params.tenant}/products/${it.product_id}`}
                     className="relative flex-shrink-0 w-20 h-28 sm:w-24 sm:h-32 rounded-xl bg-[#fafafa] overflow-hidden border border-black/[0.07]"
                   >
-                    {it.image_url ? (
+                    {coverSrc ? (
                       <Image
-                        src={it.image_url}
+                        src={coverSrc}
                         alt={localizeName(rawName)}
                         fill
                         sizes="96px"
@@ -263,7 +282,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                       {localizeName(rawName)}
                     </Link>
                     <p className="mt-1 text-[12px] text-gray-500">
-                      ₹{((it.price_cents ?? 0) / 100).toFixed(2)}{" "}
+                      ₹{(unitPrice / 100).toFixed(2)}{" "}
                       {t("/ பிரதி", "each")}
                     </p>
                     <div className="mt-3 flex items-center gap-2">
@@ -278,7 +297,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                         {it.quantity}
                       </span>
                       <button
-                        disabled={!!updating || (typeof it.inventory_quantity === "number" && it.quantity >= it.inventory_quantity)}
+                        disabled={!!updating || (typeof maxStock === "number" && it.quantity >= maxStock)}
                         onClick={() => updateQty(it.id, (it.quantity || 1) + 1)}
                         className="w-7 h-7 border border-gray-200 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50"
                       >
@@ -293,11 +312,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                     </div>
                   </div>
                   <p className="text-[15px] font-bold text-gray-900 whitespace-nowrap">
-                    ₹
-                    {(
-                      ((it.price_cents ?? 0) * (it.quantity ?? 1)) /
-                      100
-                    ).toFixed(2)}
+                    ₹{(lineTotalCents / 100).toFixed(2)}
                   </p>
                 </div>
               );

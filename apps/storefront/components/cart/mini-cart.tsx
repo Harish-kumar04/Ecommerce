@@ -4,16 +4,28 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged, closeMiniCart } from "@/lib/cart-events";
-import { splitBilingual } from "@/lib/i18n";
 import { useLanguage } from "@/components/language-provider";
 import Sunburst from "@/components/brand/sunburst";
 import { CartIcon, CloseIcon } from "@/components/brand/icons";
 import Img from "@/components/ui/img";
+import { cloudinaryImageUrl } from "@/lib/site-defaults";
+import { toast } from "@/components/toaster";
 
 interface CartItem {
   id: string;
   product_id: string;
+  variant_id?: string | null;
+  name?: string | null;
+  slug?: string | null;
+  price_cents?: number;
+  unit_price_cents?: number;
+  original_price_cents?: number;
+  sale_price_cents?: number | null;
+  line_total_cents?: number;
   quantity: number;
+  image_url?: string | null;
+  stock?: number | null;
+  inventory_quantity?: number | null;
   product?: {
     name?: string;
     price_cents?: number;
@@ -21,6 +33,24 @@ interface CartItem {
     image_url?: string;
     images?: string[];
   };
+}
+
+function itemUnitPriceCents(item: CartItem): number {
+  return (
+    item.unit_price_cents ??
+    item.price_cents ??
+    item.product?.sale_price_cents ??
+    item.product?.price_cents ??
+    0
+  );
+}
+
+function formatRupees(cents: number): string {
+  const rs = (cents || 0) / 100;
+  return `₹${rs.toLocaleString("en-IN", {
+    minimumFractionDigits: Number.isInteger(rs) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function MiniCart({ tenant }: { tenant: string }) {
@@ -34,10 +64,12 @@ export default function MiniCart({ tenant }: { tenant: string }) {
     try {
       setLoading(true);
       const res = await storefrontApi.getCart(tenant);
-      setCart(res);
-      setItems(Array.isArray(res?.items) ? res.items : []);
+      const cartObj = res?.cart || res?.data || res;
+      setCart(cartObj);
+      setItems(Array.isArray(cartObj?.items) ? cartObj.items : []);
     } catch {
-      // offline / fallback
+      setCart(null);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -75,15 +107,27 @@ export default function MiniCart({ tenant }: { tenant: string }) {
       await removeItem(itemId);
       return;
     }
-    // Optimistic update
     setItems((prev) =>
-      prev.map((it) => (it.id === itemId ? { ...it, quantity: newQty } : it))
+      prev.map((it) =>
+        it.id === itemId
+          ? {
+              ...it,
+              quantity: newQty,
+              line_total_cents: itemUnitPriceCents(it) * newQty,
+            }
+          : it,
+      ),
     );
     try {
       await storefrontApi.updateCartItem(tenant, itemId, newQty);
       notifyCartChanged(tenant);
       void fetchCart();
-    } catch {
+    } catch (err: any) {
+      toast({
+        kind: "error",
+        title: t("பிழை ஏற்பட்டது", "Could not update quantity"),
+        description: err?.message || t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
+      });
       void fetchCart();
     }
   };
@@ -94,17 +138,24 @@ export default function MiniCart({ tenant }: { tenant: string }) {
       await storefrontApi.removeCartItem(tenant, itemId);
       notifyCartChanged(tenant);
       void fetchCart();
-    } catch {
+    } catch (err: any) {
+      toast({
+        kind: "error",
+        title: t("பிழை ஏற்பட்டது", "Could not remove item"),
+        description: err?.message || t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
+      });
       void fetchCart();
     }
   };
 
-  const subtotalCents = items.reduce((acc, it) => {
-    const price = it.product?.sale_price_cents ?? it.product?.price_cents ?? 0;
-    return acc + price * it.quantity;
-  }, 0);
-
-  const rupees = (cents: number) => `₹${Math.round(cents / 100).toLocaleString("en-IN")}`;
+  const computedItemsTotal = items.reduce(
+    (acc, it) => acc + (it.line_total_cents ?? itemUnitPriceCents(it) * it.quantity),
+    0,
+  );
+  const subtotalCents =
+    typeof cart?.total_cents === "number" && cart.items?.length === items.length
+      ? computedItemsTotal || cart.total_cents
+      : computedItemsTotal;
 
   if (!isOpen) return null;
 
@@ -166,16 +217,25 @@ export default function MiniCart({ tenant }: { tenant: string }) {
           ) : (
             <div className="divide-y divide-black/[0.06] space-y-4">
               {items.map((item) => {
-                const name = item.product?.name || "Book";
-                const img = item.product?.images?.[0] || item.product?.image_url;
-                const price = item.product?.sale_price_cents ?? item.product?.price_cents ?? 0;
+                const name = item.name || item.product?.name || "Book";
+                const rawImg =
+                  item.image_url || item.product?.image_url || item.product?.images?.[0] || null;
+                const img = rawImg ? cloudinaryImageUrl(rawImg, 900) : null;
+                const unitPrice = itemUnitPriceCents(item);
+                const lineTotalCents = item.line_total_cents ?? unitPrice * item.quantity;
+                const maxStock = item.stock ?? item.inventory_quantity;
+                const atMaxStock = typeof maxStock === "number" && item.quantity >= maxStock;
                 return (
                   <div key={item.id} className="flex gap-4 pt-4 first:pt-0">
-                    <div className="relative h-24 w-18 flex-shrink-0 overflow-hidden rounded-lg bg-[#fafafa] border border-black/[0.06]">
+                    <Link
+                      href={`/${tenant}/products/${item.product_id}`}
+                      onClick={() => setIsOpen(false)}
+                      className="relative h-24 w-18 flex-shrink-0 overflow-hidden rounded-lg bg-[#fafafa] border border-black/[0.06]"
+                    >
                       {img ? (
                         <Img
                           src={img}
-                          alt={name}
+                          alt={localizeName(name)}
                           fill
                           sizes="72px"
                           className="object-contain p-1.5"
@@ -185,14 +245,21 @@ export default function MiniCart({ tenant }: { tenant: string }) {
                           {t("படம் இல்லை", "No cover")}
                         </div>
                       )}
-                    </div>
-                    <div className="flex flex-1 flex-col justify-between">
+                    </Link>
+                    <div className="flex flex-1 flex-col justify-between min-w-0">
                       <div>
-                        <h4 className="line-clamp-2 text-[14px] font-semibold text-black">
+                        <Link
+                          href={`/${tenant}/products/${item.product_id}`}
+                          onClick={() => setIsOpen(false)}
+                          className="line-clamp-2 text-[14px] font-semibold text-black hover:text-brand-red transition-colors"
+                        >
                           {localizeName(name)}
-                        </h4>
+                        </Link>
                         <p className="line-clamp-1 text-[12px] text-black/50">
                           {localizeSubName(name)}
+                        </p>
+                        <p className="mt-0.5 text-[11.5px] text-black/55">
+                          {formatRupees(unitPrice)} {t("/ பிரதி", "each")}
                         </p>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
@@ -208,8 +275,9 @@ export default function MiniCart({ tenant }: { tenant: string }) {
                             {item.quantity}
                           </span>
                           <button
+                            disabled={atMaxStock}
                             onClick={() => updateQty(item.id, item.quantity + 1)}
-                            className="h-7 w-7 rounded-r-full font-bold hover:bg-black/5 transition-colors"
+                            className="h-7 w-7 rounded-r-full font-bold hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             aria-label="Increase quantity"
                           >
                             +
@@ -217,7 +285,7 @@ export default function MiniCart({ tenant }: { tenant: string }) {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-[15px] font-bold text-brand-red">
-                            {rupees(price * item.quantity)}
+                            {formatRupees(lineTotalCents)}
                           </span>
                           <button
                             onClick={() => removeItem(item.id)}
@@ -244,7 +312,7 @@ export default function MiniCart({ tenant }: { tenant: string }) {
                 {t("மொத்தத் தொகை", "Subtotal")}
               </span>
               <span className="text-[20px] font-extrabold text-brand-red">
-                {rupees(subtotalCents)}
+                {formatRupees(subtotalCents)}
               </span>
             </div>
             <p className="text-[11px] text-black/50">

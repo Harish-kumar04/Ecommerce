@@ -14,6 +14,8 @@ const CardAddButton = dynamic(() => import("./card-add-button"), {
   ),
 });
 
+const UUID_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** The only product fields a card needs (keeps RSC/client payloads small). */
 export interface CardProduct {
   id: string;
@@ -24,6 +26,7 @@ export interface CardProduct {
   inventory?: number;
   image_url?: string | null;
   images?: string[] | null;
+  isFallback?: boolean;
 }
 
 export function toCardProduct(p: any): CardProduct {
@@ -33,8 +36,9 @@ export function toCardProduct(p: any): CardProduct {
     (typeof p.safety_info === "string" && p.safety_info.includes("•") ? null : p.safety_info) ||
     null;
 
+  const rawId = String(p.id ?? "");
   return {
-    id: String(p.id),
+    id: rawId,
     name: String(p.name ?? ""),
     author: author ? String(author) : null,
     price_cents: Number(p.price_cents) || 0,
@@ -42,6 +46,7 @@ export function toCardProduct(p: any): CardProduct {
     inventory: p.inventory !== undefined ? Number(p.inventory) : Number(p.inventory_quantity ?? 10),
     image_url: p.image_url || p.images?.[0] || null,
     images: Array.isArray(p.images) ? p.images : null,
+    isFallback: Boolean(p.is_fallback || p.isFallback) || !UUID_ID_RE.test(rawId.trim()),
   };
 }
 
@@ -128,6 +133,7 @@ export default function ProductCard({
             productId={product.id}
             productName={product.name}
             inStock={inStock}
+            isFallback={product.isFallback}
           />
         </div>
       </div>

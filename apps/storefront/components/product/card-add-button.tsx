@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { quickAddToCart } from "@/lib/cart-client";
+import { isUuidProductId, quickAddToCart } from "@/lib/cart-client";
 import { notifyCartChanged, openMiniCart } from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import { useLanguage } from "@/components/language-provider";
@@ -12,15 +12,19 @@ export default function CardAddButton({
   productId,
   productName,
   inStock = true,
+  isFallback = false,
 }: {
   tenant: string;
   productId: string;
   productName: string;
   inStock?: boolean;
+  isFallback?: boolean;
 }) {
   const { t, localizeName } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const unavailable = Boolean(isFallback) || !isUuidProductId(productId);
 
   if (!inStock) {
     return (
@@ -30,10 +34,26 @@ export default function CardAddButton({
     );
   }
 
+  if (unavailable) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Store is temporarily unavailable, try again"
+        className="inline-flex min-h-9 items-center justify-center rounded-lg bg-amber-50 border border-amber-300/70 px-2.5 py-1 text-[10.5px] leading-tight font-medium text-amber-900 cursor-not-allowed text-right"
+      >
+        {t(
+          "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+          "Store is temporarily unavailable, try again",
+        )}
+      </button>
+    );
+  }
+
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (loading) return;
+    if (loading || unavailable) return;
 
     setLoading(true);
     setSuccess(false);
@@ -48,11 +68,16 @@ export default function CardAddButton({
         description: localizeName(productName),
       });
       setTimeout(() => setSuccess(false), 1500);
-    } catch {
+    } catch (err: any) {
       toast({
         kind: "error",
         title: t("பிழை ஏற்பட்டது", "Failed to add"),
-        description: t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
+        description:
+          err?.message ||
+          t(
+            "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+            "Store is temporarily unavailable, try again",
+          ),
       });
     } finally {
       setLoading(false);

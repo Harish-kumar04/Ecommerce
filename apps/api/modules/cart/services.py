@@ -220,11 +220,8 @@ async def add_to_cart(
         raise ValueError("Product not found")
 
     variant = None
-    unit_price = (
-        product.sale_price_cents
-        if getattr(product, "sale_price_cents", None)
-        else product.price_cents
-    )
+    sale_price = getattr(product, "sale_price_cents", None)
+    unit_price = int(sale_price) if (sale_price is not None and sale_price > 0) else int(product.price_cents or 0)
     if data.variant_id is not None:
         from infalette_database.models.product import ProductVariant
 
@@ -239,11 +236,8 @@ async def add_to_cart(
         ).scalar_one_or_none()
         if not variant:
             raise ValueError("Product variant not found")
-        unit_price = (
-            variant.sale_price_cents
-            if getattr(variant, "sale_price_cents", None)
-            else variant.price_cents
-        )
+        var_sale = getattr(variant, "sale_price_cents", None)
+        unit_price = int(var_sale) if (var_sale is not None and var_sale > 0) else int(variant.price_cents or 0)
 
     cart = await get_or_create_cart(tenant_id, customer_id, session, session_key=session_key)
 
@@ -308,37 +302,84 @@ async def add_to_cart(
 
 
 async def get_cart_with_items(cart_id: UUID, session: AsyncSession) -> dict:
-    """Return cart + items with product names for the storefront."""
+    """Return cart + items with authoritative server-side product details, prices, and stock."""
+    from infalette_database.models.product import ProductVariant
+
     result = await session.execute(select(Cart).where(Cart.id == cart_id))
     cart = result.scalar_one_or_none()
     if not cart:
         return {}
     items = await get_cart_items(cart.id, session)
     item_dicts = []
+    dirty = False
     for it in items:
         prod_result = await session.execute(
             select(Product).where(Product.id == it.product_id)
         )
         product = prod_result.scalar_one_or_none()
-        img = getattr(product, "image_url", None)
+        variant = None
+        if it.variant_id is not None:
+            variant = (
+                await session.execute(
+                    select(ProductVariant).where(ProductVariant.id == it.variant_id)
+                )
+            ).scalar_one_or_none()
+
+        if variant is not None:
+            var_sale = getattr(variant, "sale_price_cents", None)
+            unit_price = int(var_sale) if (var_sale is not None and var_sale > 0) else int(variant.price_cents or 0)
+            stock = int(getattr(variant, "inventory", 0) or 0)
+        elif product is not None:
+            prod_sale = getattr(product, "sale_price_cents", None)
+            unit_price = int(prod_sale) if (prod_sale is not None and prod_sale > 0) else int(product.price_cents or 0)
+            avail_raw = getattr(product, "inventory_quantity", None)
+            if avail_raw is None:
+                avail_raw = getattr(product, "inventory", 0)
+            stock = int(avail_raw or 0)
+        else:
+            unit_price = int(it.price_cents or 0)
+            stock = 0
+
+        if it.price_cents != unit_price:
+            it.price_cents = unit_price
+            dirty = True
+
+        img = getattr(product, "image_url", None) if product else None
         if not img and product:
             imgs = list(getattr(product, "images_json", None) or [])
             if imgs:
                 img = imgs[0]
+
+        line_total_cents = unit_price * int(it.quantity)
         item_dicts.append({
             "id": str(it.id),
             "product_id": str(it.product_id),
             "variant_id": str(it.variant_id) if it.variant_id else None,
             "name": product.name if product else None,
-            "image_url": img,
+            "slug": getattr(product, "slug", None) if product else None,
+            "price_cents": unit_price,
+            "unit_price_cents": unit_price,
+            "original_price_cents": int(product.price_cents or 0) if product else unit_price,
+            "sale_price_cents": getattr(product, "sale_price_cents", None) if product else None,
+            "line_total_cents": line_total_cents,
             "quantity": it.quantity,
-            "price_cents": it.price_cents,
-            "inventory_quantity": getattr(product, "inventory_quantity", None) if product else None,
+            "image_url": img,
+            "stock": stock,
+            "inventory_quantity": stock,
         })
+
+    server_subtotal_cents = sum(d["line_total_cents"] for d in item_dicts)
+    if cart.total_cents != server_subtotal_cents:
+        cart.total_cents = server_subtotal_cents
+        dirty = True
+    if dirty:
+        await session.commit()
+
     return {
         "id": str(cart.id),
-        "total_cents": cart.total_cents,
-        "currency": cart.currency,
+        "total_cents": server_subtotal_cents,
+        "subtotal_cents": server_subtotal_cents,
+        "currency": cart.currency or "INR",
         "items": item_dicts,
     }
 

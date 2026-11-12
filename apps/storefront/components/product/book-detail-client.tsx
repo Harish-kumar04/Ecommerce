@@ -12,6 +12,8 @@ import ProductCard, { toCardProduct } from "@/components/product/product-card";
 import { CartIcon } from "@/components/brand/icons";
 import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
+import { isUuidProductId } from "@/lib/cart-client";
+
 function formatPrice(cents?: number | null) {
   return `₹${Math.round((cents || 0) / 100).toLocaleString("en-IN")}`;
 }
@@ -40,6 +42,7 @@ export default function BookDetailClient({
   const onSale = Boolean(product.sale_price_cents && product.sale_price_cents < product.price_cents);
   const price = onSale ? (product.sale_price_cents as number) : product.price_cents;
   const inStock = (product.inventory_quantity ?? product.inventory ?? 1) > 0;
+  const isFallback = Boolean(product.is_fallback) || !isUuidProductId(product.id);
 
   const primaryTitle = localizeName(product.name);
   const secondaryTitle = localizeSubName(product.name);
@@ -71,16 +74,17 @@ export default function BookDetailClient({
 
   // Non-blocking beacon tracking
   useEffect(() => {
+    if (isFallback) return;
     fetch("/api/v1/public/track", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tenant": tenant },
       body: JSON.stringify({ event_type: "product.viewed", product_id: product.id, source: "storefront" }),
       keepalive: true,
     }).catch(() => undefined);
-  }, [tenant, product.id]);
+  }, [tenant, product.id, isFallback]);
 
   const handleAddToCart = async () => {
-    if (!inStock || adding) return;
+    if (!inStock || adding || isFallback) return;
     setAdding(true);
     try {
       await storefrontApi.addToCart(tenant, product.id, quantity);
@@ -91,11 +95,16 @@ export default function BookDetailClient({
         title: t("கூடையில் சேர்க்கப்பட்டது", "Added to cart"),
         description: `${primaryTitle} × ${quantity}`,
       });
-    } catch {
+    } catch (err: any) {
       toast({
         kind: "error",
         title: t("பிழை ஏற்பட்டது", "Failed to add"),
-        description: t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
+        description:
+          err?.message ||
+          t(
+            "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+            "Store is temporarily unavailable, try again",
+          ),
       });
     } finally {
       setAdding(false);
@@ -103,14 +112,23 @@ export default function BookDetailClient({
   };
 
   const handleBuyNow = async () => {
-    if (!inStock || buying) return;
+    if (!inStock || buying || isFallback) return;
     setBuying(true);
     try {
       await storefrontApi.addToCart(tenant, product.id, quantity);
       notifyCartChanged(tenant);
       router.push(`/${tenant}/checkout`);
-    } catch {
-      router.push(`/${tenant}/checkout`);
+    } catch (err: any) {
+      toast({
+        kind: "error",
+        title: t("பிழை ஏற்பட்டது", "Failed to add"),
+        description:
+          err?.message ||
+          t(
+            "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+            "Store is temporarily unavailable, try again",
+          ),
+      });
     } finally {
       setBuying(false);
     }
@@ -223,7 +241,15 @@ export default function BookDetailClient({
             </div>
 
             {/* Quantity Selector & Action Buttons (Desktop) */}
-            {inStock && (
+            {inStock && isFallback && (
+              <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[14px] font-semibold text-amber-900">
+                {t(
+                  "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்",
+                  "Store is temporarily unavailable, try again",
+                )}
+              </div>
+            )}
+            {inStock && !isFallback && (
               <div className="mt-6 flex flex-wrap items-center gap-4">
                 <div className="flex items-center rounded-full border border-black/20 bg-white">
                   <button
@@ -246,7 +272,7 @@ export default function BookDetailClient({
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={adding}
+                  disabled={adding || isFallback}
                   className="btn-outline h-12 px-7 text-[15px] font-bold"
                 >
                   <CartIcon className="h-4 w-4" />
@@ -256,7 +282,7 @@ export default function BookDetailClient({
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  disabled={buying}
+                  disabled={buying || isFallback}
                   className="btn-red h-12 px-8 text-[15px] font-bold shadow-glow"
                 >
                   {buying ? t("தயாராகிறது…", "Processing…") : t("இப்போதே வாங்குக", "Buy now")}
@@ -362,24 +388,33 @@ export default function BookDetailClient({
             {formatPrice(price)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!inStock || adding}
-            className="btn-outline h-11 px-4 text-[13px] font-bold"
-          >
-            {adding ? "…" : t("கூடை", "Cart")}
-          </button>
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={!inStock || buying}
-            className="btn-red h-11 px-5 text-[13.5px] font-bold"
-          >
-            {buying ? "…" : t("வாங்க", "Buy now")}
-          </button>
-        </div>
+        {isFallback ? (
+          <span className="text-[11px] font-semibold text-amber-900 text-right">
+            {t(
+              "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை",
+              "Store is temporarily unavailable, try again",
+            )}
+          </span>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!inStock || adding}
+              className="btn-outline h-11 px-4 text-[13px] font-bold"
+            >
+              {adding ? "…" : t("கூடை", "Cart")}
+            </button>
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={!inStock || buying}
+              className="btn-red h-11 px-5 text-[13.5px] font-bold"
+            >
+              {buying ? "…" : t("வாங்க", "Buy now")}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

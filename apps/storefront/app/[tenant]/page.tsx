@@ -68,9 +68,11 @@ export async function generateMetadata({ params }: { params: { tenant: string } 
 export default async function TenantHomePage({ params }: { params: { tenant: string } }) {
   const { tenant } = params;
   if (!tenant) notFound();
-  const { products, store, categories } = await fetchTenantData(tenant);
+  const { products, isFallback, store, categories } = await fetchTenantData(tenant);
 
-  const cards = products.map(toCardProduct);
+  const cards = products.map((p) =>
+    toCardProduct(isFallback ? { ...p, is_fallback: true } : p),
+  );
   const withCovers = cards.filter((c) => c.image_url);
 
   // Hero slides: admin-configured, or built-in brand slides decorated with real covers.
@@ -117,9 +119,9 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
   return (
     <>
       {/* Fallback Notice Banner */}
-      {Boolean((await fetchTenantData(tenant)).isFallback) && (
+      {Boolean(isFallback) && (
         <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-2 text-center text-xs font-medium">
-          நூல் பட்டியல் புதுப்பிக்கப்படுகிறது. சில நொடிகளில் பக்கத்தை மீண்டும் ஏற்றவும் (Catalog is updating, please retry in a moment).
+          சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும் — Store is temporarily unavailable, try again.
         </div>
       )}
 

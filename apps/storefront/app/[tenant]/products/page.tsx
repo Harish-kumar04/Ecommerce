@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import BooksCatalogClient from "@/components/product/books-catalog-client";
-import { getBooksWithFallback, getCategoriesWithFallback } from "@/lib/catalog-fallback";
+import { fetchBooksSafe, getBooksWithFallback, getCategoriesWithFallback } from "@/lib/catalog-fallback";
 import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
 
 // ISR: the category filter is applied client-side from ?category=, so this page stays static.
@@ -24,13 +24,13 @@ export async function generateMetadata({ params }: { params: { tenant: string } 
 }
 
 export default async function ProductsPage({ params }: { params: { tenant: string } }) {
-  const [products, categories] = await Promise.all([
-    getBooksWithFallback(params.tenant),
+  const [booksRes, categories] = await Promise.all([
+    fetchBooksSafe(params.tenant),
     getCategoriesWithFallback(params.tenant),
   ]);
 
   // Send the client only what filtering, search and the cards need.
-  const slim = (products as any[]).map((p) => ({
+  const slim = (booksRes.books as any[]).map((p) => ({
     id: p.id,
     name: p.name,
     sku: p.sku,
@@ -38,9 +38,21 @@ export default async function ProductsPage({ params }: { params: { tenant: strin
     description: p.description,
     price_cents: p.price_cents,
     sale_price_cents: p.sale_price_cents ?? null,
-    image_url: p.images?.[0] || p.image_url || null,
+    inventory: p.inventory_quantity ?? p.inventory,
+    inventory_quantity: p.inventory_quantity ?? p.inventory,
+    image_url: p.image_url || p.images?.[0] || null,
+    is_fallback: Boolean(booksRes.isFallback || p.is_fallback),
   }));
   const cats = (categories as any[]).map((c) => ({ id: c.id, name: c.name, slug: c.slug }));
 
-  return <BooksCatalogClient tenant={params.tenant} products={slim} categories={cats} />;
+  return (
+    <>
+      {booksRes.isFallback && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-2 text-center text-xs font-medium">
+          சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும் — Store is temporarily unavailable, try again.
+        </div>
+      )}
+      <BooksCatalogClient tenant={params.tenant} products={slim} categories={cats} />
+    </>
+  );
 }

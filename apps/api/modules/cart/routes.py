@@ -49,8 +49,8 @@ async def get_cart(
     )
     data = await get_cart_with_items(cart.id, session)
     data.setdefault("id", str(cart.id))
-    data["total_cents"] = cart.total_cents
-    data["currency"] = getattr(cart, "currency", "INR")
+    data.setdefault("total_cents", cart.total_cents)
+    data["currency"] = data.get("currency") or getattr(cart, "currency", "INR") or "INR"
     return data
 
 

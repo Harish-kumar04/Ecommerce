@@ -23,9 +23,13 @@ export async function GET(req: NextRequest) {
     req.headers.get("X-Cart-Session-ID") ||
     "";
 
+  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   const headers: Record<string, string> = { "X-Tenant": tenant };
   if (sessionKey) {
     headers["X-Cart-Session-ID"] = sessionKey;
+  }
+  if (authHeader) {
+    headers["Authorization"] = authHeader;
   }
 
   try {

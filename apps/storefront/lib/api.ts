@@ -71,31 +71,17 @@ function tenantHeaders(tenant: string): Record<string, string> {
   return h;
 }
 
-import { FALLBACK_BOOKS, FALLBACK_CATEGORIES, FALLBACK_STORE } from "./catalog-fallback";
-import { CART_COUNT_KEY, CART_TOTAL_KEY } from "./cart-events";
+import {
+  FALLBACK_BOOKS,
+  FALLBACK_CATEGORIES,
+  FALLBACK_STORE,
+  isDatabaseProductId,
+} from "./catalog-fallback";
 
-const LOCAL_CART_KEY = "mp_fallback_cart";
-
-function readLocalCart(): any[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(window.localStorage.getItem(LOCAL_CART_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalCart(items: any[]) {
+function purgeLegacyLocalCart() {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(items));
-    const count = items.reduce((s, it) => s + (it.quantity || 1), 0);
-    const total = items.reduce(
-      (s, it) => s + (it.price_cents || 0) * (it.quantity || 1),
-      0,
-    );
-    window.localStorage.setItem(CART_COUNT_KEY, String(count));
-    window.localStorage.setItem(CART_TOTAL_KEY, String(total));
+    window.localStorage.removeItem("mp_fallback_cart");
   } catch {
     // ignore
   }
@@ -167,18 +153,22 @@ export class StorefrontApi {
   // ---- Cart / checkout (guest session keyed; optional customer auth) ----
 
   async getCart(tenant: string) {
+    purgeLegacyLocalCart();
     try {
       const response = await api.get(`/cart`, {
         headers: tenantHeaders(tenant),
       });
       return response.data;
-    } catch {
-      const items = readLocalCart();
-      const total_cents = items.reduce(
-        (s, it) => s + (it.price_cents || 0) * (it.quantity || 1),
-        0,
-      );
-      return { id: "local-cart", items, total_cents };
+    } catch (err: any) {
+      if (err?.response) {
+        const detail =
+          err.response?.data?.error ||
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Store is temporarily unavailable, try again";
+        throw new Error(String(detail));
+      }
+      throw new Error("Store is temporarily unavailable, try again");
     }
   }
 
@@ -188,6 +178,10 @@ export class StorefrontApi {
     quantity: number,
     variantId?: string,
   ) {
+    purgeLegacyLocalCart();
+    if (!isDatabaseProductId(productId)) {
+      throw new Error("Store is temporarily unavailable, try again");
+    }
     try {
       const response = await api.post(
         `/cart/items`,
@@ -200,7 +194,7 @@ export class StorefrontApi {
         const detail = err.response?.data?.error || err.response?.data?.detail || err.response?.data?.message || "Unable to add item to cart";
         throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || JSON.stringify(d)).join(", ") : String(detail));
       }
-      throw new Error(err?.message || "Network error adding item to cart");
+      throw new Error("Store is temporarily unavailable, try again");
     }
   }
 
