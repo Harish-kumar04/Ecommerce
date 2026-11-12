@@ -467,7 +467,7 @@ class Settings(BaseSettings):
 
     redis: RedisSettings = RedisSettings()
     auth: AuthSettings = AuthSettings()
-    payments: PaymentSettings = PaymentSettings()
+    payments: PaymentSettings = Field(default_factory=PaymentSettings)
     social: SocialSettings = SocialSettings()
     email: EmailSettings = EmailSettings()
     sms: SmsSettings = SmsSettings()

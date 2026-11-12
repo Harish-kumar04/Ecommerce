@@ -94,17 +94,19 @@ class InvoiceService:
 
         invoice_number = self._generate_invoice_number(order.tenant_id, order.id, getattr(order, "created_at", None))
 
+        from infalette_validation.schemas import normalize_address_dict
+
         # Build line items and calculate totals + GST
         tax_service = TaxService()
         line_items = []
         subtotal_cents = 0
+        discount_total_cents = 0
         total_tax_cents = 0
         gst_breakdown: dict[str, int] = {"cgst": 0, "sgst": 0, "igst": 0}
 
-        # Address for tax calculation
-        shipping_address = getattr(order, "shipping_address_json", None) or {}
-        if not isinstance(shipping_address, dict):
-            shipping_address = {}
+        # Canonicalize addresses (line1 / postal_code)
+        shipping_address = normalize_address_dict(getattr(order, "shipping_address_json", None))
+        billing_address = normalize_address_dict(getattr(order, "billing_address_json", None)) or dict(shipping_address)
 
         # Supplier state (place of supply rules): resolved from the tenant's
         # store tax profile when present, else unknown → conservative IGST.
@@ -135,6 +137,13 @@ class InvoiceService:
             line_total = price_cents * quantity
             subtotal_cents += line_total
 
+            try:
+                item_discount = max(int(snapshot.get("discount_cents") or 0), 0)
+            except (TypeError, ValueError):
+                item_discount = 0
+            discount_total_cents += item_discount
+            taxable_cents = max(line_total - item_discount, 0)
+
             # Tax amount — immutable snapshot first (spec §7): use the tax
             # frozen at checkout (column or checkout snapshot); recompute
             # from current rates only for legacy orders without a snapshot.
@@ -145,27 +154,27 @@ class InvoiceService:
                 try:
                     tax_amount = int(snap_tax)
                 except (TypeError, ValueError):
-                    tax_amount = int(line_total * 0.18)
+                    tax_amount = tax_service.calculate_tax(taxable_cents, tax_class, shipping_address)
                 snap_rate_bps = getattr(oi, "tax_rate_bps", None)
                 if snap_rate_bps is None:
                     snap_rate_bps = snapshot.get("tax_rate_bps")
                 try:
-                    rate = int(snap_rate_bps) / 10000 if snap_rate_bps is not None else tax_service.TAX_RATES.get(tax_class, 0.18)
+                    rate = int(snap_rate_bps) / 10000 if snap_rate_bps is not None else tax_service.get_tax_rate(tax_class)
                 except (TypeError, ValueError):
-                    rate = tax_service.TAX_RATES.get(tax_class, 0.18)
+                    rate = tax_service.get_tax_rate(tax_class)
             else:
                 try:
-                    tax_amount = tax_service.calculate_tax(line_total, tax_class, shipping_address)
+                    tax_amount = tax_service.calculate_tax(taxable_cents, tax_class, shipping_address)
                 except Exception:
-                    tax_amount = int(line_total * 0.18)
-                rate = tax_service.TAX_RATES.get(tax_class, 0.18)
+                    tax_amount = int(taxable_cents * 0.18)
+                rate = tax_service.get_tax_rate(tax_class)
 
             total_tax_cents += tax_amount
 
             # CGST+SGST when the ship-to state equals the supplier state;
-            # IGST for inter-state/exports (conservative default).
+            # IGST for inter-state/exports (conservative default), computed AFTER discount.
             breakdown = TaxService.gst_breakdown(
-                line_total,
+                taxable_cents,
                 rate,
                 supplier_state,
                 shipping_address.get("state", ""),
@@ -190,6 +199,8 @@ class InvoiceService:
                 "price_display": f"{price_cents/100:.2f}",
                 "line_total_cents": line_total,
                 "line_total_display": f"{line_total/100:.2f}",
+                "discount_cents": item_discount,
+                "taxable_cents": taxable_cents,
                 "tax_class": tax_class,
                 "gst_mode": breakdown["mode"],
                 "tax_cents": tax_amount,
@@ -197,12 +208,11 @@ class InvoiceService:
                 "tax_rate": rate,
             })
 
-        # Totals
-        total_cents = getattr(order, "total_cents", subtotal_cents + total_tax_cents)
-        # If order total already includes tax/shipping, derive shipping as remainder
-        # Assume shipping = total - subtotal - tax (if positive)
-        shipping_cents = max(total_cents - subtotal_cents - total_tax_cents, 0)
-        grand_total_cents = subtotal_cents + total_tax_cents + shipping_cents
+        # Totals (net of discounts)
+        net_subtotal_cents = max(subtotal_cents - discount_total_cents, 0)
+        total_cents = getattr(order, "total_cents", net_subtotal_cents + total_tax_cents)
+        shipping_cents = max(total_cents - net_subtotal_cents - total_tax_cents, 0)
+        grand_total_cents = net_subtotal_cents + total_tax_cents + shipping_cents
 
         # Use order.currency
         currency = getattr(order, "currency", "INR") or "INR"
@@ -221,11 +231,13 @@ class InvoiceService:
                 "phone": getattr(customer, "phone", None) if customer else None,
             } if customer or getattr(order, "customer_id", None) else None,
             "shipping_address": shipping_address,
-            "billing_address": getattr(order, "billing_address_json", None) or {},
+            "billing_address": billing_address,
             "line_items": line_items,
             "totals": {
                 "subtotal_cents": subtotal_cents,
                 "subtotal_display": f"{subtotal_cents/100:.2f} {currency}",
+                "discount_cents": discount_total_cents,
+                "discount_display": f"{discount_total_cents/100:.2f} {currency}",
                 "tax_total_cents": total_tax_cents,
                 "tax_total_display": f"{total_tax_cents/100:.2f} {currency}",
                 "shipping_cents": shipping_cents,

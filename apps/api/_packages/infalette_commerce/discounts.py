@@ -6,10 +6,24 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.models.discount_code import DiscountCode
+
+
+def deduplicate_discount_codes(codes: Optional[list[str]]) -> list[str]:
+    """Normalize (trim + uppercase) and de-duplicate coupon codes while preserving order."""
+    if not codes:
+        return []
+    seen: set[str] = set()
+    unique: list[str] = []
+    for raw in codes:
+        norm = (str(raw) if raw is not None else "").strip().upper()
+        if norm and norm not in seen:
+            seen.add(norm)
+            unique.append(norm)
+    return unique
 
 
 class DiscountService:
@@ -23,21 +37,28 @@ class DiscountService:
         session: AsyncSession,
     ) -> dict:
         """Validate a coupon code against order total."""
+        code_norm = (code or "").strip().upper()
+        if not code_norm:
+            raise ValueError("Invalid coupon code")
         result = await session.execute(
-            select(DiscountCode).where(
-                DiscountCode.code == code,
+            select(DiscountCode)
+            .where(
+                func.upper(DiscountCode.code) == code_norm,
                 DiscountCode.tenant_id == tenant_id,
             )
+            .limit(1)
         )
-        discount = result.scalar_one_or_none()
+        discount = result.scalars().first()
         if not discount:
             raise ValueError("Invalid coupon code")
 
         if not discount.is_active:
             raise ValueError("Coupon is not active")
 
-        if discount.expires_at and datetime.utcnow() > discount.expires_at:
-            raise ValueError("Coupon has expired")
+        if discount.expires_at:
+            now_cmp = datetime.now(discount.expires_at.tzinfo) if discount.expires_at.tzinfo else datetime.utcnow()
+            if now_cmp > discount.expires_at:
+                raise ValueError("Coupon has expired")
 
         if discount.usage_limit and discount.used_count >= discount.usage_limit:
             raise ValueError("Coupon usage limit reached")

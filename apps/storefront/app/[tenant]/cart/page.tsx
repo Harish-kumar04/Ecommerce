@@ -16,6 +16,18 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    type: string;
+    value: number;
+    discount_cents: number;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
+  const couponStorageKey = `store_applied_coupon_${params.tenant}`;
+
   const fetchCart = async () => {
     setLoading(true);
     setError(null);
@@ -25,6 +37,37 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       setCart(c);
       const list = c?.items || c?.cart_items || data?.items || [];
       setItems(list);
+      const sub =
+        c?.total_cents ??
+        list.reduce(
+          (sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1),
+          0,
+        );
+      if (typeof window !== "undefined" && sub > 0) {
+        try {
+          const savedRaw = localStorage.getItem(couponStorageKey);
+          if (savedRaw) {
+            const saved = JSON.parse(savedRaw);
+            if (saved?.code) {
+              const verified = await storefrontApi.validateCoupon(params.tenant, saved.code, sub);
+              const nextCoupon = {
+                code: verified.code,
+                type: verified.type,
+                value: verified.value,
+                discount_cents: verified.discount_cents ?? 0,
+              };
+              setAppliedCoupon(nextCoupon);
+              setCouponInput(verified.code);
+              localStorage.setItem(couponStorageKey, JSON.stringify(nextCoupon));
+            }
+          }
+        } catch {
+          setAppliedCoupon(null);
+          try {
+            localStorage.removeItem(couponStorageKey);
+          } catch {}
+        }
+      }
     } catch (e: any) {
       setError(e.message || "Failed to load cart");
     } finally {
@@ -36,6 +79,53 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
     fetchCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.tenant]);
+
+  const handleApplyCoupon = async (subtotalCents: number) => {
+    const clean = couponInput.trim().toUpperCase();
+    if (!clean) {
+      setCouponError(t("கூப்பன் குறியீட்டை உள்ளிடவும்", "Please enter a coupon code"));
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await storefrontApi.validateCoupon(params.tenant, clean, subtotalCents);
+      const nextCoupon = {
+        code: res.code,
+        type: res.type,
+        value: res.value,
+        discount_cents: res.discount_cents ?? 0,
+      };
+      setAppliedCoupon(nextCoupon);
+      setCouponInput(res.code);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(couponStorageKey, JSON.stringify(nextCoupon));
+        } catch {}
+      }
+    } catch (e: any) {
+      setAppliedCoupon(null);
+      setCouponError(e?.message || t("தவறான கூப்பன்", "Invalid coupon code"));
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(couponStorageKey);
+        } catch {}
+      }
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(couponStorageKey);
+      } catch {}
+    }
+  };
 
   const updateQty = async (itemId: string, qty: number) => {
     if (qty < 1) return;
@@ -92,6 +182,8 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
       (sum: number, it: any) => sum + (it.price_cents ?? 0) * (it.quantity ?? 1),
       0,
     );
+  const discountCents = appliedCoupon ? Math.min(appliedCoupon.discount_cents || 0, total) : 0;
+  const finalTotal = Math.max(total - discountCents, 0);
   const itemCount = items.reduce(
     (sum: number, it: any) => sum + (it.quantity ?? 1),
     0,
@@ -186,7 +278,7 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                         {it.quantity}
                       </span>
                       <button
-                        disabled={!!updating}
+                        disabled={!!updating || (typeof it.inventory_quantity === "number" && it.quantity >= it.inventory_quantity)}
                         onClick={() => updateQty(it.id, (it.quantity || 1) + 1)}
                         className="w-7 h-7 border border-gray-200 rounded-full text-sm disabled:opacity-40 hover:bg-gray-50"
                       >
@@ -217,21 +309,82 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
             <h2 className="text-[16px] font-bold text-gray-900">
               {t("ஆர்டர் சுருக்கம்", "Order Summary")}
             </h2>
+
+            {/* Coupon Box */}
+            <div className="mt-4 pb-4 border-b border-gray-200">
+              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">
+                {t("தள்ளுபடி கூப்பன்", "Coupon Code")}
+              </label>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-xl bg-green-50 border border-green-200 px-3 py-2 text-[13px]">
+                  <div>
+                    <span className="font-bold text-green-800">{appliedCoupon.code}</span>
+                    <span className="ml-2 text-green-700">
+                      {appliedCoupon.type === "free_shipping"
+                        ? t("இலவச அஞ்சல்", "Free shipping")
+                        : `-₹${(discountCents / 100).toFixed(2)}`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-[12px] font-semibold text-brand-red hover:underline"
+                  >
+                    {t("நீக்கு", "Remove")}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value.toUpperCase());
+                      if (couponError) setCouponError(null);
+                    }}
+                    placeholder={t("குறியீடு (எ.கா. SAVE10)", "Enter coupon code")}
+                    className="flex-1 h-9 px-3 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-900 uppercase focus:border-brand-red focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={couponLoading}
+                    onClick={() => handleApplyCoupon(total)}
+                    className="h-9 px-3.5 rounded-lg bg-gray-900 text-white text-[12.5px] font-semibold hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {couponLoading ? "…" : t("பயன்படுத்து", "Apply")}
+                  </button>
+                </div>
+              )}
+              {couponError && (
+                <p className="mt-1.5 text-[12px] text-brand-red">{couponError}</p>
+              )}
+            </div>
+
             <div className="mt-4 space-y-2 text-[14px]">
               <div className="flex justify-between text-gray-600">
                 <span>{t("நூல்களின் விலை", "Subtotal")}</span>
                 <span>₹{(total / 100).toFixed(2)}</span>
               </div>
+              {discountCents > 0 && (
+                <div className="flex justify-between text-green-700 font-medium">
+                  <span>
+                    {t("கூப்பன் தள்ளுபடி", "Discount")} ({appliedCoupon?.code})
+                  </span>
+                  <span>−₹{(discountCents / 100).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-600">
                 <span>{t("அஞ்சல் / கூரியர் கட்டணம்", "Shipping")}</span>
                 <span className="text-gray-500">
-                  {t("அடுத்தப் பக்கத்தில்", "Calculated at checkout")}
+                  {appliedCoupon?.type === "free_shipping"
+                    ? t("இலவசம்", "Free")
+                    : t("அடுத்தப் பக்கத்தில்", "Calculated at checkout")}
                 </span>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between text-[16px] font-extrabold text-gray-900">
               <span>{t("மொத்தத் தொகை", "Total")}</span>
-              <span>₹{(total / 100).toFixed(2)}</span>
+              <span>₹{(finalTotal / 100).toFixed(2)}</span>
             </div>
             <Link
               href={`/${params.tenant}/checkout`}
@@ -247,8 +400,8 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
             </Link>
             <p className="mt-4 text-[12px] text-gray-500 text-center">
               {t(
-                "பாதுகாப்பான கட்டணம் · Razorpay, Stripe அல்லது COD வசதி.",
-                "Secure checkout · Razorpay, Stripe or COD.",
+                "பாதுகாப்பான கட்டணம் · ஆன்லைன் அல்லது COD வசதி.",
+                "Secure checkout · Online payment or COD.",
               )}
             </p>
           </aside>

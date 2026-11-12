@@ -318,13 +318,56 @@ class CartItemCreate(BaseSchema):
 # Checkout Schemas
 # =============================================================================
 
-class AddressSchema(BaseSchema):
-    """Address schema.
+def normalize_address_dict(raw: Any) -> dict[str, Any]:
+    """Normalize any address mapping to canonical ``line1`` / ``postal_code`` keys."""
+    if not raw:
+        return {}
+    if hasattr(raw, "model_dump"):
+        d = raw.model_dump()
+    elif isinstance(raw, dict):
+        d = dict(raw)
+    else:
+        return {}
 
-    Storefront forms send ``address``/``pincode``; the canonical field
-    names are ``line1``/``postal_code``. A validator normalizes the
-    aliases so both client shapes validate.
-    """
+    line1 = (
+        d.get("line1")
+        or d.get("address")
+        or d.get("address1")
+        or d.get("street")
+        or ""
+    )
+    line2 = d.get("line2") or d.get("address2") or None
+    postal_code = (
+        d.get("postal_code")
+        or d.get("pincode")
+        or d.get("zip")
+        or ""
+    )
+    name = (
+        d.get("name")
+        or d.get("full_name")
+        or " ".join(x for x in (d.get("first_name"), d.get("last_name")) if x).strip()
+        or None
+    )
+    out: dict[str, Any] = {
+        "line1": str(line1).strip() if line1 is not None else "",
+        "line2": str(line2).strip() if line2 else None,
+        "city": str(d.get("city") or "").strip(),
+        "state": str(d.get("state") or "").strip(),
+        "postal_code": str(postal_code).strip() if postal_code is not None else "",
+        "country": str(d.get("country") or "India").strip(),
+    }
+    if name:
+        out["name"] = str(name).strip()
+    if d.get("phone"):
+        out["phone"] = str(d["phone"]).strip()
+    if d.get("email"):
+        out["email"] = str(d["email"]).strip()
+    return out
+
+
+class AddressSchema(BaseSchema):
+    """Canonical address schema using ``line1`` and ``postal_code``."""
 
     line1: str
     line2: Optional[str] = None
@@ -332,19 +375,32 @@ class AddressSchema(BaseSchema):
     state: str
     postal_code: str
     country: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
     def _accept_address_aliases(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if "line1" not in data and "address" in data:
-                data["line1"] = data.pop("address")
-            elif "address" in data and data.get("line1") is None:
-                data["line1"] = data.get("address")
-            if "postal_code" not in data and "pincode" in data:
-                data["postal_code"] = data.pop("pincode")
-            elif "pincode" in data and data.get("postal_code") is None:
-                data["postal_code"] = data.get("pincode")
+            d = dict(data)
+            if not d.get("line1"):
+                for alias in ("address", "address1", "street"):
+                    if d.get(alias):
+                        d["line1"] = d[alias]
+                        break
+            if not d.get("line2") and d.get("address2"):
+                d["line2"] = d["address2"]
+            if not d.get("postal_code"):
+                for alias in ("pincode", "zip"):
+                    if d.get(alias):
+                        d["postal_code"] = d[alias]
+                        break
+            if not d.get("name") and d.get("full_name"):
+                d["name"] = d["full_name"]
+            for legacy in ("address", "address1", "address2", "street", "pincode", "zip", "full_name"):
+                d.pop(legacy, None)
+            return d
         return data
 
 
@@ -379,11 +435,17 @@ class AttributionSchema(BaseSchema):
 class CheckoutCreate(BaseSchema):
     """Schema for creating a checkout."""
 
-    customer_data: CustomerDataSchema
+    customer_data: CustomerDataSchema = Field(default_factory=CustomerDataSchema)
     shipping_address: AddressSchema
-    billing_address: AddressSchema
+    billing_address: Optional[AddressSchema] = None
     discount_codes: list[str] = Field(default_factory=list)
     attribution: Optional[AttributionSchema] = None
+
+    @model_validator(mode="after")
+    def _default_billing_to_shipping(self) -> "CheckoutCreate":
+        if self.billing_address is None:
+            self.billing_address = self.shipping_address
+        return self
 
 
 # =============================================================================

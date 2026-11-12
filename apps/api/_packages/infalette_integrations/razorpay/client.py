@@ -24,31 +24,49 @@ class RazorpayClient:
         self._webhook_secret = self._settings.payments.razorpay_webhook_secret
         self._base_url = "https://api.razorpay.com/v1"
 
+    def is_configured(self) -> bool:
+        """Return True only when both Razorpay key_id and key_secret are set."""
+        secret_val = (
+            self._key_secret.get_secret_value().strip()
+            if self._key_secret is not None
+            else ""
+        )
+        return bool((self._key_id or "").strip() and secret_val)
+
     async def create_payment_link(
         self,
         checkout,
         tenant_id: UUID,
         linked_account_id: Optional[str] = None,
+        tenant_slug: Optional[str] = None,
     ) -> dict:
         """Create a payment link via Razorpay.
 
         When ``linked_account_id`` is set, funds are routed to the
         tenant's linked merchant account via a Razorpay Route transfer.
         """
+        import os
+
         amount = checkout.total_cents
         currency = checkout.currency
+        storefront_base = str(
+            getattr(self._settings, "storefront_url", None) or "http://localhost:3000"
+        ).rstrip("/")
+        target_tenant = str(tenant_slug or tenant_id).strip("/")
+        callback_url = f"{storefront_base}/{target_tenant}/checkout?checkout_id={checkout.id}"
 
         payload = {
             "amount": amount,
             "currency": currency,
             "accept_partial": False,
+            "reference_id": str(checkout.id)[:40],
             "description": f"Order for tenant {tenant_id}",
             "notes": {
                 "checkout_id": str(checkout.id),
                 "tenant_id": str(tenant_id),
             },
-            "callback_url": f"{self._settings.api_url}/api/v1/webhooks/razorpay",
-            "callback_method": "post",
+            "callback_url": callback_url,
+            "callback_method": "get",
         }
 
         if linked_account_id:
@@ -63,10 +81,13 @@ class RazorpayClient:
             # Razorpay places transfer notes separately; the top-level
             # notes.checkout_id above is what webhook extraction relies on.
 
-        if not self._key_id or not self._key_secret:
-            if not allow_dummy_payments():
+        if not self.is_configured():
+            if os.environ.get("ALLOW_DUMMY_PAYMENTS", "").lower() != "true":
                 raise ValueError("Razorpay key_id/key_secret not configured")
-            return {"id": "dummy_payment_id", "short_url": "https://example.com/pay"}
+            return {
+                "id": f"plink_{checkout.id.hex[:14]}",
+                "short_url": callback_url,
+            }
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -79,7 +100,7 @@ class RazorpayClient:
 
     async def verify_payment(self, payment_id: str) -> dict:
         """Verify a payment's status."""
-        if not self._key_id or not self._key_secret:
+        if not self.is_configured():
             # Never fabricate a "captured" result with unconfigured keys:
             # reconciliation would mark unpaid orders as paid.
             if not allow_dummy_payments():
@@ -105,7 +126,7 @@ class RazorpayClient:
         if reason:
             payload["notes"] = {"reason": reason}
 
-        if not self._key_id or not self._key_secret:
+        if not self.is_configured():
             if not allow_dummy_payments():
                 raise ValueError("Razorpay key_id/key_secret not configured")
             return {"id": "dummy_refund_id", "status": "processed"}
@@ -124,11 +145,9 @@ class RazorpayClient:
         payload,
         signature: str,
     ) -> bool:
-        """Verify the webhook signature from Razorpay."""
-        if not self._webhook_secret:
-            if not allow_unverified_webhooks():
-                return False
-            return True
+        """Verify the webhook signature from Razorpay using strict HMAC-SHA256."""
+        if not self._webhook_secret or not signature:
+            return False
 
         # Razorpay uses SHA256 HMAC over the exact raw body bytes
         expected = hmac.new(

@@ -291,14 +291,20 @@ async def public_get_store(
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ):
-    """First store for the resolved tenant (theme/branding for SSR)."""
+    """First store for the resolved tenant (theme/branding + payment provider availability)."""
     from apps.api.modules.store.services import list_stores
+    from infalette_integrations.razorpay.client import RazorpayClient
 
     tenant_id = await _public_tenant_id(request, session)
     stores = await list_stores(tenant_id, session)
     if not stores:
         raise HTTPException(status_code=404, detail="Store not found")
     store = stores[0]
+    razorpay_enabled = False
+    try:
+        razorpay_enabled = RazorpayClient().is_configured()
+    except Exception:
+        razorpay_enabled = False
     return {
         "id": str(store.id),
         "tenant_id": str(store.tenant_id),
@@ -315,6 +321,47 @@ async def public_get_store(
         "status": getattr(store.status, "value", store.status)
         if getattr(store, "status", None) is not None
         else None,
+        "razorpay_enabled": razorpay_enabled,
+        "payment_providers": {
+            "razorpay": razorpay_enabled,
+            "cod": True,
+        },
+    }
+
+
+@router.post("/coupons/validate")
+async def public_validate_coupon(
+    request: Request,
+    data: dict,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Validate a coupon code for the storefront cart/checkout."""
+    from infalette_commerce.discounts import DiscountService
+
+    tenant_id = await _public_tenant_id(request, session)
+    code = str(data.get("code") or "").strip().upper()
+    try:
+        order_total_cents = max(int(data.get("order_total_cents") or 0), 0)
+    except (TypeError, ValueError):
+        order_total_cents = 0
+
+    svc = DiscountService()
+    try:
+        res = await svc.validate_coupon_code(code, tenant_id, order_total_cents, session)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    discount_type = res["type"]
+    value = int(res["value"])
+    discount_cents = svc.calculate_discount_amount(order_total_cents, discount_type, value)
+    final_total_cents = svc.apply_coupon(order_total_cents, discount_type, value)
+    return {
+        "valid": True,
+        "code": res["code"],
+        "type": discount_type,
+        "value": value,
+        "discount_cents": discount_cents,
+        "final_total_cents": final_total_cents,
     }
 
 

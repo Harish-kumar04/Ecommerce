@@ -59,6 +59,70 @@ async def _recalculate_total(tenant_id: UUID, session: AsyncSession, cart_id: UU
     return carts[0].total_cents
 
 
+def _validate_stock_for_cart(product, variant, desired_qty: int) -> None:
+    """Reject out-of-stock products/variants and desired_qty exceeding available stock."""
+    if desired_qty <= 0:
+        raise ValueError("Quantity must be at least 1")
+
+    status_val = str(getattr(getattr(product, "status", None), "value", getattr(product, "status", "active")) or "active").lower()
+    if status_val not in ("active", "published"):
+        raise ValueError("Product is out of stock or unavailable")
+
+    if variant is not None:
+        policy = str(getattr(variant, "inventory_policy", None) or getattr(product, "inventory_policy", "deny") or "deny").lower()
+        if policy != "continue":
+            avail = int(getattr(variant, "inventory", 0) or 0)
+            if avail <= 0:
+                raise ValueError("Item is out of stock")
+            if desired_qty > avail:
+                raise ValueError(f"Requested quantity ({desired_qty}) exceeds available stock ({avail})")
+        return
+
+    tracks = getattr(product, "inventory_track", True)
+    policy = str(getattr(product, "inventory_policy", "deny") or "deny").lower()
+    if tracks is not False and policy != "continue":
+        avail_raw = getattr(product, "inventory_quantity", None)
+        if avail_raw is None:
+            avail_raw = getattr(product, "inventory", 0)
+        avail = int(avail_raw or 0)
+        if avail <= 0:
+            raise ValueError("Item is out of stock")
+        if desired_qty > avail:
+            raise ValueError(f"Requested quantity ({desired_qty}) exceeds available stock ({avail})")
+
+
+async def _ensure_valid_customer_id(
+    tenant_id: UUID,
+    customer_id: UUID | None,
+    session: AsyncSession,
+) -> UUID | None:
+    """Ensure customer_id references customers.id (resolving User -> Customer if needed)."""
+    if customer_id is None:
+        return None
+    from infalette_database.models.customer import Customer
+
+    direct = (
+        await session.execute(
+            select(Customer.id).where(
+                Customer.tenant_id == tenant_id,
+                Customer.id == customer_id,
+            ).limit(1)
+        )
+    ).scalars().first()
+    if direct is not None:
+        return direct
+
+    from infalette_database.models.user import User as _User
+    from infalette_commerce.customers import resolve_user_customer_id
+
+    user_row = (
+        await session.execute(select(_User).where(_User.id == customer_id).limit(1))
+    ).scalars().first()
+    if user_row is not None:
+        return await resolve_user_customer_id(tenant_id, user_row, session)
+    return customer_id
+
+
 async def get_or_create_cart(
     tenant_id: UUID,
     customer_id: UUID | None,
@@ -67,27 +131,68 @@ async def get_or_create_cart(
 ) -> Cart:
     """Get or create a cart for a customer or a guest session.
 
-    Authenticated users are keyed by customer_id. Guests (storefront
-    without login) are keyed by the opaque ``session_key`` sent via
-    ``X-Cart-Session-ID``.
+    Authenticated users are keyed by customer_id (customers.id). If an
+    unlinked guest cart exists for ``session_key``, it is adopted/merged.
     """
+    customer_id = await _ensure_valid_customer_id(tenant_id, customer_id, session)
+
+    cart = None
     if customer_id is not None:
         result = await session.execute(
-            select(Cart).where(Cart.tenant_id == tenant_id, Cart.customer_id == customer_id)
+            select(Cart).where(Cart.tenant_id == tenant_id, Cart.customer_id == customer_id).limit(1)
         )
+        cart = result.scalars().first()
+        if session_key:
+            guest_cart = (
+                await session.execute(
+                    select(Cart).where(
+                        Cart.tenant_id == tenant_id,
+                        Cart.session_key == session_key,
+                        Cart.customer_id.is_(None),
+                    ).limit(1)
+                )
+            ).scalars().first()
+            if guest_cart is not None:
+                if cart is None:
+                    guest_cart.customer_id = customer_id
+                    await session.commit()
+                    await session.refresh(guest_cart)
+                    cart = guest_cart
+                elif guest_cart.id != cart.id:
+                    guest_items = list(
+                        (await session.execute(select(CartItem).where(CartItem.cart_id == guest_cart.id))).scalars().all()
+                    )
+                    for gi in guest_items:
+                        existing = (
+                            await session.execute(
+                                select(CartItem).where(
+                                    CartItem.cart_id == cart.id,
+                                    CartItem.product_id == gi.product_id,
+                                    CartItem.variant_id == gi.variant_id if gi.variant_id else CartItem.variant_id.is_(None),
+                                ).limit(1)
+                            )
+                        ).scalars().first()
+                        if existing:
+                            existing.quantity += gi.quantity
+                            await session.delete(gi)
+                        else:
+                            gi.cart_id = cart.id
+                    await session.delete(guest_cart)
+                    await session.commit()
+                    await _recalculate_cart_total(cart.id, session)
     elif session_key:
         result = await session.execute(
-            select(Cart).where(Cart.tenant_id == tenant_id, Cart.session_key == session_key)
+            select(Cart).where(Cart.tenant_id == tenant_id, Cart.session_key == session_key).limit(1)
         )
+        cart = result.scalars().first()
     else:
         raise ValueError("Either customer_id or session_key is required")
 
-    cart = result.scalar_one_or_none()
     if not cart:
         cart = Cart(
             tenant_id=tenant_id,
             customer_id=customer_id,
-            session_key=session_key,
+            session_key=session_key if customer_id is None else None,
             total_cents=0,
         )
         session.add(cart)
@@ -103,29 +208,10 @@ async def add_to_cart(
     session: AsyncSession,
     session_key: str | None = None,
 ) -> CartItem:
-    """Add an item to the cart."""
-    cart = await get_or_create_cart(tenant_id, customer_id, session, session_key=session_key)
+    """Add an item to the cart, rejecting out-of-stock items and qty > stock."""
+    if data.quantity <= 0:
+        raise ValueError("Quantity must be at least 1")
 
-    # Check if item (matching product_id + variant_id) already exists in cart
-    stmt = select(CartItem).where(
-        CartItem.cart_id == cart.id,
-        CartItem.product_id == data.product_id,
-    )
-    if data.variant_id is not None:
-        stmt = stmt.where(CartItem.variant_id == data.variant_id)
-    else:
-        stmt = stmt.where(CartItem.variant_id.is_(None))
-    result = await session.execute(stmt)
-    existing_item = result.scalar_one_or_none()
-
-    if existing_item:
-        existing_item.quantity += data.quantity
-        await session.commit()
-        await session.refresh(existing_item)
-        await _recalculate_cart_total(cart.id, session)
-        return existing_item
-
-    # Get product price (and variant price if variant_id specified)
     result = await session.execute(
         select(Product).where(Product.id == data.product_id, Product.tenant_id == tenant_id)
     )
@@ -133,13 +219,14 @@ async def add_to_cart(
     if not product:
         raise ValueError("Product not found")
 
+    variant = None
     unit_price = (
         product.sale_price_cents
         if getattr(product, "sale_price_cents", None)
         else product.price_cents
     )
     if data.variant_id is not None:
-        from infalette_database.models.product_variant import ProductVariant
+        from infalette_database.models.product import ProductVariant
 
         variant = (
             await session.execute(
@@ -152,8 +239,36 @@ async def add_to_cart(
         ).scalar_one_or_none()
         if not variant:
             raise ValueError("Product variant not found")
-        if getattr(variant, "price_cents", None):
-            unit_price = variant.price_cents
+        unit_price = (
+            variant.sale_price_cents
+            if getattr(variant, "sale_price_cents", None)
+            else variant.price_cents
+        )
+
+    cart = await get_or_create_cart(tenant_id, customer_id, session, session_key=session_key)
+
+    # Check if item (matching product_id + variant_id) already exists in cart
+    stmt = select(CartItem).where(
+        CartItem.cart_id == cart.id,
+        CartItem.product_id == data.product_id,
+    )
+    if data.variant_id is not None:
+        stmt = stmt.where(CartItem.variant_id == data.variant_id)
+    else:
+        stmt = stmt.where(CartItem.variant_id.is_(None))
+    result = await session.execute(stmt)
+    existing_item = result.scalars().first()
+
+    desired_total_qty = (existing_item.quantity if existing_item else 0) + data.quantity
+    _validate_stock_for_cart(product, variant, desired_total_qty)
+
+    if existing_item:
+        existing_item.quantity = desired_total_qty
+        existing_item.price_cents = unit_price
+        await session.commit()
+        await session.refresh(existing_item)
+        await _recalculate_cart_total(cart.id, session)
+        return existing_item
 
     cart_item = CartItem(
         tenant_id=tenant_id,
@@ -173,13 +288,14 @@ async def add_to_cart(
 
         await record_event(
             tenant_id=tenant_id,
-            actor_id=customer_id,
+            actor_id=None,
             event_type="cart.item_added",
             payload={
                 "cart_id": str(cart.id),
                 "product_id": str(data.product_id),
                 "variant_id": str(data.variant_id) if data.variant_id else None,
                 "quantity": data.quantity,
+                "customer_id": str(cart.customer_id) if cart.customer_id else None,
                 "session_key": session_key,
             },
             session=session,
@@ -217,6 +333,7 @@ async def get_cart_with_items(cart_id: UUID, session: AsyncSession) -> dict:
             "image_url": img,
             "quantity": it.quantity,
             "price_cents": it.price_cents,
+            "inventory_quantity": getattr(product, "inventory_quantity", None) if product else None,
         })
     return {
         "id": str(cart.id),
@@ -232,6 +349,10 @@ async def get_cart_items(cart_id: UUID, session: AsyncSession) -> list[CartItem]
 
 
 def _apply_cart_owner_filter(stmt, customer_id: UUID | None, session_key: str | None):
+    from sqlalchemy import or_
+
+    if customer_id is not None and session_key:
+        return stmt.where(or_(Cart.customer_id == customer_id, Cart.session_key == session_key))
     if customer_id is not None:
         return stmt.where(Cart.customer_id == customer_id)
     if session_key is not None:
@@ -247,11 +368,15 @@ async def update_cart_item(
     customer_id: UUID | None = None,
     session_key: str | None = None,
 ) -> CartItem | None:
-    """Update a cart item quantity with tenant and cart-owner isolation."""
+    """Update a cart item quantity with tenant, owner, and stock validation."""
     from sqlalchemy import update
     from fastapi import HTTPException
 
+    if tenant_id is not None and customer_id is not None:
+        customer_id = await _ensure_valid_customer_id(tenant_id, customer_id, session)
+
     target_cart_id: UUID | None = None
+    item: CartItem | None = None
     if tenant_id is not None:
         stmt = select(CartItem).join(Cart, CartItem.cart_id == Cart.id).where(
             CartItem.id == item_id,
@@ -259,10 +384,14 @@ async def update_cart_item(
         )
         stmt = _apply_cart_owner_filter(stmt, customer_id, session_key)
         result = await session.execute(stmt)
-        item = result.scalar_one_or_none()
+        item = result.scalars().first()
         if not item:
             raise HTTPException(status_code=404, detail="Cart item not found or access denied")
         target_cart_id = item.cart_id
+    else:
+        item = (await session.execute(select(CartItem).where(CartItem.id == item_id))).scalars().first()
+        if item:
+            target_cart_id = item.cart_id
 
     if quantity <= 0:
         await remove_from_cart(
@@ -273,6 +402,22 @@ async def update_cart_item(
             session_key=session_key,
         )
         return None
+
+    if item is not None:
+        product = (
+            await session.execute(select(Product).where(Product.id == item.product_id))
+        ).scalars().first()
+        variant = None
+        if item.variant_id is not None:
+            from infalette_database.models.product import ProductVariant
+
+            variant = (
+                await session.execute(
+                    select(ProductVariant).where(ProductVariant.id == item.variant_id)
+                )
+            ).scalars().first()
+        if product is not None:
+            _validate_stock_for_cart(product, variant, quantity)
 
     await session.execute(
         update(CartItem)

@@ -41,11 +41,9 @@ class RazorpayWebhookHandler:
         payload,
         signature: str,
     ) -> bool:
-        """Verify the webhook signature from Razorpay."""
-        if not self._webhook_secret:
-            if not allow_unverified_webhooks():
-                return False
-            return True
+        """Verify the webhook signature from Razorpay using strict HMAC-SHA256."""
+        if not self._webhook_secret or not signature:
+            return False
 
         expected = hmac.new(
             self._webhook_secret.encode(),

@@ -55,7 +55,10 @@ async def update_discount(
     user=Depends(require_role("owner", "admin", "staff")),
 ):
     from apps.api.modules.discount.services import update_discount
-    dc = await update_discount(user.tenant_id, discount_id, data, session)
+    try:
+        dc = await update_discount(user.tenant_id, discount_id, data, session)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not dc:
         raise HTTPException(status_code=404, detail="Discount not found")
     return dc

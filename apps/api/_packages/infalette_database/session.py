@@ -196,6 +196,19 @@ async def init_db() -> None:
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                if str(engine.url.drivername).startswith("postgresql"):
+                    from sqlalchemy import text as _text
+
+                    await conn.execute(
+                        _text(
+                            "ALTER TABLE payments ADD COLUMN IF NOT EXISTS checkout_id UUID REFERENCES checkouts(id)"
+                        )
+                    )
+                    await conn.execute(
+                        _text(
+                            "CREATE INDEX IF NOT EXISTS ix_payments_checkout_id ON payments (checkout_id)"
+                        )
+                    )
             if attempt > 1:
                 logger.info("init_db succeeded on attempt %d", attempt)
             return

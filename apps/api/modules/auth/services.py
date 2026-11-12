@@ -433,20 +433,17 @@ async def customer_register(
     )
     session.add(user)
 
-    # Mirror into the CRM customer profile
-    try:
-        from infalette_database.models.customer import Customer
+    # Mirror/link into the CRM customer profile (email-first, idempotent)
+    await session.flush()
+    from infalette_commerce.customers import find_or_create_customer
 
-        session.add(
-            Customer(
-                tenant_id=tenant_id,
-                email=email,
-                first_name=data.first_name or "",
-                last_name=data.last_name or "",
-            )
-        )
-    except Exception:
-        pass
+    await find_or_create_customer(
+        tenant_id=tenant_id,
+        session=session,
+        email=email,
+        first_name=data.first_name or "",
+        last_name=data.last_name or "",
+    )
 
     await session.commit()
 

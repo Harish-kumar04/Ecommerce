@@ -195,26 +195,12 @@ export class StorefrontApi {
         { headers: tenantHeaders(tenant) },
       );
       return response.data;
-    } catch {
-      const book = FALLBACK_BOOKS.find(
-        (b) => b.id === productId || b.slug === productId,
-      );
-      const items = readLocalCart();
-      const existing = items.find((it) => it.product_id === productId);
-      if (existing) {
-        existing.quantity = (existing.quantity || 1) + quantity;
-      } else {
-        items.push({
-          id: `item-${productId}`,
-          product_id: productId,
-          name: book?.name || productId,
-          price_cents: book?.sale_price_cents ?? book?.price_cents ?? 10000,
-          image_url: book?.image_url,
-          quantity,
-        });
+    } catch (err: any) {
+      if (err?.response) {
+        const detail = err.response?.data?.error || err.response?.data?.detail || err.response?.data?.message || "Unable to add item to cart";
+        throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || JSON.stringify(d)).join(", ") : String(detail));
       }
-      writeLocalCart(items);
-      return { items };
+      throw new Error(err?.message || "Network error adding item to cart");
     }
   }
 
@@ -239,12 +225,12 @@ export class StorefrontApi {
         { headers: tenantHeaders(tenant) },
       );
       return response.data;
-    } catch {
-      const items = readLocalCart().map((it) =>
-        it.id === itemId ? { ...it, quantity } : it,
-      );
-      writeLocalCart(items);
-      return { items };
+    } catch (err: any) {
+      if (err?.response) {
+        const detail = err.response?.data?.error || err.response?.data?.detail || err.response?.data?.message || "Unable to update cart quantity";
+        throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || JSON.stringify(d)).join(", ") : String(detail));
+      }
+      throw new Error(err?.message || "Network error updating cart");
     }
   }
 
@@ -254,11 +240,39 @@ export class StorefrontApi {
         headers: tenantHeaders(tenant),
       });
       return response.data;
-    } catch {
-      const items = readLocalCart().filter((it) => it.id !== itemId);
-      writeLocalCart(items);
-      return { items };
+    } catch (err: any) {
+      if (err?.response) {
+        const detail = err.response?.data?.error || err.response?.data?.detail || err.response?.data?.message || "Unable to remove item from cart";
+        throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || JSON.stringify(d)).join(", ") : String(detail));
+      }
+      throw new Error(err?.message || "Network error removing item from cart");
     }
+  }
+
+  async validateCoupon(tenant: string, code: string, orderTotalCents: number) {
+    try {
+      const response = await api.post(
+        `/public/coupons/validate`,
+        { code: code.trim().toUpperCase(), order_total_cents: orderTotalCents },
+        { headers: { "X-Tenant": tenant } },
+      );
+      return response.data;
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid coupon code";
+      throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || String(d)).join(", ") : String(detail));
+    }
+  }
+
+  async getCheckout(tenant: string, checkoutId: string) {
+    const response = await api.get(`/checkout/${encodeURIComponent(checkoutId)}`, {
+      headers: tenantHeaders(tenant),
+    });
+    return response.data;
   }
 
   async createCheckout(tenant: string, data: any) {
@@ -283,17 +297,14 @@ export class StorefrontApi {
         headers: { ...tenantHeaders(tenant), "Idempotency-Key": idempotencyKey },
       });
       return response.data;
-    } catch {
-      const items = readLocalCart();
-      const total_cents = items.reduce(
-        (s, it) => s + (it.price_cents || 0) * (it.quantity || 1),
-        0,
-      );
-      return {
-        id: `chk-${Date.now()}`,
-        checkout_id: `chk-${Date.now()}`,
-        total_cents,
-      };
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Checkout failed";
+      throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || String(d)).join(", ") : String(detail));
     }
   }
 
@@ -304,7 +315,7 @@ export class StorefrontApi {
   ) {
     try {
       const response = await api.post(
-        `/checkout/${checkoutId}/pay`,
+        `/checkout/${encodeURIComponent(checkoutId)}/pay`,
         { provider },
         {
           headers: {
@@ -314,13 +325,14 @@ export class StorefrontApi {
         },
       );
       return response.data;
-    } catch {
-      writeLocalCart([]);
-      return {
-        cod: provider === "cod",
-        order_id: `ord-${Date.now()}`,
-        status: "confirmed",
-      };
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Payment initiation failed";
+      throw new Error(Array.isArray(detail) ? detail.map((d: any) => d?.msg || String(d)).join(", ") : String(detail));
     }
   }
 

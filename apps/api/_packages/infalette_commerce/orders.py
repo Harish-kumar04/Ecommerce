@@ -235,10 +235,23 @@ class OrderService:
         if not payment:
             raise ValueError("Payment not found")
 
+        from sqlalchemy import func
+
         if amount_cents <= 0:
             raise ValueError("Refund amount must be positive")
-        if amount_cents > payment.amount_cents:
-            raise ValueError("Refund amount exceeds payment amount")
+
+        existing_refunded_res = await session.execute(
+            select(func.coalesce(func.sum(Refund.amount_cents), 0)).where(
+                Refund.payment_id == payment_id,
+                Refund.status == RefundStatus.SUCCEEDED,
+            )
+        )
+        existing_refunded = int(existing_refunded_res.scalar() or 0)
+        if existing_refunded + amount_cents > payment.amount_cents:
+            remaining = max(payment.amount_cents - existing_refunded, 0)
+            raise ValueError(
+                f"Cumulative refund exceeds payment amount (remaining refundable: {remaining} cents)"
+            )
         if not payment.provider_payment_id and payment.provider != PaymentProvider.COD:
             raise ValueError("Payment has no provider reference to refund against")
 
@@ -296,17 +309,18 @@ class OrderService:
         if reason and provider_refund_id:
             refund.reason = f"{reason} [provider_refund:{provider_refund_id}]"
 
-        if amount_cents >= payment.amount_cents:
+        is_fully_refunded = existing_refunded + amount_cents >= payment.amount_cents
+        if is_fully_refunded:
             payment.status = PaymentStatus.REFUNDED
         else:
             payment.status = PaymentStatus.PARTIALLY_REFUNDED
 
-        # Only a delivered order may land in REFUNDED via this flow; other
+        order_row = None
         if payment.order_id:
             order_row = (
                 await session.execute(select(Order).where(Order.id == payment.order_id))
             ).scalar_one_or_none()
-            if order_row and order_row.status in (
+            if is_fully_refunded and order_row and order_row.status in (
                 OrderStatus.DELIVERED,
                 OrderStatus.SHIPPED,
                 OrderStatus.PROCESSING,
@@ -344,11 +358,10 @@ class OrderService:
         reason: str,
         session: AsyncSession,
     ) -> dict:
-        """Create a return request for an order.
+        """Create a return request for an order, capping returned quantities at OrderItem.quantity."""
+        from infalette_database.models.event import Event
+        from infalette_commerce.inventory import release_inventory as _release
 
-        Returns are only valid from DELIVERED and restock the returned
-        quantities back into inventory.
-        """
         result = await session.execute(
             select(Order).where(Order.id == order_id)
         )
@@ -360,14 +373,12 @@ class OrderService:
         allowed_sources = {
             OrderStatus.DELIVERED.value,
             OrderStatus.SHIPPED.value,
+            OrderStatus.RETURNED.value,
         }
         if current_status not in allowed_sources:
             raise ValueError(
                 f"Invalid status transition from {current_status} to {OrderStatus.RETURNED.value}"
             )
-
-        # Restock returned items (stock was deducted at checkout).
-        from infalette_commerce.inventory import release_inventory as _release
 
         order_items = list(
             (
@@ -376,14 +387,91 @@ class OrderService:
                 )
             ).scalars().all()
         )
-        requested = {str(i.get("product_id")): int(i.get("quantity", 0)) for i in items} if items else {}
-        for item in order_items:
-            qty = requested.get(str(item.product_id), item.quantity if not requested else 0)
-            if qty <= 0:
-                continue
-            await _release(
-                item.product_id, qty, session, variant_id=item.variant_id
+        if not order_items:
+            raise ValueError("Order has no items to return")
+
+        # Sum previously returned quantities per (product_id, variant_id)
+        prior_returned: dict[tuple[str, Optional[str]], int] = {}
+        try:
+            prior_events = list(
+                (
+                    await session.execute(
+                        select(Event).where(
+                            Event.tenant_id == order.tenant_id,
+                            Event.event_type == "order.returned",
+                        )
+                    )
+                ).scalars().all()
             )
+            for ev in prior_events:
+                pl = getattr(ev, "payload_json", None) or {}
+                if str(pl.get("order_id") or "") != str(order_id):
+                    continue
+                for ri in pl.get("items") or []:
+                    rk = (
+                        str(ri.get("product_id") or ""),
+                        str(ri.get("variant_id")) if ri.get("variant_id") else None,
+                    )
+                    prior_returned[rk] = prior_returned.get(rk, 0) + max(int(ri.get("quantity") or 0), 0)
+        except Exception:
+            prior_returned = {}
+
+        # Map order items (aggregating if same product+variant appears)
+        ordered_map: dict[tuple[str, Optional[str]], OrderItem] = {}
+        ordered_qty: dict[tuple[str, Optional[str]], int] = {}
+        by_product_only: dict[str, tuple[str, Optional[str]]] = {}
+        for oi in order_items:
+            k = (str(oi.product_id), str(oi.variant_id) if oi.variant_id else None)
+            ordered_map[k] = oi
+            ordered_qty[k] = ordered_qty.get(k, 0) + int(oi.quantity)
+            by_product_only.setdefault(str(oi.product_id), k)
+
+        normalized_return_items: list[dict] = []
+        requested_by_key: dict[tuple[str, Optional[str]], int] = {}
+
+        if items:
+            for req in items:
+                pid = str(req.get("product_id") or "").strip()
+                vid = str(req.get("variant_id")).strip() if req.get("variant_id") else None
+                try:
+                    qty = int(req.get("quantity", 0))
+                except (TypeError, ValueError):
+                    raise ValueError("Return quantity must be a positive integer")
+                if qty <= 0:
+                    raise ValueError("Return quantity must be positive")
+                key = (pid, vid)
+                if key not in ordered_qty:
+                    if vid is None and pid in by_product_only:
+                        key = by_product_only[pid]
+                    else:
+                        raise ValueError(f"Item {pid} does not belong to this order")
+                requested_by_key[key] = requested_by_key.get(key, 0) + qty
+
+            for key, req_qty in requested_by_key.items():
+                already = prior_returned.get(key, 0)
+                max_allowed = ordered_qty[key] - already
+                if req_qty > max_allowed:
+                    raise ValueError(
+                        f"Return quantity ({req_qty}) exceeds remaining returnable quantity ({max(max_allowed, 0)})"
+                    )
+        else:
+            for key, max_q in ordered_qty.items():
+                rem = max_q - prior_returned.get(key, 0)
+                if rem > 0:
+                    requested_by_key[key] = rem
+            if not requested_by_key:
+                raise ValueError("All items in this order have already been returned")
+
+        for key, qty in requested_by_key.items():
+            oi = ordered_map[key]
+            await _release(
+                oi.product_id, qty, session, variant_id=oi.variant_id
+            )
+            normalized_return_items.append({
+                "product_id": str(oi.product_id),
+                "variant_id": str(oi.variant_id) if oi.variant_id else None,
+                "quantity": qty,
+            })
 
         await session.execute(
             update(Order)
@@ -396,7 +484,7 @@ class OrderService:
             tenant_id=order.tenant_id,
             actor_id=None,
             event_type="order.returned",
-            payload={"order_id": str(order_id), "reason": reason, "items": items},
+            payload={"order_id": str(order_id), "reason": reason, "items": normalized_return_items},
             session=session,
         )
 
@@ -406,7 +494,7 @@ class OrderService:
             "order_id": str(order_id),
             "status": OrderStatus.RETURNED.value,
             "reason": reason,
-            "items": items,
+            "items": normalized_return_items,
         }
 
     async def get_order_fulfillments(

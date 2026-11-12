@@ -39,6 +39,9 @@ class Payment(Base, TenantMixin):
     order_id = Column(
         UUID(as_uuid=True), ForeignKey("orders.id"), nullable=True, index=True
     )
+    checkout_id = Column(
+        UUID(as_uuid=True), ForeignKey("checkouts.id"), nullable=True, index=True
+    )
     provider = Column(
         SAEnum(PaymentProvider, native_enum=False, length=50), nullable=False, index=True
     )

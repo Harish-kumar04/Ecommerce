@@ -62,11 +62,12 @@ async def payment_webhook(
             payload,
             signature,
             session,
-            raw_body=raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw),
+            raw_body=bytes(raw) if isinstance(raw, (bytes, bytearray)) else str(raw).encode("utf-8"),
         )
     except ValueError as e:
         # Verification failures must not be swallowed (alerting relies on 4xx)
-        raise HTTPException(status_code=400, detail=str(e))
+        status_code = 403 if "signature" in str(e).lower() else 400
+        raise HTTPException(status_code=status_code, detail=str(e))
     except Exception as e:  # pragma: no cover - defensive
         logger.exception("payment webhook processing failed")
         raise HTTPException(status_code=500, detail="Webhook processing failed")

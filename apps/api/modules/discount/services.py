@@ -51,6 +51,8 @@ async def create_discount(tenant_id: UUID, data: dict, session: AsyncSession):
 
 
 async def update_discount(tenant_id: UUID, discount_id: UUID, data: dict, session: AsyncSession):
+    from sqlalchemy import func
+
     dc = await get_discount(tenant_id, discount_id, session)
     if not dc:
         return None
@@ -61,7 +63,21 @@ async def update_discount(tenant_id: UUID, discount_id: UUID, data: dict, sessio
         if field in ("type", "discount_type"):
             dc.discount_type = val
         elif field == "code":
-            dc.code = str(val).strip().upper()
+            new_code = str(val or "").strip().upper()
+            if not new_code:
+                raise ValueError("Code is required")
+            dup = (
+                await session.execute(
+                    select(DiscountCode).where(
+                        DiscountCode.tenant_id == tenant_id,
+                        func.upper(DiscountCode.code) == new_code,
+                        DiscountCode.id != discount_id,
+                    ).limit(1)
+                )
+            ).scalars().first()
+            if dup is not None:
+                raise ValueError(f"Discount code {new_code} already exists")
+            dc.code = new_code
         elif field == "expires_at":
             dc.expires_at = _parse_dt(val)
         else:

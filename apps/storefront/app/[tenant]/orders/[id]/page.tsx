@@ -7,14 +7,19 @@ import { storefrontApi } from "@/lib/api";
 import AuthGate from "@/components/auth-gate";
 
 type Address = {
+  name?: string;
   full_name?: string;
   first_name?: string;
   last_name?: string;
+  line1?: string;
+  line2?: string;
+  address?: string;
   address1?: string;
   address2?: string;
   city?: string;
   state?: string;
   postal_code?: string;
+  pincode?: string;
   zip?: string;
   country?: string;
   phone?: string;
@@ -24,14 +29,15 @@ type Address = {
 function formatAddress(addr: Address | null | undefined): string | null {
   if (!addr || typeof addr !== "object") return null;
   const name =
+    addr.name ||
     addr.full_name ||
     [addr.first_name, addr.last_name].filter(Boolean).join(" ") ||
     "";
-  const line1 = addr.address1 || "";
-  const line2 = addr.address2 || "";
+  const line1 = addr.line1 || addr.address1 || addr.address || "";
+  const line2 = addr.line2 || addr.address2 || "";
   const city = addr.city || "";
   const state = addr.state || "";
-  const postal = addr.postal_code || addr.zip || "";
+  const postal = addr.postal_code || addr.pincode || addr.zip || "";
   const country = addr.country || "";
   const phone = addr.phone || "";
 

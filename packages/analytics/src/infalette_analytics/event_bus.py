@@ -29,11 +29,28 @@ class EventRecorder:
         request_id: Optional[str] = None,
     ) -> Event:
         """Record an event to the database."""
+        safe_actor_id = actor_id
+        safe_payload = dict(payload or {})
+        if safe_actor_id is not None and isinstance(session, AsyncSession):
+            try:
+                from infalette_database.models.user import User
+
+                u_exists = (
+                    await session.execute(
+                        select(User.id).where(User.id == safe_actor_id).limit(1)
+                    )
+                ).scalars().first()
+                if u_exists is None:
+                    safe_payload.setdefault("actor_customer_id", str(safe_actor_id))
+                    safe_actor_id = None
+            except Exception:
+                safe_actor_id = None
+
         event = Event(
             tenant_id=tenant_id,
-            actor_id=actor_id,
+            actor_id=safe_actor_id,
             event_type=event_type,
-            payload_json=payload,
+            payload_json=safe_payload,
             request_id=request_id,
             created_at=datetime.utcnow(),
         )

@@ -36,19 +36,31 @@ async def create_checkout(
 ):
     """Create a checkout from the cart (guest checkout supported)."""
     from apps.api.modules.checkout.services import create_checkout
+    from infalette_commerce.customers import resolve_user_customer_id
 
     tenant_id = await resolve_tenant_id(request, user, session)
+    customer_id = await resolve_user_customer_id(tenant_id, user, session) if user is not None else None
     try:
         checkout = await create_checkout(
             tenant_id,
-            user.id if user else None,
+            customer_id,
             data,
             session,
-            session_key=get_cart_session_key(request) if user is None else None,
+            session_key=get_cart_session_key(request),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return {"id": str(checkout.id), "status": checkout.status.value, "total_cents": checkout.total_cents}
+    attr = getattr(checkout, "attribution_json", None) or {}
+    return {
+        "id": str(checkout.id),
+        "status": checkout.status.value,
+        "total_cents": checkout.total_cents,
+        "subtotal_cents": attr.get("subtotal_cents"),
+        "discount_cents": attr.get("discount_cents", 0),
+        "tax_cents": attr.get("tax_cents", 0),
+        "shipping_cents": attr.get("shipping_cents", 0),
+        "discounts": getattr(checkout, "discounts_json", None) or [],
+    }
 
 
 @router.get("/{checkout_id}", response_model=dict)
@@ -58,14 +70,34 @@ async def get_checkout(
     session: AsyncSession = Depends(get_async_session),
     user=Depends(get_optional_user),
 ):
-    """Get a checkout by ID."""
+    """Get a checkout by ID, including order_id when confirmed."""
+    from sqlalchemy import select
     from apps.api.modules.checkout.services import get_checkout
+    from infalette_database.models.order import Order
 
     tenant_id = await resolve_tenant_id(request, user, session)
     checkout = await get_checkout(tenant_id, checkout_id, session)
     if not checkout:
         raise HTTPException(status_code=404, detail="Checkout not found")
-    return {"id": str(checkout.id), "status": checkout.status.value, "total_cents": checkout.total_cents}
+    order_row = (
+        await session.execute(
+            select(Order).where(
+                Order.checkout_id == checkout.id,
+                Order.tenant_id == tenant_id,
+            ).limit(1)
+        )
+    ).scalars().first()
+    return {
+        "id": str(checkout.id),
+        "status": checkout.status.value,
+        "total_cents": checkout.total_cents,
+        "order_id": str(order_row.id) if order_row is not None else None,
+        "order_status": (
+            str(getattr(order_row.status, "value", order_row.status))
+            if order_row is not None
+            else None
+        ),
+    }
 
 
 @router.post("/{checkout_id}/pay", response_model=dict)

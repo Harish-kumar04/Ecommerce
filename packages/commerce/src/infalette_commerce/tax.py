@@ -32,6 +32,7 @@ class TaxService:
     TAX_RATES = {
         "standard": 0.18,  # 18% GST for India
         "reduced": 0.05,   # 5% GST
+        "books": 0.0,      # 0% GST on printed books
         "zero": 0.0,       # 0% GST
         "exempt": 0.0,     # Exempt
     }
@@ -46,15 +47,16 @@ class TaxService:
     ) -> int:
         """Calculate tax amount for a given amount and tax class.
 
-        GST slabs are product-class driven (standard/reduced/zero/exempt),
+        GST slabs are product-class driven (standard/reduced/books/zero/exempt),
         not state driven. ``store_override`` is the tenant's flat percentage
         (e.g. 12) applied when the product carries no specific tax_class.
         """
-        if not tax_class and store_override is not None:
+        cls_norm = (tax_class or "").strip().lower()
+        if not cls_norm and store_override is not None:
             rate = max(0.0, float(store_override)) / 100.0
             return int(amount_cents * rate)
 
-        rate = self.TAX_RATES.get(tax_class, self.TAX_RATES["standard"])
+        rate = self.TAX_RATES.get(cls_norm, self.TAX_RATES["standard"])
         return int(amount_cents * rate)
 
     def get_tax_rate(
@@ -63,7 +65,8 @@ class TaxService:
         region: Optional[str] = None,
     ) -> float:
         """Get the tax rate for a tax class."""
-        return self.TAX_RATES.get(tax_class, self.TAX_RATES["standard"])
+        cls_norm = (tax_class or "").strip().lower()
+        return self.TAX_RATES.get(cls_norm, self.TAX_RATES["standard"])
 
     @staticmethod
     def gst_breakdown(

@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
 import CheckoutForm from "@/components/checkout/checkout-form";
+
+function hasRealOrderId(orderObj: any): boolean {
+  const oid = orderObj?.order_id || orderObj?.id;
+  if (!oid || typeof oid !== "string") return false;
+  if (oid.startsWith("ord-") || oid.startsWith("chk-") || oid.startsWith("MP-")) return false;
+  return true;
+}
 
 export default function CheckoutPage({ params }: { params: { tenant: string } }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -12,12 +19,107 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>("razorpay");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
+  const [razorpayEnabled, setRazorpayEnabled] = useState<boolean>(false);
+  const [cartSubtotalCents, setCartSubtotalCents] = useState<number>(0);
+
+  const clearClientCartBadges = () => {
+    notifyCartChanged(params.tenant);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("mp_fallback_cart");
+        localStorage.removeItem("infalette-local-cart");
+        localStorage.removeItem(`store_applied_coupon_${params.tenant}`);
+        localStorage.setItem("infalette-cart-count", "0");
+        localStorage.setItem("infalette-cart-total", "0");
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    storefrontApi
+      .getStore(params.tenant)
+      .then((store) => {
+        if (!cancelled) {
+          setRazorpayEnabled(Boolean(store?.razorpay_enabled));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRazorpayEnabled(false);
+      });
+
+    storefrontApi
+      .getCart(params.tenant)
+      .then((c) => {
+        if (cancelled) return;
+        const cartObj = c?.cart || c?.data || c;
+        const items = cartObj?.items || cartObj?.cart_items || [];
+        const sub =
+          cartObj?.total_cents ??
+          items.reduce(
+            (s: number, it: any) => s + (it.price_cents ?? 0) * (it.quantity ?? 1),
+            0,
+          );
+        setCartSubtotalCents(sub || 0);
+      })
+      .catch(() => {});
+
+    // Handle return from Razorpay callback_url (?checkout_id=...)
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const returnedCheckoutId = sp.get("checkout_id");
+      if (returnedCheckoutId) {
+        setLoading(true);
+        (async () => {
+          for (let attempt = 0; attempt < 5; attempt++) {
+            if (cancelled) return;
+            try {
+              const chk = await storefrontApi.getCheckout(params.tenant, returnedCheckoutId);
+              if (cancelled) return;
+              setCheckout(chk);
+              if (chk?.order_id && !String(chk.order_id).startsWith("ord-")) {
+                setOrder({ order_id: chk.order_id, status: chk.order_status || "confirmed", cod: false });
+                setStep(3);
+                clearClientCartBadges();
+                setLoading(false);
+                return;
+              }
+              if (chk?.status === "failed" || chk?.status === "cancelled") {
+                setError("Payment was not completed. Your cart items are still saved — please try again.");
+                setStep(1);
+                setLoading(false);
+                return;
+              }
+            } catch (err: any) {
+              if (cancelled) return;
+              setError(err?.message || "Unable to verify payment status.");
+              setStep(1);
+              setLoading(false);
+              return;
+            }
+            await new Promise((r) => setTimeout(r, 1200));
+          }
+          if (!cancelled) {
+            setError("Payment confirmation is still pending from Razorpay. Please check My Orders in a moment.");
+            setStep(1);
+            setLoading(false);
+          }
+        })();
+      }
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.tenant]);
 
   const handleCheckout = async (data: any) => {
     setLoading(true);
     setError(null);
-    setPaymentMethod(data.payment_provider || "razorpay");
+    const chosenProvider = data.payment_provider || (razorpayEnabled ? "razorpay" : "cod");
+    setPaymentMethod(chosenProvider);
     try {
       const res = await storefrontApi.createCheckout(params.tenant, {
         customer_data: {
@@ -30,42 +132,41 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
         billing_address: data.billing,
         discount_codes: data.discount_codes,
       });
+      const checkoutId = res?.id || res?.checkout_id;
+      if (!checkoutId || String(checkoutId).startsWith("chk-")) {
+        throw new Error("Checkout could not be created. Please try again.");
+      }
       setCheckout(res);
-      const checkoutId = res.id || res.checkout_id;
 
-      try {
-        const payRes = await storefrontApi.initiatePayment(params.tenant, checkoutId, data.payment_provider || "razorpay");
-        if (payRes.cod || payRes.order_id) {
-          setOrder(payRes);
-          setStep(3);
-          notifyCartChanged(params.tenant);
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.removeItem("mp_fallback_cart");
-              localStorage.removeItem("infalette-local-cart");
-              localStorage.setItem("infalette-cart-count", "0");
-              localStorage.setItem("infalette-cart-total", "0");
-            } catch {}
-          }
-          return;
-        }
-        const paymentUrl = payRes.payment_url || payRes.url;
-        if (paymentUrl) {
-          setCheckout({ ...res, ...payRes });
-          setStep(2);
-          setTimeout(() => {
-            window.location.href = paymentUrl;
-          }, 900);
-          return;
-        }
-      } catch (payErr: any) {
-        console.warn("Payment initiation failed, showing checkout:", payErr);
+      const payRes = await storefrontApi.initiatePayment(
+        params.tenant,
+        checkoutId,
+        chosenProvider,
+      );
+
+      if (hasRealOrderId(payRes)) {
+        setOrder(payRes);
+        setStep(3);
+        clearClientCartBadges();
+        return;
       }
 
-      setStep(2);
+      const paymentUrl = payRes?.payment_url || payRes?.url;
+      if (paymentUrl) {
+        setCheckout({ ...res, ...payRes });
+        setStep(2);
+        setTimeout(() => {
+          window.location.href = paymentUrl;
+        }, 600);
+        return;
+      }
+
+      throw new Error("Order could not be confirmed by the server. Your cart has been preserved.");
     } catch (e: any) {
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || e.message || "Checkout failed";
+      const msg = e?.response?.data?.detail || e?.response?.data?.message || e?.message || "Checkout failed";
       setError(Array.isArray(msg) ? msg.join(", ") : String(msg));
+      setOrder(null);
+      setStep(1);
     } finally {
       setLoading(false);
     }
@@ -116,13 +217,21 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
         </div>
       )}
 
-      {step === 1 && <CheckoutForm onSubmit={handleCheckout} loading={loading} />}
+      {step === 1 && (
+        <CheckoutForm
+          tenant={params.tenant}
+          razorpayEnabled={razorpayEnabled}
+          cartSubtotalCents={cartSubtotalCents}
+          onSubmit={handleCheckout}
+          loading={loading}
+        />
+      )}
 
       {step === 2 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center">
           <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-100 border-t-brand-red animate-spin" />
           <h2 className="mt-5 text-[20px] font-semibold text-gray-900">
-            Checkout created
+            Redirecting to payment
           </h2>
           <p className="mt-2 text-[14px] text-gray-500">
             Total: ₹{checkout ? (checkout.total_cents / 100).toFixed(2) : "—"}
@@ -141,16 +250,10 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
               Pay now
             </a>
           )}
-          <button
-            onClick={() => setStep(3)}
-            className="block mt-4 text-[12px] text-gray-500 hover:underline"
-          >
-            I&apos;ve completed payment — show confirmation
-          </button>
         </div>
       )}
 
-      {step === 3 && (
+      {step === 3 && hasRealOrderId(order) && (
         <div className="rounded-2xl border border-black/10 bg-white p-8 sm:p-12 text-center shadow-sm">
           <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
@@ -162,7 +265,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
             {order?.cod ? "ஆர்டர் உறுதி செய்யப்பட்டது! (COD)" : "ஆர்டர் வெற்றிகரமாக பதிவு செய்யப்பட்டது!"}
           </h2>
           <p className="text-[15px] font-medium text-black/60 mt-1">
-            {order?.cod ? "Order Confirmed — Cash on Delivery" : "Order Placed Successfully"}
+            {order?.cod ? "Order Confirmed — Cash on Delivery" : "Order Confirmed"}
           </p>
 
           {/* Order ID Box */}
@@ -171,7 +274,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
               ஆர்டர் எண் / Order ID
             </span>
             <span className="block text-[20px] font-mono font-extrabold text-brand-red mt-0.5">
-              {order?.order_number || order?.order_id || checkout?.id || `MP-${Date.now().toString().slice(-6)}`}
+              {order.order_number || order.order_id}
             </span>
           </div>
 
@@ -185,7 +288,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href={`https://wa.me/919003324473?text=${encodeURIComponent(
-                `வணக்கம், எனது ஆர்டர் எண்: ${order?.order_number || order?.order_id || checkout?.id || ""}. விவரங்களை அறிய விரும்புகிறேன்.`
+                `வணக்கம், எனது ஆர்டர் எண்: ${order.order_number || order.order_id}. விவரங்களை அறிய விரும்புகிறேன்.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
