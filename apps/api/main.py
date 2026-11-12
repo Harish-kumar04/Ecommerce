@@ -125,6 +125,65 @@ async def _auto_seed_if_empty() -> None:
         log.warning("Auto-seed skipped or failed: %s", exc)
 
 
+REQUIRED_BOOKSTORE_CATEGORIES = [
+    {
+        "name": "திராவிட இயக்க வரலாறு | Dravidian Movement History",
+        "slug": "dravidian-history",
+        "description": "Books on the history, ideology, and struggles of the Dravidian movement and DMK.",
+    },
+    {
+        "name": "கலைஞர் படைப்புகள் | Kalaignar Works & Studies",
+        "slug": "kalaignar-works",
+        "description": "Biographies, letters, literary works, and political analyses of Muthamilarignar Kalaignar M. Karunanidhi.",
+    },
+    {
+        "name": "திராவிட மாடல் & சமூகநீதி | Dravidian Model & Social Justice",
+        "slug": "dravidian-model-social-justice",
+        "description": "Publications on the Dravidian Model governance, reservation, state autonomy, and language rights.",
+    },
+    {
+        "name": "திராவிட சினிமா & பண்பாடு | Dravidian Cinema & Culture",
+        "slug": "dravidian-cinema-culture",
+        "description": "Explorations of Dravidian cinema, art, cultural transformation, and youth movement.",
+    },
+]
+
+
+async def _ensure_required_categories() -> None:
+    """Ensure the 4 canonical Muthamilarignar Pathipagam categories exist for all tenants.
+    Idempotent by slug: only inserts missing categories, never reseeds books."""
+    try:
+        from sqlalchemy import select
+        from infalette_database.models.tenant import Tenant
+        from infalette_database.models.category import Category
+        from infalette_database.session import get_session_factory
+
+        async with get_session_factory()() as session:
+            tenants = (await session.execute(select(Tenant.id))).scalars().all()
+            for tid in tenants:
+                existing_slugs = set(
+                    (
+                        await session.execute(
+                            select(Category.slug).where(Category.tenant_id == tid)
+                        )
+                    ).scalars().all()
+                )
+                for cat in REQUIRED_BOOKSTORE_CATEGORIES:
+                    if cat["slug"] not in existing_slugs:
+                        new_cat = Category(
+                            tenant_id=tid,
+                            name=cat["name"],
+                            slug=cat["slug"],
+                            description=cat["description"],
+                            status="active",
+                        )
+                        session.add(new_cat)
+            await session.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Category check skipped or failed: %s", exc)
+
+
 async def _ensure_runtime_ready() -> None:
     """Idempotent startup initializer safe for both ASGI lifespan and cold serverless invocations."""
     global _RUNTIME_READY, _RUNTIME_LOCK
@@ -164,6 +223,7 @@ async def _ensure_runtime_ready() -> None:
             await _db_session.init_db()
 
         await _auto_seed_if_empty()
+        await _ensure_required_categories()
 
         if settings.sentry_dsn and sentry_sdk is not None:
             sentry_sdk.init(

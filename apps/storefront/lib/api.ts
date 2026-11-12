@@ -39,11 +39,28 @@ const api = axios.create({
 // Guest cart identity: opaque uuid kept client-side (requirement: guest checkout)
 export function getCartSessionId(): string {
   if (typeof window === "undefined") return "";
-  let id = window.localStorage.getItem("cart_session_id");
+  let id =
+    window.localStorage.getItem("cart_session_id") ||
+    window.localStorage.getItem("infalette-cart-session-id");
   if (!id) {
-    id = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-    window.localStorage.setItem("cart_session_id", id);
+    const match = document.cookie.match(
+      /(?:^|; )(?:cart_session_id|infalette-cart-session)=([^;]+)/,
+    );
+    if (match && match[1]) {
+      id = decodeURIComponent(match[1]);
+    }
   }
+  if (!id) {
+    id = window.crypto?.randomUUID
+      ? window.crypto.randomUUID()
+      : `cart_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  }
+  try {
+    window.localStorage.setItem("cart_session_id", id);
+    window.localStorage.setItem("infalette-cart-session-id", id);
+    document.cookie = `cart_session_id=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `infalette-cart-session=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch {}
   return id;
 }
 
@@ -109,22 +126,23 @@ export class StorefrontApi {
         params,
       });
       const data = response.data;
-      const list = Array.isArray(data) ? data : data.data || data.items || [];
-      if (list.length > 0) return list;
+      return Array.isArray(data) ? data : data.data || data.items || [];
     } catch {
-      // fallback
+      // fallback only on network error or server down
     }
     return FALLBACK_BOOKS;
   }
 
   async getProduct(tenant: string, id: string) {
     try {
-      const response = await api.get(`/public/products/${id}`, {
+      const response = await api.get(`/public/products/${encodeURIComponent(id)}`, {
         headers: { "X-Tenant": tenant },
       });
       if (response.data) return response.data;
-    } catch {
-      // fallback
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        return null;
+      }
     }
     return (
       FALLBACK_BOOKS.find(
@@ -139,8 +157,7 @@ export class StorefrontApi {
         headers: { "X-Tenant": tenant },
       });
       const data = response.data;
-      const list = Array.isArray(data) ? data : data.data || data.items || [];
-      if (list.length > 0) return list;
+      return Array.isArray(data) ? data : data.data || data.items || [];
     } catch {
       // fallback
     }

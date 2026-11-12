@@ -14,6 +14,14 @@ interface ImageUploaderProps {
   required?: boolean;
 }
 
+function getSizeBadge(ratio: [number, number], width: number): string {
+  if (ratio[0] === 8 && ratio[1] === 3) return "Desktop 1920x720 (8:3)";
+  if (ratio[0] === 4 && ratio[1] === 5 && width >= 1000) return "Mobile 1080x1350 (4:5)";
+  if (ratio[0] === 4 && ratio[1] === 5) return "Popup 800x1000 (4:5)";
+  if (ratio[0] === 3 && ratio[1] === 4) return "Cover 900x1200 (3:4)";
+  return `${width}x${Math.round((width * ratio[1]) / ratio[0])} (${ratio[0]}:${ratio[1]})`;
+}
+
 export default function ImageUploader({
   label,
   ratio,
@@ -24,29 +32,35 @@ export default function ImageUploader({
   required = false,
 }: ImageUploaderProps) {
   const [loading, setLoading] = useState(false);
+  const [uploadedTick, setUploadedTick] = useState(false);
+  const [instantPreview, setInstantPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"upload" | "url">("upload");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [urlInput, setUrlInput] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const targetHeight = Math.round((targetWidth * ratio[1]) / ratio[0]);
+  const sizeBadge = getSizeBadge(ratio, targetWidth);
 
   const processAndUpload = async (file: File) => {
     setLoading(true);
     setError(null);
+    setUploadedTick(false);
+
+    // 1. Instant preview
+    const objectUrl = URL.createObjectURL(file);
+    setInstantPreview(objectUrl);
+
     try {
       const img = new window.Image();
-      const objectUrl = URL.createObjectURL(file);
       img.src = objectUrl;
 
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Unable to read image file. Please try another file."));
+        img.onerror = () => reject(new Error("Unable to read image file. Please choose a valid JPG, PNG, or WebP."));
       });
 
-      URL.revokeObjectURL(objectUrl);
-
-      // Auto-fit onto canvas with target aspect ratio
+      // 2. Auto-fit onto canvas with target aspect ratio
       const targetRatio = ratio[0] / ratio[1];
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -73,16 +87,16 @@ export default function ImageUploader({
       canvas.height = finalHeight;
       ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, finalWidth, finalHeight);
 
-      // Encode to WebP
+      // 3. WebP conversion
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/webp", 0.85)
       );
 
       if (!blob) throw new Error("Failed to encode image to WebP");
 
-      // Upload to /api/upload
+      // 4. Upload
       const formData = new FormData();
-      const cleanBase = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/gi, "-");
+      const cleanBase = (file.name || "image").replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/gi, "-");
       formData.append("file", blob, `${cleanBase}.webp`);
       formData.append("kind", kind);
 
@@ -93,16 +107,26 @@ export default function ImageUploader({
         body: formData,
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) {
-        throw new Error(data.error || "Upload failed. You can also paste an image URL directly below.");
+        const msg = data.error || data.message || `Upload failed with status ${res.status}`;
+        throw new Error(msg);
       }
 
+      // Check that server didn't send raw data: or blob:
+      if (data.url.startsWith("blob:") || data.url.startsWith("data:")) {
+        throw new Error("Invalid storage URL returned. Please paste an image URL under Advanced.");
+      }
+
+      // 5. Success
       onChange(data.url);
+      setUploadedTick(true);
+      setTimeout(() => setUploadedTick(false), 2500);
     } catch (err: any) {
-      console.error("Image upload error:", err);
-      setError(err.message || "Failed to upload image. Please try pasting a direct image link.");
+      setInstantPreview(null);
+      setError(err.message || "Failed to upload image. Please try pasting a direct image link under Advanced.");
     } finally {
+      URL.revokeObjectURL(objectUrl);
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -121,165 +145,182 @@ export default function ImageUploader({
     void processAndUpload(file);
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("File exceeds maximum allowed size of 10 MB.");
+        return;
+      }
+      void processAndUpload(file);
+    }
+  };
+
   const handleApplyUrl = () => {
-    if (!urlInput.trim()) return;
-    onChange(urlInput.trim());
+    const raw = urlInput.trim();
+    if (!raw) return;
+    if (raw.startsWith("blob:") || raw.startsWith("data:")) {
+      setError("Cannot use local blob or data URLs. Please enter an HTTPS URL or upload a file.");
+      return;
+    }
+    onChange(raw);
     setUrlInput("");
     setError(null);
   };
 
+  const currentDisplay = instantPreview || (value && !value.startsWith("data:") && !value.startsWith("blob:") ? value : null);
+
   return (
     <div className="space-y-2">
+      {/* Header Label + Dimensions */}
       <div className="flex items-center justify-between">
         <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider">
           {label} {required && <span className="text-red-600">*</span>}
         </label>
-        <span className="text-[11px] text-gray-400">
-          Recommended: {targetWidth}x{targetHeight} ({ratio[0]}:{ratio[1]})
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-neutral-300">
+          {sizeBadge}
         </span>
       </div>
 
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* Main Dropzone / Preview Area */}
+      {!currentDisplay ? (
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          className={`group relative cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+            isDragOver
+              ? "border-[#E52320] bg-red-50/30"
+              : "border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/40 hover:border-[#E52320] hover:bg-red-50/10"
+          }`}
+        >
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-2 space-y-2">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#E52320] border-t-transparent" />
+              <p className="text-xs font-semibold text-gray-800 dark:text-neutral-200">
+                Processing & WebP converting...
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-neutral-800 text-gray-500 shadow-sm group-hover:text-[#E52320]">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-900 dark:text-neutral-100">
+                  Upload image <span className="font-normal text-gray-500">or drag & drop</span>
+                </p>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  JPG, PNG, WebP &bull; Auto-converted to WebP
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 flex items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-800 bg-[#fafafa]">
+              <Image
+                src={currentDisplay}
+                alt={label}
+                fill
+                sizes="80px"
+                className="object-contain p-1"
+                unoptimized
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-gray-900 dark:text-neutral-100">
+                  Image Ready
+                </span>
+                {uploadedTick && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] font-mono text-gray-400 truncate max-w-[240px]">
+                {currentDisplay.slice(0, 48)}...
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="px-3 py-1.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-200"
+            >
+              {loading ? "..." : "Change"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInstantPreview(null);
+                onChange("");
+              }}
+              className="px-3 py-1.5 text-xs font-medium rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Red Error Box Below Slot */}
       {error && (
-        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 p-3 text-xs text-red-700 dark:text-red-300 flex items-start justify-between gap-2">
+        <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-300 flex items-start justify-between gap-2">
           <div>
-            <p className="font-semibold">Upload Notice</p>
-            <p className="mt-0.5">{error}</p>
+            <p className="font-bold">Upload Error</p>
+            <p className="mt-0.5 leading-relaxed">{error}</p>
           </div>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="text-red-500 hover:text-red-700 font-bold px-1"
+            className="text-red-600 hover:text-red-800 font-bold px-1"
           >
             &times;
           </button>
         </div>
       )}
 
-      {/* Mode Switcher */}
-      <div className="flex items-center gap-2 border-b border-gray-100 dark:border-neutral-800 pb-1.5 text-xs">
+      {/* Advanced URL Paste */}
+      <div className="pt-0.5">
         <button
           type="button"
-          onClick={() => setMode("upload")}
-          className={`pb-1 font-medium transition-colors border-b-2 ${
-            mode === "upload"
-              ? "border-red-600 text-red-600 dark:text-red-400"
-              : "border-transparent text-gray-400 hover:text-gray-600"
-          }`}
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="text-[11px] font-medium text-gray-500 hover:text-gray-800 dark:text-neutral-400 flex items-center gap-1"
         >
-          Upload File
+          <span>{showAdvanced ? "▾" : "▸"}</span>
+          <span>Advanced: Paste image URL</span>
         </button>
-        <span className="text-gray-300 dark:text-neutral-700">|</span>
-        <button
-          type="button"
-          onClick={() => setMode("url")}
-          className={`pb-1 font-medium transition-colors border-b-2 ${
-            mode === "url"
-              ? "border-red-600 text-red-600 dark:text-red-400"
-              : "border-transparent text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          Paste Image URL
-        </button>
-      </div>
 
-      {/* Mode 1: File Upload */}
-      {mode === "upload" && (
-        <div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-
-          {!value ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="group relative cursor-pointer rounded-xl border-2 border-dashed border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/40 p-5 text-center transition-all hover:border-red-500 hover:bg-red-50/20"
-            >
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-2 space-y-2">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                  <p className="text-xs font-semibold text-gray-700 dark:text-neutral-300">
-                    Optimizing & uploading image...
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-white dark:bg-neutral-800 text-gray-500 shadow-sm group-hover:text-red-600">
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                  </div>
-                  <p className="text-xs font-semibold text-gray-800 dark:text-neutral-200">
-                    Click to choose image file
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    JPG, PNG, WebP &bull; Auto-scaled
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2.5 flex items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-neutral-800 bg-gray-50">
-                  <Image
-                    src={value}
-                    alt={label}
-                    fill
-                    sizes="80px"
-                    className="object-contain p-0.5"
-                    unoptimized={value.startsWith("data:")}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-gray-800 dark:text-neutral-200 truncate max-w-[220px]">
-                    Image selected
-                  </p>
-                  <p className="text-[10.5px] font-mono text-gray-400 truncate max-w-[220px]">
-                    {value.slice(0, 45)}...
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={loading}
-                  className="px-2.5 py-1 text-xs font-medium rounded-lg border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-200"
-                >
-                  {loading ? "..." : "Replace"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange("")}
-                  className="px-2.5 py-1 text-xs font-medium rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Mode 2: Paste Direct URL */}
-      {mode === "url" && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
+        {showAdvanced && (
+          <div className="mt-2 flex gap-2">
             <input
               type="url"
-              placeholder="https://example.com/banner.jpg or /logo.jpg"
+              placeholder="https://example.com/banner.jpg"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               onKeyDown={(e) => {
@@ -288,7 +329,7 @@ export default function ImageUploader({
                   handleApplyUrl();
                 }
               }}
-              className="flex-1 rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="flex-1 rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 font-mono focus:outline-none focus:ring-2 focus:ring-[#E52320]"
             />
             <button
               type="button"
@@ -298,40 +339,8 @@ export default function ImageUploader({
               Apply
             </button>
           </div>
-
-          {value && (
-            <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2.5 flex items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-neutral-800 bg-gray-50">
-                  <Image
-                    src={value}
-                    alt={label}
-                    fill
-                    sizes="80px"
-                    className="object-contain p-0.5"
-                    unoptimized={value.startsWith("data:")}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-gray-800 dark:text-neutral-200 truncate">
-                    Active URL
-                  </p>
-                  <p className="text-[10.5px] font-mono text-gray-400 truncate max-w-[220px]">
-                    {value}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onChange("")}
-                className="px-2.5 py-1 text-xs font-medium rounded-lg text-red-600 hover:bg-red-50"
-              >
-                Remove
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

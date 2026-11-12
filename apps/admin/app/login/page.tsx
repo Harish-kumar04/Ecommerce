@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { adminApi } from "@/lib/api";
 import { AuthManager } from "@/lib/auth";
 import { toast } from "@/components/toaster";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isExpired = searchParams?.get("expired") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +49,12 @@ export default function LoginPage() {
             Sign in to manage books, inventory, and orders.
           </p>
         </div>
+
+        {isExpired && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-center text-xs font-semibold text-amber-800">
+            Session expired, please log in again.
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="mt-8 space-y-3">
           <input
@@ -113,5 +121,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

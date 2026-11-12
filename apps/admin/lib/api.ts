@@ -77,8 +77,19 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") {
+        this.setToken(null);
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.href = "/login?expired=1";
+        }
+      }
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || response.statusText);
+      const rawMsg = error.detail || error.message || response.statusText || "Request failed";
+      const formatted = typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg);
+      const err = new Error(`HTTP ${response.status}: ${formatted}`);
+      (err as any).status = response.status;
+      (err as any).detail = formatted;
+      throw err;
     }
 
     if (response.status === 204) return undefined as T;
@@ -194,6 +205,13 @@ class ApiClient {
   async getCategories(params?: Record<string, string>): Promise<any> {
     const query = new URLSearchParams(params).toString();
     return this.request(`/categories${query ? `?${query}` : ""}`);
+  }
+
+  async createCategory(data: { name: string; slug?: string; description?: string }): Promise<any> {
+    return this.request("/categories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async getCategoryTree(): Promise<any[]> {

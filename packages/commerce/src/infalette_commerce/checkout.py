@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.models.cart import Cart
@@ -847,6 +847,15 @@ class CheckoutService:
                 tax_rate_bps=snapshot.get("tax_rate_bps"),
             )
             session.add(order_item)
+
+        # Clear cart items and reset cart total
+        if checkout.cart_id:
+            await session.execute(
+                delete(CartItem).where(CartItem.cart_id == checkout.cart_id)
+            )
+            await session.execute(
+                update(Cart).where(Cart.id == checkout.cart_id).values(total_cents=0)
+            )
 
         # Record order created event
         await record_event(

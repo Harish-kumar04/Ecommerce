@@ -67,9 +67,14 @@ export async function refreshCartCount(tenant?: string): Promise<CartSummary> {
     try {
       // Discover tenant from the URL path if not explicitly given.
       const t = tenant || (window.location.pathname.split("/")[1] || "");
-      if (!t) return;
+      const sessionKey = typeof window !== "undefined"
+        ? (window.localStorage.getItem("cart_session_id") || window.localStorage.getItem("infalette-cart-session-id") || "")
+        : "";
+      const headers: Record<string, string> = {};
+      if (sessionKey) headers["X-Cart-Session-ID"] = sessionKey;
       const res = await fetch(`/api/cart-summary?tenant=${encodeURIComponent(t)}`, {
         cache: "no-store",
+        headers,
       });
       if (!res.ok) return;
       const data: CartSummary = await res.json();

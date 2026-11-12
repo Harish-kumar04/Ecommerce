@@ -9,6 +9,7 @@ __pycache__/
 .eggs/
 dist/
 build/
+*.tsbuildinfo
 
 # Environment
 .env
@@ -71,3 +72,4 @@ out/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.env*

@@ -186,28 +186,38 @@ async def public_list_products(
     session: AsyncSession = Depends(get_async_session),
     search: str | None = Query(default=None, max_length=100),
     category_id: str | None = Query(default=None),
+    category: str | None = Query(default=None),
 ):
     """Published products for the resolved tenant (storefront catalog).
 
-    Supports ``?search=`` (ilike on name/sku) and ``?category_id=`` filtering,
-    forwarded to the product service so the public catalog satisfies spec §5
-    search without exposing an extra engine.
+    Supports ``?search=`` (ilike on name/sku) and ``?category=`` (slug) or
+    ``?category_id=`` (UUID or slug) filtering.
     """
+    from uuid import UUID as _UUID
     from apps.api.modules.product.services import list_products, search_products
+    from infalette_database.models.category import Category
 
     tenant_id = await _public_tenant_id(request, session)
 
-    if search:
-        from uuid import UUID as _UUID
+    cat_target = (category or category_id or "").strip()
+    cat_uuid: _UUID | None = None
+    if cat_target:
+        try:
+            cat_uuid = _UUID(cat_target)
+        except ValueError:
+            cat_row = (
+                await session.execute(
+                    select(Category.id).where(
+                        Category.tenant_id == tenant_id,
+                        Category.slug == cat_target,
+                    )
+                )
+            ).scalar_one_or_none()
+            if cat_row is not None:
+                cat_uuid = cat_row
 
-        cat_uuid = None
-        if category_id:
-            try:
-                cat_uuid = _UUID(category_id)
-            except Exception:
-                cat_uuid = None
+    if search:
         items = await search_products(tenant_id, search, session)
-        # search_products already scopes to tenant; still filter published
         filtered = [
             p for p in items
             if str(getattr(p, "visibility", "published") or "published").lower() not in ("hidden", "draft")
@@ -239,7 +249,7 @@ async def public_list_products(
             for p in filtered
         ]
 
-    result = await list_products(tenant_id, session)
+    result = await list_products(tenant_id, session, per_page=200, category_id=cat_uuid)
     items = result["data"] if isinstance(result, dict) else result
     return [
         p

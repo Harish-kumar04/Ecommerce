@@ -68,6 +68,7 @@ export default function HomepageOffersPage() {
 
   const [settings, setSettings] = useState<any>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [editingSlideIdx, setEditingSlideIdx] = useState<number | null>(null);
   const [popup, setPopup] = useState<NotificationConfig>({
     enabled: false,
     type: "popup",
@@ -147,8 +148,17 @@ export default function HomepageOffersPage() {
         theme_config: updatedTc,
       });
 
-      setMessage("Homepage slides and offers updated successfully!");
-      setTimeout(() => setMessage(null), 5000);
+      // Trigger storefront revalidation (non-blocking)
+      try {
+        void fetch("/api/revalidate-storefront", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant: "demo-store" }),
+        }).catch(() => {});
+      } catch {}
+
+      setMessage("Saved. Live on the website in about a minute");
+      setTimeout(() => setMessage(null), 6000);
     } catch (err: any) {
       const msg = err.message || "Failed to save settings.";
       if (msg.includes("expired") || msg.includes("401") || msg.includes("Unauthorized")) {
@@ -185,12 +195,21 @@ export default function HomepageOffersPage() {
       link: "/products",
       active: true,
     };
-    setSlides((prev) => [...prev, newSlide]);
+    setSlides((prev) => {
+      const next = [...prev, newSlide];
+      setEditingSlideIdx(next.length - 1);
+      return next;
+    });
   };
 
   const removeSlide = (idx: number) => {
     if (confirm("Remove this slide?")) {
       setSlides((prev) => prev.filter((_, i) => i !== idx));
+      if (editingSlideIdx === idx) {
+        setEditingSlideIdx(null);
+      } else if (editingSlideIdx !== null && editingSlideIdx > idx) {
+        setEditingSlideIdx(editingSlideIdx - 1);
+      }
     }
   };
 
@@ -204,6 +223,9 @@ export default function HomepageOffersPage() {
       copy[targetIdx] = temp;
       return copy;
     });
+    if (editingSlideIdx === idx) {
+      setEditingSlideIdx(direction === "up" ? idx - 1 : idx + 1);
+    }
   };
 
   return (
@@ -325,157 +347,113 @@ export default function HomepageOffersPage() {
             </div>
           </div>
 
-          {/* List of Slide Cards */}
-          <div className="space-y-5">
+          {/* Compact List of Slides */}
+          <div className="space-y-3">
             {slides.map((slide, idx) => (
               <div
                 key={slide.id || idx}
-                className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 shadow-sm space-y-4"
+                className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-gray-300 transition-colors"
               >
-                {/* Slide Card Header */}
-                <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-700 text-xs font-bold">
-                      {idx + 1}
-                    </span>
-                    <h2 className="text-sm font-bold text-gray-900 dark:text-neutral-100">
-                      Slide {idx + 1} {slide.alt_en ? `— ${slide.alt_en}` : ""}
-                    </h2>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
-                        slide.active
-                          ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
-                          : "bg-gray-100 text-gray-600 dark:bg-neutral-800 dark:text-neutral-400"
-                      }`}
-                    >
-                      {slide.active ? "Active" : "Paused"}
-                    </span>
+                {/* Left: Thumbnail & Info */}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-xs font-bold">
+                    {idx + 1}
+                  </span>
+
+                  {/* Thumbnail */}
+                  <div className="relative w-24 h-12 shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-800 bg-gray-100 dark:bg-neutral-800 flex items-center justify-center">
+                    {slide.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={slide.image_url}
+                        alt={slide.alt_en || slide.alt_ta || "Slide"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-gray-400">No Image</span>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Active Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => updateSlide(idx, { active: !slide.active })}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium border ${
-                        slide.active
-                          ? "border-green-300 text-green-700 hover:bg-green-50"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {slide.active ? "Pause" : "Activate"}
-                    </button>
-
-                    {/* Move Up */}
-                    <button
-                      type="button"
-                      disabled={idx === 0}
-                      onClick={() => moveSlide(idx, "up")}
-                      className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
-                      title="Move Up"
-                    >
-                      &uarr;
-                    </button>
-
-                    {/* Move Down */}
-                    <button
-                      type="button"
-                      disabled={idx === slides.length - 1}
-                      onClick={() => moveSlide(idx, "down")}
-                      className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
-                      title="Move Down"
-                    >
-                      &darr;
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => removeSlide(idx)}
-                      className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
-                      title="Delete Slide"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
+                  {/* Title & Link */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-gray-900 dark:text-neutral-100 truncate">
+                        {slide.alt_ta || slide.alt_en || `Slide ${idx + 1}`}
+                      </p>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
+                          slide.active
+                            ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-neutral-800 dark:text-neutral-400"
+                        }`}
+                      >
+                        {slide.active ? "Active" : "Paused"}
+                      </span>
+                    </div>
+                    {slide.alt_en && slide.alt_ta && (
+                      <p className="text-xs text-gray-500 truncate">{slide.alt_en}</p>
+                    )}
+                    <p className="text-[11px] font-mono text-gray-400 truncate">
+                      {slide.link || "/products"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Banner Images: Desktop & Mobile */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Desktop Banner */}
-                  <div className="rounded-xl border border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30 p-3.5 space-y-2">
-                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
-                      Desktop Banner Image <span className="text-red-600">*</span>
-                    </p>
-                    <ImageUploader
-                      label="Desktop Banner"
-                      ratio={[8, 3]}
-                      targetWidth={1920}
-                      value={slide.image_url}
-                      onChange={(url) => updateSlide(idx, { image_url: url })}
-                      kind="home-hero"
-                      required
-                    />
-                  </div>
+                {/* Right: Actions */}
+                <div className="flex items-center gap-2 shrink-0 justify-end">
+                  {/* Reorder Buttons */}
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => moveSlide(idx, "up")}
+                    className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800 disabled:opacity-30"
+                    title="Move Up"
+                  >
+                    &uarr;
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === slides.length - 1}
+                    onClick={() => moveSlide(idx, "down")}
+                    className="p-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800 disabled:opacity-30"
+                    title="Move Down"
+                  >
+                    &darr;
+                  </button>
 
-                  {/* Mobile Banner (Optional) */}
-                  <div className="rounded-xl border border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30 p-3.5 space-y-2">
-                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
-                      Mobile Banner Image (Optional)
-                    </p>
-                    <ImageUploader
-                      label="Mobile Banner"
-                      ratio={[4, 5]}
-                      targetWidth={1080}
-                      value={slide.mobile_image_url || ""}
-                      onChange={(url) => updateSlide(idx, { mobile_image_url: url })}
-                      kind="home-hero-mobile"
-                    />
-                  </div>
-                </div>
+                  {/* Active Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => updateSlide(idx, { active: !slide.active })}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
+                      slide.active
+                        ? "border-green-300 text-green-700 hover:bg-green-50"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {slide.active ? "Pause" : "Activate"}
+                  </button>
 
-                {/* Titles & Destination Link */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
-                      Alt Text / Heading (Tamil)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="எ.கா. சிறப்புச் சலுகை"
-                      value={slide.alt_ta}
-                      onChange={(e) => updateSlide(idx, { alt_ta: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
+                  {/* Edit Slide (Opens Drawer) */}
+                  <button
+                    type="button"
+                    onClick={() => setEditingSlideIdx(idx)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black text-xs font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <span>Edit</span>
+                  </button>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
-                      Alt Text / Heading (English)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Special Offer"
-                      value={slide.alt_en}
-                      onChange={(e) => updateSlide(idx, { alt_en: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
-                      Click Destination Link
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="/products or /products?category=..."
-                      value={slide.link || ""}
-                      onChange={(e) => updateSlide(idx, { link: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs font-mono bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
+                  {/* Delete */}
+                  <button
+                    type="button"
+                    onClick={() => removeSlide(idx)}
+                    className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                    title="Delete Slide"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))}
@@ -489,6 +467,171 @@ export default function HomepageOffersPage() {
             >
               <span>+ Add Another Banner Slide</span>
             </button>
+          )}
+
+          {/* Slide Edit Drawer Modal */}
+          {editingSlideIdx !== null && slides[editingSlideIdx] && (
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm animate-fade-in">
+              <div
+                className="fixed inset-0"
+                onClick={() => setEditingSlideIdx(null)}
+                aria-hidden="true"
+              />
+
+              <div className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 h-full shadow-2xl flex flex-col z-10 overflow-hidden">
+                {/* Drawer Header */}
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between bg-gray-50/50 dark:bg-neutral-950/50">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-xs font-bold">
+                      {editingSlideIdx + 1}
+                    </span>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-neutral-100">
+                      Edit Banner Slide {editingSlideIdx + 1}
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingSlideIdx(null)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                    title="Close Drawer"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Drawer Body (Scrollable) */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {/* Status Toggle */}
+                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/30">
+                    <div>
+                      <p className="text-xs font-bold text-gray-900 dark:text-neutral-100">
+                        Slide Visibility
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        Active slides appear in the homepage hero banner rotation.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={slides[editingSlideIdx].active}
+                        onChange={(e) =>
+                          updateSlide(editingSlideIdx, { active: e.target.checked })
+                        }
+                        className="h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                      />
+                      <span className="text-xs font-bold text-gray-700 dark:text-neutral-300">
+                        {slides[editingSlideIdx].active ? "Active" : "Paused"}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Desktop Banner */}
+                  <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 space-y-2">
+                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
+                      Desktop Banner Image <span className="text-red-600">*</span>
+                    </p>
+                    <ImageUploader
+                      label="Desktop Banner"
+                      ratio={[8, 3]}
+                      targetWidth={1920}
+                      value={slides[editingSlideIdx].image_url}
+                      onChange={(url) => updateSlide(editingSlideIdx, { image_url: url })}
+                      kind="home-hero"
+                      required
+                    />
+                  </div>
+
+                  {/* Mobile Banner */}
+                  <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 space-y-2">
+                    <p className="text-xs font-bold text-gray-800 dark:text-neutral-200">
+                      Mobile Banner Image (Optional)
+                    </p>
+                    <ImageUploader
+                      label="Mobile Banner"
+                      ratio={[4, 5]}
+                      targetWidth={1080}
+                      value={slides[editingSlideIdx].mobile_image_url || ""}
+                      onChange={(url) =>
+                        updateSlide(editingSlideIdx, { mobile_image_url: url })
+                      }
+                      kind="home-hero-mobile"
+                    />
+                  </div>
+
+                  {/* Titles */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                        Alt Text / Heading (Tamil)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="எ.கா. சிறப்புச் சலுகை"
+                        value={slides[editingSlideIdx].alt_ta}
+                        onChange={(e) =>
+                          updateSlide(editingSlideIdx, { alt_ta: e.target.value })
+                        }
+                        className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                        Alt Text / Heading (English)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Special Offer"
+                        value={slides[editingSlideIdx].alt_en}
+                        onChange={(e) =>
+                          updateSlide(editingSlideIdx, { alt_en: e.target.value })
+                        }
+                        className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Link Destination */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
+                      Click Destination Link
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="/products or /products?category=..."
+                      value={slides[editingSlideIdx].link || ""}
+                      onChange={(e) =>
+                        updateSlide(editingSlideIdx, { link: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3 py-2 text-xs font-mono bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Drawer Footer */}
+                <div className="p-4 border-t border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/50 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => removeSlide(editingSlideIdx)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                  >
+                    Delete Slide
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingSlideIdx(null)}
+                    className="px-6 py-2 rounded-xl text-xs font-bold bg-[#E52320] text-white hover:bg-[#c91e1b] transition-colors shadow-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       ) : (

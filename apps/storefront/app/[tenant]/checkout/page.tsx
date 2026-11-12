@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
+import { notifyCartChanged } from "@/lib/cart-events";
 import CheckoutForm from "@/components/checkout/checkout-form";
 
 export default function CheckoutPage({ params }: { params: { tenant: string } }) {
@@ -37,6 +38,15 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
         if (payRes.cod || payRes.order_id) {
           setOrder(payRes);
           setStep(3);
+          notifyCartChanged(params.tenant);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.removeItem("mp_fallback_cart");
+              localStorage.removeItem("infalette-local-cart");
+              localStorage.setItem("infalette-cart-count", "0");
+              localStorage.setItem("infalette-cart-total", "0");
+            } catch {}
+          }
           return;
         }
         const paymentUrl = payRes.payment_url || payRes.url;

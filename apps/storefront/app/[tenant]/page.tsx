@@ -7,6 +7,7 @@ import OffersBand from "@/components/home/offers-band";
 import { NewsletterSection } from "@/components/home/why-newsletter";
 import { toCardProduct } from "@/components/product/product-card";
 import {
+  fetchBooksSafe,
   getBooksWithFallback,
   getCategoriesWithFallback,
   getStoreWithFallback,
@@ -29,12 +30,17 @@ export function generateStaticParams() {
 }
 
 async function fetchTenantData(tenant: string) {
-  const [products, store, categories] = await Promise.all([
-    getBooksWithFallback(tenant),
+  const [booksRes, store, categories] = await Promise.all([
+    fetchBooksSafe(tenant),
     getStoreWithFallback(tenant),
     getCategoriesWithFallback(tenant),
   ]);
-  return { products: products as any[], store, categories: categories as any[] };
+  return {
+    products: booksRes.books as any[],
+    isFallback: booksRes.isFallback,
+    store,
+    categories: categories as any[],
+  };
 }
 
 export async function generateMetadata({ params }: { params: { tenant: string } }): Promise<Metadata> {
@@ -110,6 +116,13 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
 
   return (
     <>
+      {/* Fallback Notice Banner */}
+      {Boolean((await fetchTenantData(tenant)).isFallback) && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-2 text-center text-xs font-medium">
+          நூல் பட்டியல் புதுப்பிக்கப்படுகிறது. சில நொடிகளில் பக்கத்தை மீண்டும் ஏற்றவும் (Catalog is updating, please retry in a moment).
+        </div>
+      )}
+
       {/* 1. Offer Slider (reads theme_config.home_slides) */}
       <HeroSlider slides={slideViews} />
 

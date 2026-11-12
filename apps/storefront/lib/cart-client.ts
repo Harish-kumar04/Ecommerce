@@ -1,21 +1,21 @@
-"use client";
+import { getCartSessionId } from "./api";
 
-export function getCartSessionId(): string {
-  if (typeof window === "undefined") return "server-session";
-  const KEY = "infalette-cart-session-id";
-  let id = localStorage.getItem(KEY);
-  if (!id) {
-    id = "cart_" + Math.random().toString(36).substring(2) + Date.now().toString(36);
-    try {
-      localStorage.setItem(KEY, id);
-    } catch {
-      // ignore
+export { getCartSessionId };
+
+function resolveClientApiBase(): string {
+  if (typeof window !== "undefined") {
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+      return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+    }
+    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "/api/v1";
     }
   }
-  return id;
+  return "http://localhost:8000/api/v1";
 }
 
-const LOCAL_CART_KEY = "infalette-local-cart";
+const LOCAL_CART_KEY = "mp_fallback_cart";
 
 function readLocalCart(): any[] {
   if (typeof window === "undefined") return [];
@@ -40,7 +40,7 @@ function writeLocalCart(items: any[]) {
  */
 export async function quickAddToCart(tenant: string, productId: string, quantity = 1) {
   try {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const apiBase = resolveClientApiBase();
     const res = await fetch(`${apiBase}/cart/items`, {
       method: "POST",
       headers: {

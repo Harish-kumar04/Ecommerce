@@ -66,14 +66,14 @@ export async function POST(req: NextRequest) {
       // Backend media service unavailable
     }
 
-    // 3. Resilient Fallback: Convert to Base64 WebP Data URL
-    // This ensures image uploads ALWAYS succeed even before external storage is configured.
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const mimeType = file.type || "image/webp";
-    const base64Url = `data:${mimeType};base64,${buffer.toString("base64")}`;
-
-    return NextResponse.json({ url: base64Url });
+    // 3. Neither Blob nor backend storage configured
+    return NextResponse.json(
+      {
+        error:
+          "Storage is not configured on this environment. Please configure BLOB_READ_WRITE_TOKEN or paste an image URL under Advanced.",
+      },
+      { status: 503 }
+    );
   } catch (err: any) {
     console.error("Upload route error:", err);
     return NextResponse.json(

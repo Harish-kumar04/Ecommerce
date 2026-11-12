@@ -30,6 +30,11 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
 
   // Categories
   const [categories, setCategories] = useState<any[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [creatingCat, setCreatingCat] = useState(false);
 
   // Titles
   const [titleTa, setTitleTa] = useState("");
@@ -65,16 +70,50 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load categories
-  useEffect(() => {
+  const loadCategories = () => {
+    setCategoryLoading(true);
+    setCategoryError(null);
     adminApi
       .getCategories()
       .then((res: any) => {
         const list = Array.isArray(res) ? res : res?.data || [];
         setCategories(list);
       })
-      .catch(() => {});
+      .catch((err: any) => {
+        setCategoryError(err?.message || "Failed to load categories");
+      })
+      .finally(() => {
+        setCategoryLoading(false);
+      });
+  };
+
+  // Load categories
+  useEffect(() => {
+    loadCategories();
   }, []);
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    setCreatingCat(true);
+    try {
+      const slugCandidate = toKebabCase(newCatName.includes("|") ? newCatName.split("|")[1] : newCatName);
+      const res: any = await adminApi.createCategory({
+        name: newCatName.trim(),
+        slug: slugCandidate || `cat-${Date.now().toString(36)}`,
+      });
+      const created = res?.id ? res : { id: res.id, name: newCatName.trim(), slug: slugCandidate };
+      setCategories((prev) => [...prev, created]);
+      setCategoryId(created.id);
+      setNewCatName("");
+      setShowNewCategory(false);
+      toast({ kind: "success", title: "Category created", description: created.name });
+    } catch (err: any) {
+      toast({ kind: "error", title: "Failed to create category", description: err.message });
+    } finally {
+      setCreatingCat(false);
+    }
+  };
 
   // Populate initial values on edit or duplicate
   useEffect(() => {
@@ -188,6 +227,10 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
       newErrors.stock = "Enter a valid stock quantity (0 or more)";
     }
 
+    if (!categoryId.trim()) {
+      newErrors.categoryId = "Category is required";
+    }
+
     if (!coverUrl.trim()) {
       newErrors.coverUrl = "Cover image is required";
     }
@@ -263,10 +306,20 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
 
       if (isEdit && initialProduct?.id) {
         await adminApi.updateProduct(initialProduct.id, payload);
+        fetch("/api/revalidate-storefront", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant: "demo-store", productId: payload.slug }),
+        }).catch(() => {});
         toast({ kind: "success", title: "Book updated successfully" });
         router.push("/products");
       } else {
         await adminApi.createProduct(payload);
+        fetch("/api/revalidate-storefront", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant: "demo-store", productId: payload.slug }),
+        }).catch(() => {});
         toast({ kind: "success", title: "Book created successfully" });
         if (andAnother) {
           setTitleTa("");
@@ -392,21 +445,79 @@ export function BookForm({ initialProduct, isEdit = false }: BookFormProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
-                  Category
-                </label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 dark:border-neutral-800 px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select Category (Optional)</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-neutral-300 uppercase tracking-wider">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCategory(!showNewCategory)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    + New category
+                  </button>
+                </div>
+
+                {showNewCategory && (
+                  <div className="mb-2 p-3 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-900 space-y-2">
+                    <p className="text-xs font-medium text-blue-900 dark:text-blue-200">
+                      Add New Category (தமிழ் | English)
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. சிறுகதைகள் | Short Stories"
+                        value={newCatName}
+                        onChange={(e) => setNewCatName(e.target.value)}
+                        className="flex-1 rounded-lg border border-blue-300 px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={creatingCat || !newCatName.trim()}
+                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 hover:bg-blue-700"
+                      >
+                        {creatingCat ? "Adding..." : "Add"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewCategory(false)}
+                        className="text-xs text-gray-500 hover:underline px-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {categoryError ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 p-2.5 text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
+                    <span>{categoryError}</span>
+                    <button
+                      type="button"
+                      onClick={loadCategories}
+                      className="ml-2 font-bold underline hover:no-underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                      errors.categoryId ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
+                    }`}
+                  >
+                    <option value="">{categoryLoading ? "Loading categories..." : "-- Select Category (Required) --"}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {errors.categoryId && <p className="text-xs text-red-500 mt-1">{errors.categoryId}</p>}
               </div>
             </div>
 

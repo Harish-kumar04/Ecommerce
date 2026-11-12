@@ -423,38 +423,49 @@ export const FALLBACK_BOOKS: CatalogBook[] = RAW_BOOKS.map((b) => ({
   status: "active",
 }));
 
-export async function getBooksWithFallback(tenant: string) {
+export async function fetchBooksSafe(tenant: string): Promise<{ books: any[]; isFallback: boolean }> {
   try {
     const res = await fetch(`${getServerApiUrl()}/public/products`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 15 },
-      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.data || [];
-      if (list.length > 0) return list;
+      return { books: list, isFallback: false };
     }
-  } catch {
-    // Fallback to embedded 27-book catalog when deployed standalone on Vercel
+    if (res.status === 404) {
+      return { books: [], isFallback: false };
+    }
+  } catch (err) {
+    // API is unreachable (network error or timeout)
   }
-  return FALLBACK_BOOKS;
+  return { books: FALLBACK_BOOKS, isFallback: true };
+}
+
+export async function getBooksWithFallback(tenant: string) {
+  const result = await fetchBooksSafe(tenant);
+  return result.books;
 }
 
 export async function getCategoriesWithFallback(tenant: string) {
   try {
     const res = await fetch(`${getServerApiUrl()}/public/categories`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.data || [];
-      if (list.length > 0) return list;
+      return list;
+    }
+    if (res.status === 404) {
+      return [];
     }
   } catch {
-    // Fallback
+    // Fallback on network/5xx error
   }
   return FALLBACK_CATEGORIES;
 }
@@ -463,8 +474,8 @@ export async function getStoreWithFallback(tenant: string) {
   try {
     const res = await fetch(`${getServerApiUrl()}/public/store`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 30 },
-      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -482,24 +493,29 @@ export async function getBookByIdWithFallback(
   productIdOrSlug: string,
 ) {
   try {
-    const res = await fetch(`${getServerApiUrl()}/public/products/${productIdOrSlug}`, {
+    const res = await fetch(`${getServerApiUrl()}/public/products/${encodeURIComponent(productIdOrSlug)}`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 15 },
-      signal: AbortSignal.timeout(3500),
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       const prod = await res.json();
       if (prod?.id) return prod;
     }
+    if (res.status === 404) {
+      return null;
+    }
   } catch {
-    // Fallback
+    // Fallback ONLY on network error or serverless timeout
+    return (
+      FALLBACK_BOOKS.find(
+        (b) =>
+          b.id === productIdOrSlug ||
+          b.slug === productIdOrSlug ||
+          b.sku.toLowerCase() === productIdOrSlug.toLowerCase(),
+      ) || null
+    );
   }
-  return (
-    FALLBACK_BOOKS.find(
-      (b) =>
-        b.id === productIdOrSlug ||
-        b.slug === productIdOrSlug ||
-        b.sku.toLowerCase() === productIdOrSlug.toLowerCase(),
-    ) || null
-  );
+  return null;
 }
+

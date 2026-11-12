@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from infalette_database.session import get_async_session
 from infalette_auth.dependencies import get_current_user
-from infalette_validation.schemas import ProductCreate, ProductRead
+from infalette_validation.schemas import ProductCreate, ProductUpdate, ProductRead
 from apps.api.core.feature_flags import enforce_quota
 
 router = APIRouter()
@@ -85,15 +85,28 @@ async def list_products(
 
 
 @router.put("/{product_id}", response_model=ProductRead)
-@router.patch("/{product_id}", response_model=ProductRead)
-async def update_product(
+async def put_product(
     product_id: UUID,
     data: ProductCreate,
     session: AsyncSession = Depends(get_async_session),
     user=Depends(get_current_user),
 ):
-    """Full update of a product. Both PUT and PATCH are accepted for
-    backward compatibility with form-style editors."""
+    """Full update of a product."""
+    from apps.api.modules.product.services import update_product
+    product = await update_product(user.tenant_id, product_id, data, session)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+
+@router.patch("/{product_id}", response_model=ProductRead)
+async def patch_product(
+    product_id: UUID,
+    data: ProductUpdate,
+    session: AsyncSession = Depends(get_async_session),
+    user=Depends(get_current_user),
+):
+    """Partial update of a product."""
     from apps.api.modules.product.services import update_product
     product = await update_product(user.tenant_id, product_id, data, session)
     if not product:

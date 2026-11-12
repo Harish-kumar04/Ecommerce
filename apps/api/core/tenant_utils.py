@@ -43,7 +43,12 @@ async def resolve_tenant_id(
         if tenant_id and not is_platform and str(tenant_id) != "00000000-0000-0000-0000-000000000000":
             return tenant_id  # type: ignore[return-value]
 
-    header_val = request.headers.get("X-Tenant") or request.headers.get("x-tenant")
+    header_val = (
+        request.headers.get("X-Tenant")
+        or request.headers.get("x-tenant")
+        or request.headers.get("X-Tenant-Slug")
+        or request.headers.get("x-tenant-slug")
+    )
     if not header_val:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,8 +67,10 @@ async def resolve_tenant_id(
 
 
 def get_cart_session_key(request: Request) -> str | None:
-    """Read the opaque guest cart session key header."""
+    """Read the opaque guest cart session key header or cookie."""
     return (
         request.headers.get("X-Cart-Session-ID")
         or request.headers.get("x-cart-session-id")
+        or request.cookies.get("cart_session_id")
+        or request.cookies.get("infalette-cart-session")
     )

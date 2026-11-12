@@ -240,7 +240,7 @@ async def create_product(tenant_id: UUID, data: ProductCreate, session: AsyncSes
     if existing_sku.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="A book with this SKU already exists")
 
-    cat_id = data.category_id or (data.category_ids[0] if getattr(data, "category_ids", None) else None)
+    cat_id = getattr(data, "category_id", None) or (data.category_ids[0] if getattr(data, "category_ids", None) else None)
     visibility = getattr(data, "visibility", "published") or "published"
     tags = list(getattr(data, "tags", None) or [])
     dimensions_json = getattr(data, "dimensions_json", None) or {}
@@ -334,16 +334,29 @@ async def list_products(
     }
 
 
-async def update_product(tenant_id: UUID, product_id: UUID, data: ProductCreate, session: AsyncSession) -> dict | None:
-    """Update a product."""
-    if data.price_cents < 0:
+async def update_product(tenant_id: UUID, product_id: UUID, data: Any, session: AsyncSession) -> dict | None:
+    """Update a product (full or partial)."""
+    existing_row = (
+        await session.execute(
+            select(Product).where(Product.id == product_id, Product.tenant_id == tenant_id)
+        )
+    ).scalar_one_or_none()
+    if existing_row is None:
+        return None
+
+    data_dict = data.model_dump(exclude_unset=True) if hasattr(data, "model_dump") else (data if isinstance(data, dict) else vars(data))
+
+    eff_price = data_dict.get("price_cents", existing_row.price_cents)
+    eff_sale = data_dict.get("sale_price_cents", existing_row.sale_price_cents)
+    if eff_price is not None and eff_price < 0:
         raise HTTPException(status_code=422, detail="Price must be non-negative")
-    if data.sale_price_cents is not None and data.sale_price_cents > data.price_cents:
+    if eff_sale is not None and eff_price is not None and eff_sale > eff_price:
         raise HTTPException(status_code=422, detail="Sale price cannot be greater than regular price")
 
     # Check duplicate slug in same store (excluding this product)
-    if data.slug:
-        clean_slug = data.slug.strip()
+    clean_slug = data_dict.get("slug")
+    if clean_slug:
+        clean_slug = str(clean_slug).strip()
         existing_slug = await session.execute(
             select(Product.id).where(
                 Product.tenant_id == tenant_id,
@@ -357,8 +370,9 @@ async def update_product(tenant_id: UUID, product_id: UUID, data: ProductCreate,
         clean_slug = None
 
     # Check duplicate SKU in same store (excluding this product)
-    clean_sku = data.sku.strip() if data.sku else None
+    clean_sku = data_dict.get("sku")
     if clean_sku:
+        clean_sku = str(clean_sku).strip()
         existing_sku = await session.execute(
             select(Product.id).where(
                 Product.tenant_id == tenant_id,
@@ -368,47 +382,69 @@ async def update_product(tenant_id: UUID, product_id: UUID, data: ProductCreate,
         )
         if existing_sku.scalar_one_or_none():
             raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+    else:
+        clean_sku = None
 
-    cat_id = data.category_id or (data.category_ids[0] if getattr(data, "category_ids", None) else None)
-    visibility = getattr(data, "visibility", "published") or "published"
-    tags = list(getattr(data, "tags", None) or [])
-    dimensions_json = getattr(data, "dimensions_json", None) or {}
+    cat_id = data_dict.get("category_id")
+    if cat_id is None and "category_ids" in data_dict and data_dict["category_ids"]:
+        cat_id = data_dict["category_ids"][0]
 
-    try:
-        await session.execute(
-            update(Product)
-            .where(Product.id == product_id, Product.tenant_id == tenant_id)
-            .values(
-                name=data.name,
-                slug=clean_slug or data.slug,
-                description=data.description,
-                category_id=cat_id,
-                sku=clean_sku or data.sku,
-                price_cents=data.price_cents,
-                sale_price_cents=data.sale_price_cents,
-                tax_class=data.tax_class or "zero",
-                inventory_quantity=data.inventory,
-                inventory=data.inventory,
-                visibility=visibility,
-                tags=tags,
-                dimensions_json=dimensions_json,
-                images_json=data.images,
-                ingredients=data.ingredients,
-                safety_info=data.safety_info,
-                age_suitability=data.age_suitability,
-                pregnancy_stage=data.pregnancy_stage,
+    vals: dict[str, Any] = {}
+    if "name" in data_dict and data_dict["name"] is not None:
+        vals["name"] = data_dict["name"]
+    if clean_slug is not None:
+        vals["slug"] = clean_slug
+    if "description" in data_dict:
+        vals["description"] = data_dict["description"]
+    if cat_id is not None:
+        vals["category_id"] = cat_id
+    if clean_sku is not None:
+        vals["sku"] = clean_sku
+    if "price_cents" in data_dict and data_dict["price_cents"] is not None:
+        vals["price_cents"] = data_dict["price_cents"]
+    if "sale_price_cents" in data_dict:
+        vals["sale_price_cents"] = data_dict["sale_price_cents"]
+    if "tax_class" in data_dict:
+        vals["tax_class"] = data_dict["tax_class"] or "zero"
+    if "inventory" in data_dict and data_dict["inventory"] is not None:
+        vals["inventory_quantity"] = data_dict["inventory"]
+        vals["inventory"] = data_dict["inventory"]
+    if "visibility" in data_dict and data_dict["visibility"] is not None:
+        vals["visibility"] = data_dict["visibility"]
+    if "tags" in data_dict and data_dict["tags"] is not None:
+        vals["tags"] = list(data_dict["tags"] or [])
+    if "dimensions_json" in data_dict and data_dict["dimensions_json"] is not None:
+        vals["dimensions_json"] = data_dict["dimensions_json"] or {}
+    if "images" in data_dict and data_dict["images"] is not None:
+        vals["images_json"] = data_dict["images"]
+        if data_dict["images"]:
+            vals["image_url"] = data_dict["images"][0]
+    if "ingredients" in data_dict:
+        vals["ingredients"] = data_dict["ingredients"]
+    if "safety_info" in data_dict:
+        vals["safety_info"] = data_dict["safety_info"]
+    if "age_suitability" in data_dict:
+        vals["age_suitability"] = data_dict["age_suitability"]
+    if "pregnancy_stage" in data_dict:
+        vals["pregnancy_stage"] = data_dict["pregnancy_stage"]
+
+    if vals:
+        try:
+            await session.execute(
+                update(Product)
+                .where(Product.id == product_id, Product.tenant_id == tenant_id)
+                .values(**vals)
+                .execution_options(synchronize_session="fetch")
             )
-            .execution_options(synchronize_session="fetch")
-        )
-        await session.commit()
-    except IntegrityError as err:
-        await session.rollback()
-        err_msg = str(err).lower()
-        if "sku" in err_msg:
-            raise HTTPException(status_code=409, detail="A book with this SKU already exists")
-        if "slug" in err_msg:
-            raise HTTPException(status_code=409, detail="A book with this slug already exists")
-        raise HTTPException(status_code=409, detail="A book with this identifier already exists")
+            await session.commit()
+        except IntegrityError as err:
+            await session.rollback()
+            err_msg = str(err).lower()
+            if "sku" in err_msg:
+                raise HTTPException(status_code=409, detail="A book with this SKU already exists")
+            if "slug" in err_msg:
+                raise HTTPException(status_code=409, detail="A book with this slug already exists")
+            raise HTTPException(status_code=409, detail="A book with this identifier already exists")
 
     # Spec §4 event model: product.updated
     try:

@@ -17,12 +17,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ count: 0, totalCents: 0 });
   }
   const sessionKey =
+    req.cookies.get("cart_session_id")?.value ||
     req.cookies.get("infalette-cart-session")?.value ||
     req.headers.get("x-cart-session-id") ||
+    req.headers.get("X-Cart-Session-ID") ||
     "";
 
   const headers: Record<string, string> = { "X-Tenant": tenant };
-  if (sessionKey) headers["X-Cart-Session-ID"] = sessionKey;
+  if (sessionKey) {
+    headers["X-Cart-Session-ID"] = sessionKey;
+  }
 
   try {
     const res = await fetch(`${getServerApiUrl()}/cart/`, {

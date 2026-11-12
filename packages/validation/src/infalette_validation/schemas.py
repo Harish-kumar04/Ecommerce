@@ -247,8 +247,36 @@ class ProductCreate(BaseSchema):
     safety_info: Optional[str] = None
     age_suitability: Optional[ProductAgeSuitability] = None
     pregnancy_stage: Optional[ProductPregnancyStage] = None
+    category_id: Optional[UUID] = None
     category_ids: list[UUID] = Field(default_factory=list)
+    visibility: Optional[str] = "published"
+    tags: list[str] = Field(default_factory=list)
+    dimensions_json: dict[str, Any] = Field(default_factory=dict)
     variants: list[ProductVariantCreate] = Field(default_factory=list)
+
+
+class ProductUpdate(BaseSchema):
+    """Schema for updating a product (partial updates supported)."""
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    slug: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    sku: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    price_cents: Optional[int] = Field(default=None, ge=0)
+    sale_price_cents: Optional[int] = Field(default=None, ge=0)
+    tax_class: Optional[str] = None
+    inventory: Optional[int] = Field(default=None, ge=0)
+    images: Optional[list[str]] = None
+    ingredients: Optional[str] = None
+    safety_info: Optional[str] = None
+    age_suitability: Optional[ProductAgeSuitability] = None
+    pregnancy_stage: Optional[ProductPregnancyStage] = None
+    category_id: Optional[UUID] = None
+    category_ids: Optional[list[UUID]] = None
+    variants: Optional[list[ProductVariantCreate]] = None
+    visibility: Optional[str] = None
+    tags: Optional[list[str]] = None
+    dimensions_json: Optional[dict[str, Any]] = None
 
 
 class ProductRead(BaseRead):

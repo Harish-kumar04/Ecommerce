@@ -204,12 +204,17 @@ async def get_cart_with_items(cart_id: UUID, session: AsyncSession) -> dict:
             select(Product).where(Product.id == it.product_id)
         )
         product = prod_result.scalar_one_or_none()
+        img = getattr(product, "image_url", None)
+        if not img and product:
+            imgs = list(getattr(product, "images_json", None) or [])
+            if imgs:
+                img = imgs[0]
         item_dicts.append({
             "id": str(it.id),
             "product_id": str(it.product_id),
             "variant_id": str(it.variant_id) if it.variant_id else None,
             "name": product.name if product else None,
-            "image_url": (product.image_url if product else None),
+            "image_url": img,
             "quantity": it.quantity,
             "price_cents": it.price_cents,
         })
