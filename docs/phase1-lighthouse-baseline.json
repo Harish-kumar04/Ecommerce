@@ -1,0 +1,182 @@
+{
+  "measured_at": "2026-11-13T00:46:40+0530",
+  "clean_books_route_status": 404,
+  "next_build_bundles": {
+    "/": {
+      "size": "138 B",
+      "first_load_js": "87.6 kB"
+    },
+    "/_not-found": {
+      "size": "873 B",
+      "first_load_js": "88.4 kB"
+    },
+    "/[tenant]": {
+      "size": "5.44 kB",
+      "first_load_js": "135 kB"
+    },
+    "/[tenant]/account": {
+      "size": "6.09 kB",
+      "first_load_js": "136 kB"
+    },
+    "/[tenant]/account/consent": {
+      "size": "2.44 kB",
+      "first_load_js": "132 kB"
+    },
+    "/[tenant]/cart": {
+      "size": "6.27 kB",
+      "first_load_js": "139 kB"
+    },
+    "/[tenant]/checkout": {
+      "size": "8.49 kB",
+      "first_load_js": "138 kB"
+    },
+    "/[tenant]/forgot-password": {
+      "size": "1.03 kB",
+      "first_load_js": "88.5 kB"
+    },
+    "/[tenant]/login": {
+      "size": "2.33 kB",
+      "first_load_js": "123 kB"
+    },
+    "/[tenant]/orders": {
+      "size": "2.25 kB",
+      "first_load_js": "132 kB"
+    },
+    "/[tenant]/orders/[id]": {
+      "size": "5.53 kB",
+      "first_load_js": "138 kB"
+    },
+    "/[tenant]/products": {
+      "size": "4.97 kB",
+      "first_load_js": "106 kB"
+    },
+    "/[tenant]/products/[id]": {
+      "size": "7.08 kB",
+      "first_load_js": "142 kB"
+    },
+    "/[tenant]/reset-password": {
+      "size": "1.16 kB",
+      "first_load_js": "88.7 kB"
+    },
+    "/[tenant]/returns": {
+      "size": "2.23 kB",
+      "first_load_js": "132 kB"
+    },
+    "/[tenant]/signup": {
+      "size": "1.66 kB",
+      "first_load_js": "97.9 kB"
+    },
+    "/[tenant]/track": {
+      "size": "1.85 kB",
+      "first_load_js": "132 kB"
+    }
+  },
+  "cold_ttfb_ms": {
+    "home": 49.4,
+    "books_list": 70.3,
+    "book_detail": 265.1,
+    "cart": 75.4
+  },
+  "lighthouse": {
+    "home": {
+      "url": "http://127.0.0.1:3188/demo-store",
+      "mobile": {
+        "performance_score": 78,
+        "lcp_ms": 1943.9,
+        "inp_proxy_max_fid_ms": 987,
+        "cls": 0.0,
+        "tbt_ms": 706.5,
+        "ttfb_ms": 68,
+        "total_js_kb": 174.6,
+        "image_kb": 90.2,
+        "total_transfer_kb": 620.9
+      },
+      "desktop": {
+        "performance_score": 99,
+        "lcp_ms": 447.1,
+        "inp_proxy_max_fid_ms": 219.0,
+        "cls": 0.0099,
+        "tbt_ms": 8.5,
+        "ttfb_ms": 143,
+        "total_js_kb": 185.5,
+        "image_kb": 227.0,
+        "total_transfer_kb": 843.3
+      }
+    },
+    "books_list": {
+      "url": "http://127.0.0.1:3188/demo-store/products",
+      "mobile": {
+        "performance_score": 85,
+        "lcp_ms": 1653.7,
+        "inp_proxy_max_fid_ms": 876,
+        "cls": 0.0001,
+        "tbt_ms": 556,
+        "ttfb_ms": 74,
+        "total_js_kb": 183.2,
+        "image_kb": 170.5,
+        "total_transfer_kb": 695.3
+      },
+      "desktop": {
+        "performance_score": 99,
+        "lcp_ms": 832.6,
+        "inp_proxy_max_fid_ms": 222,
+        "cls": 0.0012,
+        "tbt_ms": 0,
+        "ttfb_ms": 45,
+        "total_js_kb": 183.2,
+        "image_kb": 251.5,
+        "total_transfer_kb": 865.0
+      }
+    },
+    "book_detail": {
+      "url": "http://127.0.0.1:3188/demo-store/products/60e0672d-a0d5-4cdb-bbaa-8b537696a012",
+      "mobile": {
+        "performance_score": 73,
+        "lcp_ms": 4603.1,
+        "inp_proxy_max_fid_ms": 763.0,
+        "cls": 0,
+        "tbt_ms": 354,
+        "ttfb_ms": 24,
+        "total_js_kb": 183.2,
+        "image_kb": 58.4,
+        "total_transfer_kb": 570.5
+      },
+      "desktop": {
+        "performance_score": 98,
+        "lcp_ms": 1079.6,
+        "inp_proxy_max_fid_ms": 214,
+        "cls": 0.0003,
+        "tbt_ms": 0,
+        "ttfb_ms": 31,
+        "total_js_kb": 183.2,
+        "image_kb": 56.8,
+        "total_transfer_kb": 568.9
+      }
+    },
+    "cart": {
+      "url": "http://127.0.0.1:3188/demo-store/cart",
+      "mobile": {
+        "performance_score": 97,
+        "lcp_ms": 1258.9,
+        "inp_proxy_max_fid_ms": 480,
+        "cls": 0.0002,
+        "tbt_ms": 180.5,
+        "ttfb_ms": 64,
+        "total_js_kb": 179.6,
+        "image_kb": 4.9,
+        "total_transfer_kb": 509.5
+      },
+      "desktop": {
+        "performance_score": 100,
+        "lcp_ms": 377.4,
+        "inp_proxy_max_fid_ms": 158.0,
+        "cls": 0.0191,
+        "tbt_ms": 0,
+        "ttfb_ms": 66,
+        "total_js_kb": 179.6,
+        "image_kb": 3.3,
+        "total_transfer_kb": 511.6
+      }
+    }
+  }
+}
