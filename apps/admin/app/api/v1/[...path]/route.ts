@@ -49,7 +49,10 @@ async function proxyToInternalApi(
     return new NextResponse(body, { status: res.status, headers: resHeaders });
   } catch (err: any) {
     return NextResponse.json(
-      { detail: "Internal backend service unavailable", error: err?.message },
+      {
+        detail: `Backend API unavailable at ${targetUrl.origin}: ${err?.message || "Connection refused"}. Please check that apps/api is running or set API_URL.`,
+        error: err?.message,
+      },
       { status: 502 },
     );
   }

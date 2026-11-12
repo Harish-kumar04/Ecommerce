@@ -13,11 +13,8 @@ function resolveAdminApiUrl(): string {
     const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
     return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
   }
-  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    const prefix = window.location.pathname.startsWith("/admin") ? "/admin" : "";
-    return `${prefix}/api/v1`;
-  }
-  return "http://localhost:8000/api/v1";
+  const prefix = window.location.pathname.startsWith("/admin") ? "/admin" : "";
+  return `${prefix}/api/v1`;
 }
 
 const API_URL = resolveAdminApiUrl();
@@ -43,8 +40,14 @@ class ApiClient {
     if (typeof window !== "undefined") {
       if (token) {
         localStorage.setItem("access_token", token);
+        try {
+          document.cookie = `access_token=${token}; path=/; max-age=604800; samesite=lax`;
+        } catch {}
       } else {
         localStorage.removeItem("access_token");
+        try {
+          document.cookie = "access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        } catch {}
       }
     }
   }

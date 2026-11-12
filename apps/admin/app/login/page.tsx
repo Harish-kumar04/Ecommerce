@@ -14,16 +14,21 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMessage(null);
     try {
-      const data = await adminApi.login(email, password);
+      const data = await adminApi.login(email.trim(), password);
       AuthManager.setToken(data.access_token);
-      router.push("/dashboard");
+      adminApi.setToken(data.access_token);
+      window.location.href = "/dashboard";
     } catch (error: any) {
-      toast({ kind: "error", title: "Login failed", description: error?.message });
+      const msg = error?.message || error?.detail || "Invalid email or password. Please verify credentials or backend status.";
+      setErrorMessage(msg);
+      toast({ kind: "error", title: "Login failed", description: msg });
     } finally {
       setSubmitting(false);
     }
@@ -50,18 +55,27 @@ function LoginForm() {
           </p>
         </div>
 
-        {isExpired && (
-          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-center text-xs font-semibold text-amber-800">
+        {isExpired && !errorMessage && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-3 text-center text-xs font-semibold text-amber-800 dark:text-amber-200">
             Session expired, please log in again.
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-3">
+        {errorMessage && (
+          <div className="mt-4 rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/40 p-3 text-center text-xs font-semibold text-red-700 dark:text-red-300">
+            {errorMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="mt-6 space-y-3">
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Email (e.g. owner@demo.test or admin@infalette.com)"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrorMessage(null);
+            }}
             className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -69,18 +83,51 @@ function LoginForm() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrorMessage(null);
+            }}
             className="w-full h-12 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-5 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-12 rounded-full bg-blue-600 disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-blue-700 transition-colors"
+            className="w-full h-12 rounded-full bg-blue-600 disabled:bg-gray-300 text-white text-[15px] font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
             {submitting ? "Signing in…" : "Sign in with password"}
           </button>
         </form>
+
+        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-neutral-900 text-center">
+          <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-400 mb-2">
+            Quick fill default accounts:
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("owner@demo.test");
+                setPassword("demo1234");
+                setErrorMessage(null);
+              }}
+              className="px-3 py-1.5 rounded-xl text-[11.5px] font-medium border border-gray-200 dark:border-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+            >
+              Store Owner (owner@demo.test)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("admin@infalette.com");
+                setPassword("demo1234");
+                setErrorMessage(null);
+              }}
+              className="px-3 py-1.5 rounded-xl text-[11.5px] font-medium border border-gray-200 dark:border-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+            >
+              Admin (admin@infalette.com)
+            </button>
+          </div>
+        </div>
 
         {Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && (
           <>

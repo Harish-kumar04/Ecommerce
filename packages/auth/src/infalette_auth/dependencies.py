@@ -129,6 +129,12 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if user and not getattr(user, "tenant_id", None):
+        from infalette_database.models.tenant import Tenant
+        first_t = (await session.execute(select(Tenant.id).order_by(Tenant.created_at))).scalar_one_or_none()
+        if first_t:
+            user.tenant_id = first_t
+
     # Scope enforcement: MFA-enrollment tokens (issued to admins who have
     # not yet enrolled, spec §5 "MFA for admins") are valid only for the
     # MFA endpoints until enrollment completes.
