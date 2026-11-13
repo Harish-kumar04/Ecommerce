@@ -24,7 +24,17 @@ export default function BrandHero({
   totalBooks: number;
   categoryCount: number;
 }) {
-  const covers = heroBooks.filter((b) => b.image_url).slice(0, 3);
+  const seenHeroCovers = new Set<string>();
+  const covers = heroBooks
+    .filter((b) => {
+      if (!b.image_url) return false;
+      if (seenHeroCovers.has(b.image_url)) return false;
+      seenHeroCovers.add(b.image_url);
+      return true;
+    })
+    .slice(0, 3);
+  const displaySlots = covers.length > 0 ? covers : heroBooks.slice(0, 3);
+  const lcpIndex = covers.length >= 2 ? 1 : 0;
   const leadBook = covers[1] || covers[0] || heroBooks[0];
   const saleBook = heroBooks.find(
     (b) => b.sale_price_cents && b.price_cents > 0 && b.sale_price_cents < b.price_cents,
@@ -172,11 +182,11 @@ export default function BrandHero({
                 </span>
               </div>
 
-              {/* 3 Tilted Real Book Covers */}
-              {covers.length > 0 ? (
+              {/* 3 Tilted Book Slots (single center LCP image priority; neutral No cover card if none uploaded) */}
+              {displaySlots.length > 0 ? (
                 <div className="relative z-10 flex items-end justify-center pb-4 sm:pb-6">
-                  {covers.map((book, idx) => {
-                    const isCenter = idx === 1 || covers.length === 1;
+                  {displaySlots.map((book, idx) => {
+                    const isLcpHero = covers.length > 0 && idx === lcpIndex;
                     const alt = splitBilingual(book.name, "|").join(" — ");
                     return (
                       <Link
@@ -184,25 +194,36 @@ export default function BrandHero({
                         href={`/${tenant}/books/${encodeURIComponent(book.slug || book.id)}`}
                         prefetch={false}
                         aria-label={alt}
-                        className={`relative -mx-2.5 aspect-[3/4] w-[108px] overflow-hidden rounded-xl border-2 border-white bg-white shadow-2xl transition-transform duration-300 hover:z-30 hover:scale-110 sm:-mx-3.5 sm:w-[152px] lg:w-[164px] ${
+                        className={`relative -mx-2.5 aspect-[3/4] w-[108px] overflow-hidden rounded-xl border-2 border-white bg-[#F4F4F5] shadow-2xl transition-transform duration-300 hover:z-30 hover:scale-110 sm:-mx-3.5 sm:w-[152px] lg:w-[164px] ${
                           tilts[idx] || ""
                         }`}
                       >
-                        <Img
-                          src={book.image_url as string}
-                          alt={alt}
-                          fill
-                          priority={isCenter}
-                          sizes="(max-width: 640px) 115px, 170px"
-                          className="object-cover"
-                        />
+                        {book.image_url ? (
+                          <Img
+                            src={book.image_url}
+                            alt={alt}
+                            fill
+                            priority={isLcpHero}
+                            sizes="(max-width: 640px) 115px, 170px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-2.5 text-center">
+                            <span className="line-clamp-3 text-[11px] font-bold leading-tight text-black/80 sm:text-[12.5px]">
+                              <BiName value={book.name} />
+                            </span>
+                            <span className="rounded-full bg-black/[0.06] px-2 py-0.5 text-[10px] font-medium text-black/55">
+                              <T ta="படம் இல்லை" en="No cover" />
+                            </span>
+                          </div>
+                        )}
                       </Link>
                     );
                   })}
                 </div>
               ) : (
-                <div className="relative z-10 flex h-56 w-44 items-center justify-center rounded-2xl border-2 border-white bg-white p-4 text-center text-sm font-bold text-black shadow-xl">
-                  <T ta="முத்தமிழறிஞர் பதிப்பகம்" en="Muthamilarignar Pathipagam" />
+                <div className="relative z-10 flex h-56 w-44 items-center justify-center rounded-2xl border-2 border-white bg-[#F4F4F5] p-4 text-center text-sm font-bold text-black/60 shadow-xl">
+                  <T ta="படம் இல்லை" en="No cover" />
                 </div>
               )}
             </div>

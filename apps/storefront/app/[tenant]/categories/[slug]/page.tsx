@@ -150,12 +150,11 @@ export default async function CategoryDetailPage({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4 xl:grid-cols-5">
-          {catBooks.map((p, i) => (
+          {catBooks.map((p) => (
             <ProductCard
               key={p.id}
               product={toCardProduct({ ...p, is_fallback: booksRes.isFallback })}
               tenant={params.tenant}
-              priority={i === 0}
             />
           ))}
         </div>

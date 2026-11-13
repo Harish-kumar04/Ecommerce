@@ -1,6 +1,6 @@
 """Demo seed script — creates plans, the Muthamilarignar Pathipagam bookstore
 tenant, owner user, categories, homepage blocks and all 27 Muthamilarignar
-Pathipagam books from CommonFolks. Idempotent: safe to re-run.
+Pathipagam books (neutral No cover placeholder until admin upload). Idempotent: safe to re-run.
 
 Usage:
     python scripts/demo_seed.py                 # uses DATABASE_URL (sqlite fallback)
@@ -99,7 +99,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Hardcover / Collector's Edition • Tamil • Original Publisher Edition",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kaalatthin-niram-karuppu-sivappu_FrontImage_619.jpg",
+        image=None,
     ),
     dict(
         name="இளைய திராவிடம் எழுகிறது | Ilaya Dravidam Ezhugirathu",
@@ -116,7 +116,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Youth & Ideology Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/ilaya-dravidam-ezhugirathu_FrontImage_645.jpg",
+        image=None,
     ),
     dict(
         name="இந்தியாவில் சமூகநீதியும் இடஒதுக்கீடும் ? | Indiavil Samuganithiyum Idaothikkidum?",
@@ -133,7 +133,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Q&A Primer Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/indiavil-samuganithiyum-idaothikkidum-kelvi-bathil_FrontImage_782.jpg",
+        image=None,
     ),
     dict(
         name="இந்தியாவுக்கு வழிகாட்டும் திராவிட மாடல் | Indiavuku Vazhikatum Dravida Maadal",
@@ -150,7 +150,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Governance & Policy Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/indiavuku-vazhikatum-dravida-maadal_FrontImage_189.jpg",
+        image=None,
     ),
     dict(
         name="இந்தித் திணிப்பை எதிர்க்கிறோம்-ஏன்? | Hindhi Theenipai Ethirkirom - Yen?",
@@ -167,7 +167,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Language Rights Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/hindhi-theenipai-ethirkirom-yen_FrontImage_541.jpg",
+        image=None,
     ),
     dict(
         name="திராவிட இயக்க வரலாறு - கேள்வி-பதில் | Dravida Iyakka Varalaru - Kelvi-Bathil",
@@ -184,7 +184,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • History Q&A Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-iyakka-varalaru-kelvi-bathil_FrontImage_517.jpg",
+        image=None,
     ),
     dict(
         name="மாநில சுயாட்சி முழக்கம் | Maanilla Suyatchi Muzhukkam",
@@ -201,7 +201,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Federalism & Policy Series",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/maanilla-suyatchi-muzhukkam_FrontImage_336.jpg",
+        image=None,
     ),
     dict(
         name="தமிழ்நாடு போராடும் - தமிழ்நாடு வெல்லும் | Tamilnadu Poradum - Tamilnadu Vellum",
@@ -218,7 +218,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Contemporary Politics",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/tamilnadu-poradum-tamilnadu-vellum_FrontImage_976.jpg",
+        image=None,
     ),
     dict(
         name="திராவிட சினிமா (பாகம் - 2) | Dravida Cinema (Vol. 2)",
@@ -235,7 +235,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Cinema & Culture Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-cinema-paagam-2_FrontImage_476.jpg",
+        image=None,
     ),
     dict(
         name="திராவிட மாடல் அரசு (பாகம் 2) | Dravida Model Arasu (Vol. 2)",
@@ -252,7 +252,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Governance & Policy Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu-paagam-2_FrontImage_339.jpg",
+        image=None,
     ),
     dict(
         name="திராவிடப் போராளிகள் (பாகம் 2) | Dravida Poraligal (Vol. 2)",
@@ -269,7 +269,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Biographies Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-poraligal-paagam-2_FrontImage_992.jpg",
+        image=None,
     ),
     dict(
         name="உடன் பிறப்பே (பாகம் 2) | Udan Pireppe (Vol. 2)",
@@ -286,7 +286,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Kalaignar Letters Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/udan-pireppe-paagam-2_FrontImage_577.jpg",
+        image=None,
     ),
     dict(
         name="இடம் பொருள் கலைஞர் (பாகம் 2) | Idam Porul Kalaignar (Vol. 2)",
@@ -303,7 +303,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Kalaignar Studies Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/idam-porul-kalaignar-paagam-2_FrontImage_282.jpg",
+        image=None,
     ),
     dict(
         name="கலைஞர் இயக்கவியல் | Kalaignar Iyakkaviyal",
@@ -320,7 +320,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Political Philosophy",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignar-iyakkaviyal_FrontImage_350.jpg",
+        image=None,
     ),
     dict(
         name="கலைஞரும் நானும் (பாகம் 2) | Kalaignarum Naanum (Vol. 2)",
@@ -337,7 +337,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Memoirs Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignarum-naanum-paagam-2_FrontImage_139.jpg",
+        image=None,
     ),
     dict(
         name="திமுக இளைஞரணி அத்தியாயம் - 1 | DMK Ilaignarani Athiyayam - 1",
@@ -354,7 +354,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Deluxe Paperback • Tamil • Youth Wing History",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dmk-ilaignarani-athiyayam-1_FrontImage_756.jpg",
+        image=None,
     ),
     dict(
         name="திராவிடத்தால் வாழ்கிறோம் 3 | Dravidaththaal Vaazhkirom (Vol. 3)",
@@ -371,7 +371,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Ideology Series Vol. 3",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom-3_FrontImage_946.jpg",
+        image=None,
     ),
     dict(
         name="திராவிட மாடல் அரசு | Dravida Model Arasu (Vol. 1)",
@@ -388,7 +388,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Governance & Policy Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-model-arasu_FrontImage_297.gif",
+        image=None,
     ),
     dict(
         name="திராவிடத்தால் வாழ்கிறோம் 2 | Dravidaththaal Vaazhkirom (Vol. 2)",
@@ -405,7 +405,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Ideology Series Vol. 2",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom-2_FrontImage_655.gif",
+        image=None,
     ),
     dict(
         name="கலைஞரும் நானும் | Kalaignarum Naanum (Vol. 1)",
@@ -422,7 +422,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Memoirs Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/kalaignarum-naanum_FrontImage_107.gif",
+        image=None,
     ),
     dict(
         name="திராவிடப் போராளிகள் | Dravida Poraligal (Vol. 1)",
@@ -439,7 +439,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Biographies Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-poraligal_FrontImage_795.gif",
+        image=None,
     ),
     dict(
         name="இடம் பொருள் கலைஞர் | Idam Porul Kalaignar (Vol. 1)",
@@ -456,7 +456,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Kalaignar Studies Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/idam-porul-kalaignar_FrontImage_819.gif",
+        image=None,
     ),
     dict(
         name="உடன் பிறப்பே | Udan Pireppe (Vol. 1)",
@@ -473,7 +473,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Kalaignar Letters Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/udan-pireppe_FrontImage_596.gif",
+        image=None,
     ),
     dict(
         name="தி.மு.க. வரலாறு (1949-1967) | D.M.K. Varalaru (1949-1967)",
@@ -490,7 +490,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Official Party History (1949–1967)",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/d-m-k-varalaru-1949-1967_FrontImage_778.jpg",
+        image=None,
     ),
     dict(
         name="திராவிடத்தால் வாழ்கிறோம் 1 | Dravidaththaal Vaazhkirom (Vol. 1)",
@@ -507,7 +507,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Ideology Series Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravidaththaal-vaazhkirom_FrontImage_660.gif",
+        image=None,
     ),
     dict(
         name="திராவிட சினிமா (முத்தமிழறிஞர் பதிப்பகம்) | Dravida Cinema (Vol. 1)",
@@ -524,7 +524,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Cinema & Culture Vol. 1",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/dravida-cinema-muththamizharignar-pathippagam_FrontImage_780.gif",
+        image=None,
     ),
     dict(
         name="டாக்டர் கலைஞர் | Doctor Kalaignar",
@@ -542,7 +542,7 @@ PRODUCTS = [
         ),
         ingredients="முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
         safety_info="Paperback • Tamil • Biography",
-        image="https://s3.ap-south-1.amazonaws.com/storage.commonfolks.in/docs/products/images/doctor-kalaignar_FrontImage_634.gif",
+        image=None,
     ),
 ]
 
@@ -795,8 +795,14 @@ async def main() -> None:
                 exists.tax_class = pdata["tax_class"]
                 exists.inventory_quantity = pdata["inventory_quantity"]
                 exists.inventory = pdata["inventory_quantity"]
-                exists.image_url = image_url
-                exists.images_json = [image_url]
+                existing_img = (exists.image_url or "").strip()
+                is_admin_upload = any(
+                    h in existing_img.lower()
+                    for h in ("res.cloudinary.com", ".blob.vercel-storage.com", ".infalette.com")
+                )
+                kept_img = existing_img if is_admin_upload else image_url
+                exists.image_url = kept_img
+                exists.images_json = [kept_img] if kept_img else []
                 exists.ingredients = pdata.get("ingredients")
                 exists.safety_info = pdata.get("safety_info")
                 exists.category_id = cat_id
@@ -819,7 +825,7 @@ async def main() -> None:
                 inventory=pdata["inventory_quantity"],
                 inventory_track=True,
                 inventory_policy="deny",
-                images_json=[image_url],
+                images_json=[image_url] if image_url else [],
                 image_url=image_url,
                 ingredients=pdata.get("ingredients"),
                 safety_info=pdata.get("safety_info"),

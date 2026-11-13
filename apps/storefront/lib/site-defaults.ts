@@ -342,13 +342,12 @@ export function isCloudinaryUrl(src?: string | null): boolean {
  */
 export function canOptimize(src?: string | null): boolean {
   if (!src) return false;
-  if (src.startsWith("/")) return true;
+  if (src.startsWith("/")) return !src.toLowerCase().endsWith(".svg");
   try {
     const { protocol, hostname } = new URL(src);
     if (protocol !== "https:") return false;
-    if (hostname === "res.cloudinary.com") return false;
     return (
-      hostname === "s3.ap-south-1.amazonaws.com" ||
+      hostname === "res.cloudinary.com" ||
       hostname.endsWith(".public.blob.vercel-storage.com") ||
       hostname === "cdn.infalette.com" ||
       hostname.endsWith(".infalette.com")
@@ -357,3 +356,34 @@ export function canOptimize(src?: string | null): boolean {
     return false;
   }
 }
+
+/**
+ * Keep only cover URLs served from local assets or hosts allowed in `images.remotePatterns`
+ * (Cloudinary, Vercel Blob, Infalette CDN). Legacy third-party hot-links become `null`
+ * so components render the neutral "No cover" placeholder until an admin uploads a cover.
+ */
+export function sanitizeCoverUrl(src?: string | null): string | null {
+  if (!src || typeof src !== "string") return null;
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("/")) return trimmed;
+  return canOptimize(trimmed) ? trimmed : null;
+}
+
+export function sanitizeBookCovers<T extends Record<string, any>>(book: T): T {
+  if (!book || typeof book !== "object") return book;
+  const rawImages = Array.isArray(book.images) ? book.images : [];
+  const cleanImages = rawImages
+    .map((u: unknown) => (typeof u === "string" ? sanitizeCoverUrl(u) : null))
+    .filter((u: string | null): u is string => Boolean(u));
+  const cleanCover = sanitizeCoverUrl(book.image_url) || cleanImages[0] || null;
+  if (cleanCover === (book.image_url ?? null) && cleanImages.length === rawImages.length) {
+    return book;
+  }
+  return {
+    ...book,
+    image_url: cleanCover,
+    images: cleanCover && !cleanImages.includes(cleanCover) ? [cleanCover, ...cleanImages] : cleanImages,
+  };
+}
+

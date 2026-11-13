@@ -3,7 +3,6 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const IMAGE_HOSTS = [
   "https://res.cloudinary.com",
-  "https://s3.ap-south-1.amazonaws.com",
   "https://*.public.blob.vercel-storage.com",
   "https://cdn.infalette.com",
   "https://*.infalette.com",
@@ -18,7 +17,6 @@ module.exports = {
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "s3.ap-south-1.amazonaws.com" },
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
       { protocol: "https", hostname: "cdn.infalette.com" },
       { protocol: "https", hostname: "**.infalette.com" },

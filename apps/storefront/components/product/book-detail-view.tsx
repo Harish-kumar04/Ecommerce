@@ -139,8 +139,8 @@ export default function BookDetailView({
                       className="h-full w-full object-contain p-5 sm:p-6"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-black/55">
-                      <T ta="படம் இல்லை" en="No image" />
+                    <div className="flex h-full w-full items-center justify-center bg-[#F4F4F5] text-sm font-medium text-black/55">
+                      <T ta="படம் இல்லை" en="No cover" />
                     </div>
                   )}
                 </div>

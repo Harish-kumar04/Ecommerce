@@ -28,7 +28,6 @@ export default function HeaderLogo({ tenant }: { tenant: string }) {
         alt="முத்தமிழறிஞர் பதிப்பகம்"
         width={144}
         height={144}
-        loading="eager"
         placeholder="empty"
         sizes="(max-width: 640px) 62px, (max-width: 1024px) 66px, 78px"
         className={`w-auto object-contain transition-transform duration-300 ${

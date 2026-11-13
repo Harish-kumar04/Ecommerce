@@ -24,9 +24,16 @@ def normalize_series_title(name: str) -> str:
     return normalized
 
 
+def _clean_cover_url(url: str | None) -> str | None:
+    u = (url or "").strip()
+    if not u or "s3.ap-south-1.amazonaws.com/" in u.lower():
+        return None
+    return u
+
+
 def _merge_cover_and_gallery(cover: str | None, gallery: list[str] | None) -> tuple[str | None, list[str]]:
     """Ensure cover (`image_url`) is always first in `images`, followed by unique gallery URLs."""
-    clean_cover = (cover or "").strip() or None
+    clean_cover = _clean_cover_url(cover)
     images: list[str] = []
     seen: set[str] = set()
     if clean_cover:
@@ -34,7 +41,7 @@ def _merge_cover_and_gallery(cover: str | None, gallery: list[str] | None) -> tu
         seen.add(clean_cover)
     for item in gallery or []:
         if isinstance(item, str):
-            u = item.strip()
+            u = _clean_cover_url(item)
             if u and u not in seen:
                 images.append(u)
                 seen.add(u)

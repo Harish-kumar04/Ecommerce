@@ -10,6 +10,7 @@ import {
   type Attribution,
 } from "./attribution";
 import { getCartSessionId, isUuidProductId } from "./cart-session";
+import { sanitizeBookCovers, sanitizeCoverUrl } from "./site-defaults";
 
 export {
   captureAttribution,
@@ -166,7 +167,8 @@ export class StorefrontApi {
         params,
       });
       const data = response.data;
-      return Array.isArray(data) ? data : data?.data || data?.items || [];
+      const list = Array.isArray(data) ? data : data?.data || data?.items || [];
+      return list.map(sanitizeBookCovers);
     } catch (err: any) {
       if (err?.response?.status && err.response.status < 500) {
         return [];
@@ -181,7 +183,7 @@ export class StorefrontApi {
       const response = await api.get(`/public/products/${encodeURIComponent(id)}`, {
         headers: { "X-Tenant": tenant },
       });
-      if (response.data) return response.data;
+      if (response.data) return sanitizeBookCovers(response.data);
     } catch (err: any) {
       if (err?.response?.status && err.response.status < 500) {
         return null;
@@ -219,7 +221,22 @@ export class StorefrontApi {
       const response = await api.get(`/cart`, {
         headers: tenantHeaders(tenant),
       });
-      return response.data;
+      const cart = response.data;
+      if (cart && Array.isArray(cart.items)) {
+        return {
+          ...cart,
+          items: cart.items.map((it: any) => ({
+            ...it,
+            image_url: sanitizeCoverUrl(it?.image_url),
+            images: Array.isArray(it?.images)
+              ? it.images
+                  .map((u: unknown) => (typeof u === "string" ? sanitizeCoverUrl(u) : null))
+                  .filter(Boolean)
+              : [],
+          })),
+        };
+      }
+      return cart;
     } catch (err: any) {
       if (err?.response) {
         const detail =

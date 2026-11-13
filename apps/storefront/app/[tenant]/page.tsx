@@ -106,11 +106,18 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
   const cards = products.map((p) =>
     toCardProduct(isFallback ? { ...p, is_fallback: true } : p),
   );
-  const withCovers = cards.filter((c) => c.image_url);
+  const seenCoverUrls = new Set<string>();
+  const withCovers = cards.filter((c) => {
+    if (!c.image_url) return false;
+    if (seenCoverUrls.has(c.image_url)) return false;
+    seenCoverUrls.add(c.image_url);
+    return true;
+  });
   const total = cards.length;
 
-  // Admin-configured 3-image Offer Slider (or built-in brand slides decorated with real covers)
+  // Admin-configured 3-image Offer Slider (or built-in brand slides decorated with distinct non-hero covers)
   const { slides, isDefault } = getSlides(store);
+  const sliderPool = withCovers.slice(3);
   const slideViews: SlideView[] = slides.map((s, i) => {
     const href = resolveLink(tenant, s.link);
     return {
@@ -125,7 +132,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
       href,
       external: href ? isExternal(href) : false,
       covers: isDefault
-        ? withCovers.slice(i * 3, i * 3 + 3).map((c) => ({
+        ? sliderPool.slice(i * 3, i * 3 + 3).map((c) => ({
             src: c.image_url as string,
             alt: splitBilingual(c.name, "|").join(" — "),
           }))

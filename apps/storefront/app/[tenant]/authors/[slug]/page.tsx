@@ -101,12 +101,11 @@ export default async function AuthorDetailPage({
           <T ta="வெளியிடப்பட்ட நூல்கள்" en="Available Editions in Our Catalog" />
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
-          {displayBooks.map((p, idx) => (
+          {displayBooks.map((p) => (
             <ProductCard
               key={p.id}
               product={toCardProduct({ ...p, is_fallback: booksRes.isFallback })}
               tenant={params.tenant}
-              priority={idx === 0}
             />
           ))}
         </div>

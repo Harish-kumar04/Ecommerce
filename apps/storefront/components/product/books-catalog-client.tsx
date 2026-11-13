@@ -360,12 +360,11 @@ export default function BooksCatalogClient({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4 xl:grid-cols-5">
-          {filtered.map((p: any, i: number) => (
+          {filtered.map((p: any) => (
             <ProductCard
               key={p.id}
               product={toCardProduct(p)}
               tenant={tenant}
-              priority={i === 0}
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 260px"
             />
           ))}
