@@ -100,15 +100,23 @@ export default async function AuthorDetailPage({
         <h2 className="mb-6 text-[24px] font-extrabold text-black">
           <T ta="வெளியிடப்பட்ட நூல்கள்" en="Available Editions in Our Catalog" />
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
-          {displayBooks.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={toCardProduct({ ...p, is_fallback: booksRes.isFallback })}
-              tenant={params.tenant}
-            />
-          ))}
-        </div>
+        {booksRes.isFallback ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-14 text-center">
+            <p className="text-[16px] font-bold text-black">
+              <T ta="சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்" en="Store is temporarily unavailable, try again" />
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+            {displayBooks.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={toCardProduct(p)}
+                tenant={params.tenant}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

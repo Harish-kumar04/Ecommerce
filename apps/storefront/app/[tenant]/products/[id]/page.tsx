@@ -80,12 +80,11 @@ export default async function ProductDetailPage({ params }: { params: { tenant: 
     return (
       <div className="container-site py-20 text-center">
         <div className="mx-auto max-w-md rounded-2xl border border-amber-500/30 bg-white p-8 shadow-sm">
-          <h1 className="text-[22px] font-extrabold text-[#111]">நூல் விவரம் ஏற்றப்படுகிறது</h1>
-          <p className="mt-1 text-[15px] font-semibold text-brand-red-dark">Please Try Again in a Moment</p>
+          <h1 className="text-[22px] font-extrabold text-[#111]">
+            Store is temporarily unavailable, try again
+          </h1>
           <p className="mt-3 text-[13.5px] leading-relaxed text-black/60">
-            சேவையகம் தற்காலிகமாகப் பதிலளிக்கத் தாமதமாகிறது. சில நொடிகளில் மீண்டும் முயற்சிக்கவும்.
-            <br />
-            The catalog server took too long to respond{lookup.httpStatus ? ` (HTTP ${lookup.httpStatus})` : ""}. Please retry.
+            சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <a

@@ -102,7 +102,12 @@ export default async function BooksCatalogPage({
           சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும் — Store is temporarily unavailable, try again.
         </div>
       )}
-      <BooksCatalogClient tenant={params.tenant} products={slim} categories={cats} />
+      <BooksCatalogClient
+        tenant={params.tenant}
+        products={slim}
+        categories={cats}
+        apiUnavailable={booksRes.isFallback}
+      />
     </>
   );
 }

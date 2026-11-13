@@ -83,7 +83,19 @@ export async function generateMetadata({
   };
 }
 
-function renderTabGrid(tenant: string, list: CardProduct[]) {
+function renderTabGrid(tenant: string, list: CardProduct[], apiUnavailable: boolean) {
+  if (apiUnavailable) {
+    return (
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-14 text-center">
+        <p className="text-[16px] font-bold text-black">
+          Store is temporarily unavailable, try again
+        </p>
+        <p className="mt-1 text-[14px] text-black/65">
+          சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
       {list.map((book) => (
@@ -199,10 +211,10 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
           />
         }
         panels={{
-          new: renderTabGrid(tenant, newArrivals),
-          bestsellers: renderTabGrid(tenant, bestSellers),
-          offers: renderTabGrid(tenant, offers),
-          kalaignar: renderTabGrid(tenant, kalaignarWorks),
+          new: renderTabGrid(tenant, newArrivals, Boolean(isFallback)),
+          bestsellers: renderTabGrid(tenant, bestSellers, Boolean(isFallback)),
+          offers: renderTabGrid(tenant, offers, Boolean(isFallback)),
+          kalaignar: renderTabGrid(tenant, kalaignarWorks, Boolean(isFallback)),
         }}
       />
 

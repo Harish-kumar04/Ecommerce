@@ -26,7 +26,7 @@ def normalize_series_title(name: str) -> str:
 
 def _clean_cover_url(url: str | None) -> str | None:
     u = (url or "").strip()
-    if not u or "s3.ap-south-1.amazonaws.com/" in u.lower():
+    if not u or "amazonaws.com/" in u.lower():
         return None
     return u
 

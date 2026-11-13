@@ -173,9 +173,8 @@ export class StorefrontApi {
       if (err?.response?.status && err.response.status < 500) {
         return [];
       }
+      throw new Error("Store is temporarily unavailable, try again");
     }
-    const { FALLBACK_BOOKS } = await import("./catalog-fallback");
-    return FALLBACK_BOOKS;
   }
 
   async getProduct(tenant: string, id: string) {
@@ -184,17 +183,13 @@ export class StorefrontApi {
         headers: { "X-Tenant": tenant },
       });
       if (response.data) return sanitizeBookCovers(response.data);
+      return null;
     } catch (err: any) {
       if (err?.response?.status && err.response.status < 500) {
         return null;
       }
+      throw new Error("Store is temporarily unavailable, try again");
     }
-    const { FALLBACK_BOOKS } = await import("./catalog-fallback");
-    return (
-      FALLBACK_BOOKS.find(
-        (b) => b.id === id || b.slug === id || b.sku.toLowerCase() === id.toLowerCase(),
-      ) || null
-    );
   }
 
   async getCategories(tenant: string) {

@@ -136,7 +136,13 @@ export default async function CategoryDetailPage({
         <T ta={`${catBooks.length} நூல்கள்`} en={`${catBooks.length} books in this category`} />
       </h2>
 
-      {catBooks.length === 0 ? (
+      {booksRes.isFallback ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-16 text-center">
+          <p className="text-[16px] font-bold text-black">
+            <T ta="சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்" en="Store is temporarily unavailable, try again" />
+          </p>
+        </div>
+      ) : catBooks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-black/20 bg-[#FAFAFA] px-6 py-16 text-center">
           <p className="text-[15px] text-black/70">
             <T

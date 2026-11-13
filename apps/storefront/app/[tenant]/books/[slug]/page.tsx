@@ -128,12 +128,10 @@ export default async function BookSlugDetailPage({
       <div className="container-site py-20 text-center">
         <div className="mx-auto max-w-md rounded-2xl border border-amber-500/30 bg-white p-8 shadow-sm">
           <h1 className="text-[22px] font-extrabold text-black">
-            நூல் விவரம் ஏற்றப்படுகிறது / Please Try Again
+            Store is temporarily unavailable, try again
           </h1>
           <p className="mt-3 text-[13.5px] leading-relaxed text-black/65">
-            சேவையகம் தற்காலிகமாகப் பதிலளிக்கத் தாமதமாகிறது. சில நொடிகளில் மீண்டும் முயற்சிக்கவும்.
-            <br />
-            The catalog server took too long to respond. Please retry in a moment.
+            சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <a

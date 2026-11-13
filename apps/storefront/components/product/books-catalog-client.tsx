@@ -20,10 +20,12 @@ export default function BooksCatalogClient({
   tenant,
   products,
   categories,
+  apiUnavailable = false,
 }: {
   tenant: string;
   products: any[];
   categories: Category[];
+  apiUnavailable?: boolean;
 }) {
   const { t, localizeName } = useLanguage();
   const [search, setSearch] = useState("");
@@ -340,7 +342,13 @@ export default function BooksCatalogClient({
       </p>
 
       {/* Book Grid or Empty State */}
-      {filtered.length === 0 ? (
+      {apiUnavailable && filtered.length === 0 ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-16 text-center">
+          <p className="text-[17px] font-bold text-black">
+            {t("சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும்", "Store is temporarily unavailable, try again")}
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-black/15 px-6 py-20 text-center">
           <p className="text-black/60 text-[16px]">
             {t("உங்கள் தேடலுக்குப் பொருந்தும் நூல்கள் எதுவும் கிடைக்கவில்லை.", "No books matched your search or filter.")}
