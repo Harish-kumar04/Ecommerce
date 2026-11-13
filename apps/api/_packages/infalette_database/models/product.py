@@ -6,6 +6,7 @@ import enum
 from sqlalchemy import (
     Boolean,
     Column,
+    Index,
     String,
     Text,
     Integer,
@@ -60,6 +61,11 @@ class Product(Base, TenantMixin):
     """
 
     __tablename__ = "products"
+    __table_args__ = (
+        Index("ix_products_tenant_status", "tenant_id", "status"),
+        Index("ix_products_tenant_slug", "tenant_id", "slug"),
+        Index("ix_products_tenant_category", "tenant_id", "category_id"),
+    )
 
     name = Column(String(255), nullable=False)
     slug = Column(String(255), nullable=False, index=True)

@@ -1,0 +1,221 @@
+{
+  "measured_at": "2026-11-13T10:05:19+0530",
+  "api_headers": {
+    "public_products_cache_control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+    "public_products_content_encoding": "gzip"
+  },
+  "next_build_bundles": {
+    "/": {
+      "size": "138 B",
+      "first_load_js": "87.6 kB"
+    },
+    "/_not-found": {
+      "size": "873 B",
+      "first_load_js": "88.3 kB"
+    },
+    "/[tenant]": {
+      "size": "1.76 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/account": {
+      "size": "6 kB",
+      "first_load_js": "106 kB"
+    },
+    "/[tenant]/account/consent": {
+      "size": "2.43 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/cart": {
+      "size": "7.08 kB",
+      "first_load_js": "110 kB"
+    },
+    "/[tenant]/checkout": {
+      "size": "8.61 kB",
+      "first_load_js": "108 kB"
+    },
+    "/[tenant]/forgot-password": {
+      "size": "1.03 kB",
+      "first_load_js": "88.5 kB"
+    },
+    "/[tenant]/login": {
+      "size": "2.42 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/orders": {
+      "size": "2.25 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/orders/[id]": {
+      "size": "6.24 kB",
+      "first_load_js": "109 kB"
+    },
+    "/[tenant]/products": {
+      "size": "6.44 kB",
+      "first_load_js": "110 kB"
+    },
+    "/[tenant]/products/[id]": {
+      "size": "4.01 kB",
+      "first_load_js": "107 kB"
+    },
+    "/[tenant]/reset-password": {
+      "size": "1.16 kB",
+      "first_load_js": "88.6 kB"
+    },
+    "/[tenant]/returns": {
+      "size": "2.23 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/signup": {
+      "size": "1.66 kB",
+      "first_load_js": "97.8 kB"
+    },
+    "/[tenant]/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/track": {
+      "size": "1.85 kB",
+      "first_load_js": "102 kB"
+    },
+    "/api/cart-summary": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/cover": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/health/[[...path]]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/revalidate": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/v1/[...path]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    }
+  },
+  "warm_ttfb_ms": {
+    "home": 52.7,
+    "books_list": 46.8,
+    "book_detail": 52.4,
+    "cart": 37.6
+  },
+  "lighthouse": {
+    "home": {
+      "url": "http://127.0.0.1:3189/demo-store",
+      "mobile": {
+        "performance_score": 100,
+        "lcp_ms": 1052.1,
+        "inp_proxy_max_fid_ms": 279,
+        "cls": 0.0003,
+        "tbt_ms": 67.5,
+        "ttfb_ms": 33,
+        "total_js_kb": 134.7,
+        "image_kb": 100.4,
+        "total_transfer_kb": 535.9
+      },
+      "desktop": {
+        "performance_score": 100,
+        "lcp_ms": 264.8,
+        "inp_proxy_max_fid_ms": 57.0,
+        "cls": 0.0051,
+        "tbt_ms": 0,
+        "ttfb_ms": 17,
+        "total_js_kb": 142.6,
+        "image_kb": 221.0,
+        "total_transfer_kb": 744.2
+      }
+    },
+    "books_list": {
+      "url": "http://127.0.0.1:3189/demo-store/products",
+      "mobile": {
+        "performance_score": 100,
+        "lcp_ms": 979.4,
+        "inp_proxy_max_fid_ms": 70,
+        "cls": 0.0003,
+        "tbt_ms": 19,
+        "ttfb_ms": 20,
+        "total_js_kb": 140.3,
+        "image_kb": 211.1,
+        "total_transfer_kb": 650.1
+      },
+      "desktop": {
+        "performance_score": 100,
+        "lcp_ms": 737.9,
+        "inp_proxy_max_fid_ms": 56,
+        "cls": 0.0006,
+        "tbt_ms": 0,
+        "ttfb_ms": 12,
+        "total_js_kb": 140.3,
+        "image_kb": 398.1,
+        "total_transfer_kb": 921.4
+      }
+    },
+    "book_detail": {
+      "url": "http://127.0.0.1:3189/demo-store/products/60e0672d-a0d5-4cdb-bbaa-8b537696a012",
+      "mobile": {
+        "performance_score": 100,
+        "lcp_ms": 1889.5,
+        "inp_proxy_max_fid_ms": 70.0,
+        "cls": 0.0003,
+        "tbt_ms": 24.0,
+        "ttfb_ms": 11,
+        "total_js_kb": 130.0,
+        "image_kb": 63.4,
+        "total_transfer_kb": 468.2
+      },
+      "desktop": {
+        "performance_score": 100,
+        "lcp_ms": 715.4,
+        "inp_proxy_max_fid_ms": 16,
+        "cls": 0.0004,
+        "tbt_ms": 0,
+        "ttfb_ms": 7,
+        "total_js_kb": 130.0,
+        "image_kb": 64.7,
+        "total_transfer_kb": 469.5
+      }
+    },
+    "cart": {
+      "url": "http://127.0.0.1:3189/demo-store/cart",
+      "mobile": {
+        "performance_score": 100,
+        "lcp_ms": 909.1,
+        "inp_proxy_max_fid_ms": 48,
+        "cls": 0.0007,
+        "tbt_ms": 0,
+        "ttfb_ms": 22,
+        "total_js_kb": 137.7,
+        "image_kb": 4.9,
+        "total_transfer_kb": 412.3
+      },
+      "desktop": {
+        "performance_score": 100,
+        "lcp_ms": 249.0,
+        "inp_proxy_max_fid_ms": 16,
+        "cls": 0.0191,
+        "tbt_ms": 0,
+        "ttfb_ms": 44,
+        "total_js_kb": 137.7,
+        "image_kb": 3.3,
+        "total_transfer_kb": 410.7
+      }
+    }
+  }
+}

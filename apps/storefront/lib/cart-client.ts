@@ -1,6 +1,10 @@
-import { getCartSessionId } from "./api";
+import {
+  getCartSessionId,
+  isUuidProductId,
+  PRODUCT_UUID_RE,
+} from "./cart-session";
 
-export { getCartSessionId };
+export { getCartSessionId, isUuidProductId, PRODUCT_UUID_RE };
 
 function resolveClientApiBase(): string {
   if (typeof window !== "undefined") {
@@ -13,13 +17,6 @@ function resolveClientApiBase(): string {
     }
   }
   return "http://localhost:8000/api/v1";
-}
-
-export const PRODUCT_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function isUuidProductId(id: unknown): boolean {
-  return typeof id === "string" && PRODUCT_UUID_RE.test(id.trim());
 }
 
 function purgeLegacyLocalCart() {

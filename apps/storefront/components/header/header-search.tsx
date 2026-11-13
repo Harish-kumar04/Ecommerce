@@ -16,6 +16,21 @@ export interface SearchBookItem {
   image_url?: string | null;
 }
 
+const searchCatalogCache = new Map<string, SearchBookItem[]>();
+
+function resolveSearchApiBase(): string {
+  if (typeof window !== "undefined") {
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+      return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+    }
+    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "/api/v1";
+    }
+  }
+  return "http://localhost:8000/api/v1";
+}
+
 export default function HeaderSearch({
   tenant,
   books = [],
@@ -27,7 +42,39 @@ export default function HeaderSearch({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [lazyBooks, setLazyBooks] = useState<SearchBookItem[]>(
+    () => searchCatalogCache.get(tenant) || [],
+  );
+  const loadingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const activeBooks = books.length > 0 ? books : lazyBooks;
+
+  const ensureCatalogLoaded = () => {
+    if (books.length > 0 || searchCatalogCache.has(tenant) || loadingRef.current) return;
+    loadingRef.current = true;
+    fetch(`${resolveSearchApiBase()}/public/products`, {
+      headers: { "X-Tenant": tenant },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.data || [];
+        const mapped: SearchBookItem[] = list.map((b: any) => ({
+          id: String(b.id),
+          name: String(b.name || ""),
+          author: b.author || b.dimensions_json?.book?.author || null,
+          price_cents: Number(b.price_cents) || 0,
+          sale_price_cents: b.sale_price_cents ?? null,
+          image_url: b.image_url || b.images?.[0] || null,
+        }));
+        searchCatalogCache.set(tenant, mapped);
+        setLazyBooks(mapped);
+      })
+      .catch(() => {})
+      .finally(() => {
+        loadingRef.current = false;
+      });
+  };
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -43,14 +90,14 @@ export default function HeaderSearch({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q || q.length < 2) return [];
-    return books
+    return activeBooks
       .filter((b) => {
         const nameMatch = b.name.toLowerCase().includes(q);
         const authorMatch = b.author ? b.author.toLowerCase().includes(q) : false;
         return nameMatch || authorMatch;
       })
       .slice(0, 6);
-  }, [query, books]);
+  }, [query, activeBooks]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,10 +115,12 @@ export default function HeaderSearch({
           type="search"
           value={query}
           onChange={(e) => {
+            ensureCatalogLoaded();
             setQuery(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => {
+            ensureCatalogLoaded();
             if (query.trim().length >= 2) setIsOpen(true);
           }}
           placeholder={t("நூல் அல்லது ஆசிரியர் தேடுக…", "Search books or author…")}
@@ -110,7 +159,7 @@ export default function HeaderSearch({
                     <div className="relative h-14 w-11 flex-shrink-0 overflow-hidden rounded bg-[#fafafa] border border-black/[0.06]">
                       {book.image_url ? (
                         <Img
-                          src={cloudinaryImageUrl(book.image_url, 900)}
+                          src={cloudinaryImageUrl(book.image_url, 128)}
                           alt={book.name}
                           fill
                           sizes="44px"

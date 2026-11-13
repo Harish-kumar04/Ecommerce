@@ -15,13 +15,13 @@ export default function OffersBand({
   if (books.length === 0) return null;
 
   return (
-    <section aria-label="Special Offers" className="relative my-16 overflow-hidden bg-black py-16 text-white sm:my-24 sm:py-20">
+    <section aria-label="Special Offers" className="cv-auto relative my-16 overflow-hidden bg-black py-16 text-white sm:my-24 sm:py-20">
       <Sunburst className="pointer-events-none absolute -right-20 -top-10 w-96 opacity-[0.14] sm:w-[500px]" />
       <div className="container-site relative">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-red px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-white" />
               <T ta="சிறப்புச் சலுகைகள்" en="SPECIAL OFFERS" />
             </span>
             <h2 className="mt-3 text-[28px] font-extrabold leading-tight tracking-tight text-white sm:text-[38px] lg:text-[46px]">

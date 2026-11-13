@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,20 @@ export async function POST(req: NextRequest) {
     const productId = body.productId || body.id;
     const slug = body.slug;
 
+    // Revalidate ISR fetch tags
+    revalidateTag("products");
+    revalidateTag(`products:${tenant}`);
+    revalidateTag("categories");
+    revalidateTag(`categories:${tenant}`);
+    revalidateTag("store");
+    revalidateTag(`store:${tenant}`);
+    if (productId) {
+      revalidateTag(`book:${tenant}:${productId}`);
+    }
+    if (slug && slug !== productId) {
+      revalidateTag(`book:${tenant}:${slug}`);
+    }
+
     // Revalidate specific tenant paths
     revalidatePath(`/${tenant}`, "page");
     revalidatePath(`/${tenant}/products`, "page");
@@ -37,6 +51,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       revalidated: true,
       timestamp: Date.now(),
+      tags: [
+        `products:${tenant}`,
+        `categories:${tenant}`,
+        `store:${tenant}`,
+        productId ? `book:${tenant}:${productId}` : null,
+        slug && slug !== productId ? `book:${tenant}:${slug}` : null,
+      ].filter(Boolean),
       paths: [
         `/${tenant}`,
         `/${tenant}/products`,

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "@/components/toaster";
 import { setStorefrontTokens } from "@/lib/auth";
+import { resolveApiBaseUrl } from "@/lib/api";
 
 /**
  * Customer login. On success redirects to `?next=` (defaults to
@@ -25,17 +25,23 @@ export default function LoginPage({ params }: { params: { tenant: string } }) {
     e.preventDefault();
     setBusy(true);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/login`,
-        { email, password }
-      );
-      setStorefrontTokens(response.data.access_token, response.data.refresh_token);
+      const res = await fetch(`${resolveApiBaseUrl()}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Tenant": tenant },
+        body: JSON.stringify({ email, password }),
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.detail || data?.error || "Login failed");
+      }
+      setStorefrontTokens(data.access_token, data.refresh_token);
       window.location.href = next;
     } catch (error: any) {
       toast({
         kind: "error",
         title: "Login failed",
-        description: error?.response?.data?.detail || error?.message,
+        description: error?.message || "Unable to sign in",
       });
     } finally {
       setBusy(false);

@@ -3,7 +3,7 @@
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "../brand/icons";
 
-const INTERVAL_MS = 5000;
+const INTERVAL_MS = 8000;
 const TOUCH_RESUME_MS = 6000;
 
 /**

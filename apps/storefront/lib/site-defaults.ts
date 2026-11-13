@@ -269,23 +269,33 @@ export function isExternal(href: string): boolean {
  * If an image URL is hosted on Cloudinary (`/image/upload/`), inject
  * `f_auto,q_auto,w_<width>` immediately after `upload/` for fast WebP/AVIF delivery.
  */
-export function cloudinaryImageUrl(src?: string | null, width: 1920 | 900 = 900): string {
+export function cloudinaryImageUrl(src?: string | null, width: number = 900): string {
   if (!src) return "";
   const marker = "/image/upload/";
   const idx = src.indexOf(marker);
   if (idx === -1) return src;
+  const clamped = Math.max(64, Math.min(1920, Math.round(width || 900)));
   const after = src.slice(idx + marker.length);
-  // Avoid double-transforming if Cloudinary transformation params are already present
+  // Replace existing f_auto,q_auto,w_* if present so responsive loaders can emit multiple widths
+  const existingMatch = after.match(/^f_auto,q_auto,w_\d+\/(.+)$/i);
+  if (existingMatch) {
+    return `${src.slice(0, idx + marker.length)}f_auto,q_auto,w_${clamped}/${existingMatch[1]}`;
+  }
   if (/^(?:[a-z]{1,3}_[^/]+)(?:,[a-z]{1,3}_[^/]+)*\//i.test(after)) {
     return src;
   }
-  return `${src.slice(0, idx + marker.length)}f_auto,q_auto,w_${width}/${after}`;
+  return `${src.slice(0, idx + marker.length)}f_auto,q_auto,w_${clamped}/${after}`;
+}
+
+export function isCloudinaryUrl(src?: string | null): boolean {
+  if (!src) return false;
+  return src.includes("res.cloudinary.com") && src.includes("/image/upload/");
 }
 
 /**
- * Whether next/image may optimize this src. Must mirror `images.remotePatterns` in
- * next.config.js; Cloudinary URLs use Cloudinary's own `f_auto,q_auto,w_*` edge transform
- * directly, and unknown hosts fall back to `unoptimized` instead of throwing at runtime.
+ * Whether next/image may optimize this src via `/_next/image`. Must mirror
+ * `images.remotePatterns` in next.config.js; Cloudinary URLs use our custom
+ * Cloudinary loader (`f_auto,q_auto,w_<width>`), and unknown hosts fall back to `unoptimized`.
  */
 export function canOptimize(src?: string | null): boolean {
   if (!src) return false;

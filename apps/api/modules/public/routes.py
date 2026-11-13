@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -180,9 +180,51 @@ async def public_list_tenants(
     ]
 
 
+def _serialize_public_list_product(product) -> dict:
+    """Lean serializer for storefront catalog/list/search cards (drops unused heavy metadata)."""
+    from apps.api.modules.product.services import _merge_cover_and_gallery
+
+    status = getattr(product.status, "value", product.status)
+    raw_gallery = list(getattr(product, "images_json", None) or []) or list(
+        getattr(product, "gallery_urls", None) or []
+    )
+    cover, images = _merge_cover_and_gallery(getattr(product, "image_url", None), raw_gallery)
+    inventory = getattr(product, "inventory_quantity", None)
+    if inventory is None:
+        inventory = getattr(product, "inventory", 0)
+    inv_int = int(inventory or 0)
+    return {
+        "id": str(product.id),
+        "tenant_id": str(product.tenant_id),
+        "category_id": str(product.category_id) if getattr(product, "category_id", None) else None,
+        "name": product.name,
+        "slug": product.slug,
+        "sku": product.sku,
+        "price_cents": product.price_cents,
+        "sale_price_cents": product.sale_price_cents,
+        "inventory": inv_int,
+        "inventory_quantity": inv_int,
+        "image_url": cover,
+        "images": images[:2],
+        "status": status,
+        "visibility": getattr(product, "visibility", "published") or "published",
+        "tax_class": getattr(product, "tax_class", "zero"),
+        "safety_info": getattr(product, "safety_info", None),
+        "dimensions_json": getattr(product, "dimensions_json", None) or {},
+    }
+
+
+def _set_public_cache(response: Response, max_age: int = 60, swr: int = 300) -> None:
+    response.headers["Cache-Control"] = (
+        f"public, max-age={max_age}, s-maxage={max_age}, stale-while-revalidate={swr}"
+    )
+    response.headers["Vary"] = "X-Tenant, Accept-Encoding"
+
+
 @router.get("/products")
 async def public_list_products(
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
     search: str | None = Query(default=None, max_length=100),
     category_id: str | None = Query(default=None),
@@ -194,10 +236,12 @@ async def public_list_products(
     ``?category_id=`` (UUID or slug) filtering.
     """
     from uuid import UUID as _UUID
-    from apps.api.modules.product.services import list_products, search_products
+    from apps.api.modules.product.services import search_products
     from infalette_database.models.category import Category
+    from infalette_database.models.product import Product, ProductStatus
 
     tenant_id = await _public_tenant_id(request, session)
+    _set_public_cache(response, max_age=60, swr=300)
 
     cat_target = (category or category_id or "").strip()
     cat_uuid: _UUID | None = None
@@ -217,26 +261,44 @@ async def public_list_products(
                 cat_uuid = cat_row
 
     if search:
-        from apps.api.modules.product.services import serialize_product
-
         items = await search_products(tenant_id, search, session)
         filtered = [
-            p for p in items
-            if str(getattr(p, "visibility", "published") or "published").lower() not in ("hidden", "draft")
-            and (str(getattr(getattr(p, "status", None), "value", getattr(p, "status", "")) or "").lower() in ("active", "published")
-            or getattr(p, "status", None) is None)
+            p
+            for p in items
+            if str(getattr(p, "visibility", "published") or "published").lower()
+            not in ("hidden", "draft")
+            and (
+                str(
+                    getattr(getattr(p, "status", None), "value", getattr(p, "status", "")) or ""
+                ).lower()
+                in ("active", "published")
+                or getattr(p, "status", None) is None
+            )
         ]
         if cat_uuid:
-            filtered = [p for p in filtered if str(getattr(p, "category_id", None)) == str(cat_uuid)]
-        return [serialize_product(p) for p in filtered]
+            filtered = [
+                p for p in filtered if str(getattr(p, "category_id", None)) == str(cat_uuid)
+            ]
+        return [_serialize_public_list_product(p) for p in filtered]
 
-    result = await list_products(tenant_id, session, per_page=200, category_id=cat_uuid)
-    items = result["data"] if isinstance(result, dict) else result
+    stmt = (
+        select(Product)
+        .where(
+            Product.tenant_id == tenant_id,
+            Product.status == ProductStatus.ACTIVE,
+        )
+        .order_by(Product.created_at.desc())
+        .limit(200)
+    )
+    if cat_uuid is not None:
+        stmt = stmt.where(Product.category_id == cat_uuid)
+
+    rows = (await session.execute(stmt)).scalars().all()
     return [
-        p
-        for p in items
-        if str(p.get("visibility", "published") or "published").lower() not in ("hidden", "draft")
-        and (str(p.get("status", "")).lower() in ("active", "published") or p.get("status") is None)
+        _serialize_public_list_product(p)
+        for p in rows
+        if str(getattr(p, "visibility", "published") or "published").lower()
+        not in ("hidden", "draft")
     ]
 
 
@@ -244,6 +306,7 @@ async def public_list_products(
 async def public_get_product(
     product_id: str,
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
 ):
     """Single published product for the resolved tenant (by UUID, slug, or SKU)."""
@@ -283,12 +346,14 @@ async def public_get_product(
         raise HTTPException(status_code=404, detail="Product not found")
     if str(product.get("status", "")).lower() not in ("active", "published") and product.get("status") is not None:
         raise HTTPException(status_code=404, detail="Product not found")
+    _set_public_cache(response, max_age=120, swr=600)
     return product
 
 
 @router.get("/store")
 async def public_get_store(
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
 ):
     """First store for the resolved tenant (theme/branding + payment provider availability)."""
@@ -305,6 +370,7 @@ async def public_get_store(
         razorpay_enabled = RazorpayClient().is_configured()
     except Exception:
         razorpay_enabled = False
+    _set_public_cache(response, max_age=60, swr=300)
     return {
         "id": str(store.id),
         "tenant_id": str(store.tenant_id),
@@ -368,6 +434,7 @@ async def public_validate_coupon(
 @router.get("/pages")
 async def public_list_pages(
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
 ):
     """Published pages (with blocks) for the resolved tenant."""
@@ -375,6 +442,7 @@ async def public_list_pages(
 
     tenant_id = await _public_tenant_id(request, session)
     pages = await list_pages(tenant_id, session, status="PUBLISHED")
+    _set_public_cache(response, max_age=60, swr=300)
     return [
         {
             "id": str(p.id),
@@ -398,6 +466,7 @@ async def public_list_pages(
 @router.get("/categories")
 async def public_list_categories(
     request: Request,
+    response: Response,
     session: AsyncSession = Depends(get_async_session),
 ):
     """Categories for the resolved tenant (navigation/filtering)."""
@@ -407,6 +476,7 @@ async def public_list_categories(
     result = await session.execute(
         select(Category).where(Category.tenant_id == tenant_id).order_by(Category.name)
     )
+    _set_public_cache(response, max_age=60, swr=300)
     return [
         {
             "id": str(c.id),

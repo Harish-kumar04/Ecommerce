@@ -55,7 +55,7 @@ export function WhySection() {
 
 export function NewsletterSection({ storeId }: { storeId?: string | null }) {
   return (
-    <section className="container-site pt-20 sm:pt-28">
+    <section className="cv-auto container-site pt-20 sm:pt-28">
       <div className="relative overflow-hidden rounded-3xl border border-brand-red/15 bg-white px-6 py-14 text-center shadow-glow sm:px-12 lg:py-20">
         <Sunburst className="pointer-events-none absolute -bottom-1 left-1/2 w-[640px] max-w-none -translate-x-1/2 opacity-[0.07]" />
         <div className="relative">

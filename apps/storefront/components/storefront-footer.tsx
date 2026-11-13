@@ -33,7 +33,7 @@ export default function StorefrontFooter({
   const linkCls = "text-white/75 transition-colors hover:text-white";
 
   return (
-    <footer className="mt-20">
+    <footer className="cv-auto mt-20">
       <PageLines className="h-8 sm:h-10" />
       <div className="relative overflow-hidden bg-brand-black text-white">
         <div className="h-1 w-full bg-brand-red" aria-hidden="true" />
@@ -41,7 +41,7 @@ export default function StorefrontFooter({
         <div className="container-site relative py-14 lg:py-16">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <Link href={home} className="inline-block" aria-label="முத்தமிழறிஞர் பதிப்பகம்">
+              <Link href={home} prefetch={false} className="inline-block" aria-label="முத்தமிழறிஞர் பதிப்பகம்">
                 <div className="inline-flex items-center justify-center rounded-2xl bg-white p-3 shadow-md">
                   <Image
                     src={footerLogo}
@@ -82,10 +82,10 @@ export default function StorefrontFooter({
                 <T ta="நூலகம்" en="Bookstore" />
               </p>
               <ul className="space-y-2.5 text-[14.5px]">
-                <li><Link href={`${home}/products`} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
-                <li><Link href={`${home}/cart`} className={linkCls}><T ta="கூடை" en="Cart" /></Link></li>
-                <li><Link href={`${home}/orders`} className={linkCls}><T ta="எனது ஆர்டர்கள்" en="My orders" /></Link></li>
-                <li><Link href={`${home}/returns`} className={linkCls}><T ta="மாற்று / திரும்பப் பெறுதல்" en="Returns & support" /></Link></li>
+                <li><Link href={`${home}/products`} prefetch={false} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
+                <li><Link href={`${home}/cart`} prefetch={false} className={linkCls}><T ta="கூடை" en="Cart" /></Link></li>
+                <li><Link href={`${home}/orders`} prefetch={false} className={linkCls}><T ta="எனது ஆர்டர்கள்" en="My orders" /></Link></li>
+                <li><Link href={`${home}/returns`} prefetch={false} className={linkCls}><T ta="மாற்று / திரும்பப் பெறுதல்" en="Returns & support" /></Link></li>
               </ul>
             </div>
 
@@ -94,9 +94,9 @@ export default function StorefrontFooter({
                 <T ta="வாசகர் கணக்கு" en="Reader account" />
               </p>
               <ul className="space-y-2.5 text-[14.5px]">
-                <li><Link href={`${home}/account`} className={linkCls}><T ta="சுயவிவரம்" en="Profile" /></Link></li>
-                <li><Link href={`${home}/track`} className={linkCls}><T ta="ஆர்டர் நிலை" en="Track order" /></Link></li>
-                <li><Link href={`${home}/account/consent`} className={linkCls}><T ta="தனியுரிமை அமைப்புகள்" en="Privacy & consent" /></Link></li>
+                <li><Link href={`${home}/account`} prefetch={false} className={linkCls}><T ta="சுயவிவரம்" en="Profile" /></Link></li>
+                <li><Link href={`${home}/track`} prefetch={false} className={linkCls}><T ta="ஆர்டர் நிலை" en="Track order" /></Link></li>
+                <li><Link href={`${home}/account/consent`} prefetch={false} className={linkCls}><T ta="தனியுரிமை அமைப்புகள்" en="Privacy & consent" /></Link></li>
               </ul>
             </div>
 

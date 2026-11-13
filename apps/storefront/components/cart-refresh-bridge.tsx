@@ -34,10 +34,32 @@ export function CartRefreshBridge() {
     };
     window.addEventListener("storage", onStorage);
 
-    // Initial fetch so the cart counter is up to date on first paint.
-    void refreshCartCount();
+    // Only fetch server cart summary on cold mount if visitor actually has a session or auth token.
+    let idleId: number | null = null;
+    const win = window as any;
+    let hasActiveSession = false;
+    try {
+      hasActiveSession = Boolean(
+        window.localStorage.getItem("infalette_cart_session_id") ||
+          window.localStorage.getItem("store_access_token"),
+      );
+    } catch {
+      hasActiveSession = false;
+    }
+
+    if (hasActiveSession) {
+      if (typeof win.requestIdleCallback === "function") {
+        idleId = win.requestIdleCallback(() => void refreshCartCount(), { timeout: 2500 });
+      } else {
+        idleId = window.setTimeout(() => void refreshCartCount(), 1500);
+      }
+    }
 
     return () => {
+      if (idleId !== null) {
+        if (typeof win.cancelIdleCallback === "function") win.cancelIdleCallback(idleId);
+        else clearTimeout(idleId);
+      }
       window.removeEventListener("infalette-cart-changed", handler);
       window.removeEventListener("storage", onStorage);
       bc?.close();

@@ -3,7 +3,6 @@
 import { toast } from "@/components/toaster";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import axios from "axios";
 import { storefrontApi } from "@/lib/api";
 import {
   clearStorefrontTokens,
@@ -264,20 +263,8 @@ function OrdersSection({ tenant }: { tenant: string }) {
       setLoading(true);
       setError(null);
       try {
-        const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
-        const response = await axios.get(
-          `${apiBase}/orders`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("store_access_token")}`,
-              "X-Tenant": tenant,
-            },
-          }
-        );
+        const list = await storefrontApi.listOrders(tenant);
         if (cancelled) return;
-        const list = Array.isArray(response.data)
-          ? response.data
-          : response.data?.data || response.data?.items || [];
         setOrders(list);
         await Promise.all(
           list.map(async (order: any) => {
@@ -436,17 +423,17 @@ function SupportSection({ tenant }: { tenant: string }) {
     setFeedback(null);
     try {
       const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
-      await axios.post(
-        `${apiBase}/public/track`,
-        {
+      await fetch(`${apiBase}/public/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Tenant": tenant },
+        body: JSON.stringify({
           event_type: "support.message",
           subject,
           order_ref: orderRef || null,
           message,
           source: "storefront",
-        },
-        { headers: { "X-Tenant": tenant } }
-      ).catch(() => undefined);
+        }),
+      }).catch(() => undefined);
       setFeedback("Thanks — your message has been received. We'll get back within one business day.");
       setSubject("");
       setMessage("");

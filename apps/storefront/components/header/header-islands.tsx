@@ -44,6 +44,7 @@ export function HeaderNav({ tenant, items, variant }: { tenant: string; items: N
           <Link
             key={item.path}
             href={`/${tenant}${item.path}`}
+            prefetch={false}
             aria-current={active ? "page" : undefined}
             className={
               desktop
@@ -75,9 +76,11 @@ export function CartButton({ tenant }: { tenant: string }) {
     };
     sync();
     window.addEventListener("infalette-cart-changed", sync);
+    window.addEventListener("infalette-cart-optimistic", sync);
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener("infalette-cart-changed", sync);
+      window.removeEventListener("infalette-cart-optimistic", sync);
       window.removeEventListener("storage", onStorage);
     };
   }, []);

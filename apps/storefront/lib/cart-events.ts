@@ -43,6 +43,33 @@ export function notifyCartChanged(tenant?: string) {
   emit(tenant);
 }
 
+/**
+ * Optimistically adjust the client-side cart badge & total before the server responds.
+ * Returns a rollback function to restore previous values if the request fails.
+ */
+export function optimisticAdjustCart(deltaCount: number, deltaCents = 0): () => void {
+  if (typeof window === "undefined") return () => {};
+  const prev = readFromStorage();
+  const nextCount = Math.max(0, prev.count + deltaCount);
+  const nextTotal = Math.max(0, prev.totalCents + deltaCents);
+  try {
+    localStorage.setItem(CART_COUNT_KEY, String(nextCount));
+    localStorage.setItem(CART_TOTAL_KEY, String(nextTotal));
+  } catch {
+    // ignore storage errors
+  }
+  window.dispatchEvent(new CustomEvent("infalette-cart-optimistic"));
+  return () => {
+    try {
+      localStorage.setItem(CART_COUNT_KEY, String(prev.count));
+      localStorage.setItem(CART_TOTAL_KEY, String(prev.totalCents));
+    } catch {
+      // ignore
+    }
+    window.dispatchEvent(new CustomEvent("infalette-cart-optimistic"));
+  };
+}
+
 export function openMiniCart() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("infalette-open-mini-cart"));
@@ -65,14 +92,17 @@ export async function refreshCartCount(tenant?: string): Promise<CartSummary> {
   }
   inFlight = (async () => {
     try {
-      // Discover tenant from the URL path if not explicitly given.
+      const sessionKey =
+        window.localStorage.getItem("cart_session_id") ||
+        window.localStorage.getItem("infalette-cart-session-id") ||
+        "";
+      const token = window.localStorage.getItem("store_access_token") || "";
+      if (!sessionKey && !token) {
+        localStorage.setItem(CART_COUNT_KEY, "0");
+        localStorage.setItem(CART_TOTAL_KEY, "0");
+        return;
+      }
       const t = tenant || (window.location.pathname.split("/")[1] || "");
-      const sessionKey = typeof window !== "undefined"
-        ? (window.localStorage.getItem("cart_session_id") || window.localStorage.getItem("infalette-cart-session-id") || "")
-        : "";
-      const token = typeof window !== "undefined"
-        ? (window.localStorage.getItem("store_access_token") || "")
-        : "";
       const headers: Record<string, string> = {};
       if (sessionKey) headers["X-Cart-Session-ID"] = sessionKey;
       if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -84,6 +114,7 @@ export async function refreshCartCount(tenant?: string): Promise<CartSummary> {
       const data: CartSummary = await res.json();
       localStorage.setItem(CART_COUNT_KEY, String(data.count));
       localStorage.setItem(CART_TOTAL_KEY, String(data.totalCents));
+      window.dispatchEvent(new CustomEvent("infalette-cart-optimistic"));
     } catch {
       /* offline / SSR — leave whatever was previously cached */
     } finally {

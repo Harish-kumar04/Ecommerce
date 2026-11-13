@@ -35,7 +35,10 @@ export default function BookGridSection({
       : "(max-width: 1024px) 50vw, 340px";
 
   return (
-    <section id={id} className="container-site scroll-mt-28 pt-14 sm:pt-20">
+    <section
+      id={id}
+      className={`container-site scroll-mt-28 pt-14 sm:pt-20 ${id && id !== "featured" ? "cv-auto" : ""}`}
+    >
       {divider && <PageLines className="mb-12 h-6 opacity-70 sm:h-8" />}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
         <div>

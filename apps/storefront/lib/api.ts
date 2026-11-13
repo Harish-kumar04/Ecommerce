@@ -1,7 +1,7 @@
 /**
- * Storefront API client (axios). Attribution helpers live in ./attribution so that
- * lightweight components (e.g. AttributionCapture in the root layout) can use them
- * without pulling axios into every page's first-load JavaScript.
+ * Storefront API client (zero-dependency native fetch).
+ * Attribution helpers live in ./attribution and cart session in ./cart-session
+ * to keep every page's First Load JS lean.
  */
 import {
   captureAttribution,
@@ -9,16 +9,22 @@ import {
   getStoredFirstAttribution,
   type Attribution,
 } from "./attribution";
+import { getCartSessionId, isUuidProductId } from "./cart-session";
 
-export { captureAttribution, getStoredAttribution, getStoredFirstAttribution };
+export {
+  captureAttribution,
+  getStoredAttribution,
+  getStoredFirstAttribution,
+  getCartSessionId,
+};
 export type { Attribution };
 
-
-import axios from "axios";
-
-function resolveApiBaseUrl(): string {
+export function resolveApiBaseUrl(): string {
   if (typeof window === "undefined") {
-    const raw = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const raw =
+      process.env.API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8000/api/v1";
     const trimmed = raw.replace(/\/$/, "");
     return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
   }
@@ -26,43 +32,96 @@ function resolveApiBaseUrl(): string {
     const trimmed = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
     return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
   }
-  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+  if (
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1"
+  ) {
     return "/api/v1";
   }
   return "http://localhost:8000/api/v1";
 }
 
-const api = axios.create({
-  baseURL: resolveApiBaseUrl(),
-});
+interface RequestConfig {
+  headers?: Record<string, string>;
+  params?: Record<string, string | undefined>;
+  responseType?: "json" | "blob";
+}
 
-// Guest cart identity: opaque uuid kept client-side (requirement: guest checkout)
-export function getCartSessionId(): string {
-  if (typeof window === "undefined") return "";
-  let id =
-    window.localStorage.getItem("cart_session_id") ||
-    window.localStorage.getItem("infalette-cart-session-id");
-  if (!id) {
-    const match = document.cookie.match(
-      /(?:^|; )(?:cart_session_id|infalette-cart-session)=([^;]+)/,
-    );
-    if (match && match[1]) {
-      id = decodeURIComponent(match[1]);
+async function apiRequest<T = any>(
+  method: string,
+  path: string,
+  body?: unknown,
+  config?: RequestConfig,
+): Promise<{ data: T; status: number }> {
+  const base = resolveApiBaseUrl();
+  let url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  if (config?.params) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(config.params)) {
+      if (v !== undefined && v !== null) qs.set(k, String(v));
+    }
+    const qstr = qs.toString();
+    if (qstr) url += (url.includes("?") ? "&" : "?") + qstr;
+  }
+
+  const headers: Record<string, string> = { ...(config?.headers || {}) };
+  let serializedBody: BodyInit | undefined;
+  if (body !== undefined) {
+    headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    serializedBody = JSON.stringify(body);
+  }
+
+  const isPublicGet = method === "GET" && path.startsWith("/public/");
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: serializedBody,
+    cache: isPublicGet ? "default" : "no-store",
+  });
+
+  if (config?.responseType === "blob") {
+    if (!res.ok) {
+      const err: any = new Error(`Request failed with status code ${res.status}`);
+      err.response = { status: res.status, data: null };
+      throw err;
+    }
+    const blob = (await res.blob()) as unknown as T;
+    return { data: blob, status: res.status };
+  }
+
+  const text = await res.text();
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
     }
   }
-  if (!id) {
-    id = window.crypto?.randomUUID
-      ? window.crypto.randomUUID()
-      : `cart_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  if (!res.ok) {
+    const err: any = new Error(
+      data?.error || data?.detail || data?.message || `Request failed with status code ${res.status}`,
+    );
+    err.response = { status: res.status, data };
+    throw err;
   }
-  try {
-    window.localStorage.setItem("cart_session_id", id);
-    window.localStorage.setItem("infalette-cart-session-id", id);
-    document.cookie = `cart_session_id=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=Lax`;
-    document.cookie = `infalette-cart-session=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=Lax`;
-  } catch {}
-  return id;
+
+  return { data: data as T, status: res.status };
 }
+
+const api = {
+  get: <T = any>(path: string, config?: RequestConfig) =>
+    apiRequest<T>("GET", path, undefined, config),
+  post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+    apiRequest<T>("POST", path, body, config),
+  put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+    apiRequest<T>("PUT", path, body, config),
+  patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+    apiRequest<T>("PATCH", path, body, config),
+  delete: <T = any>(path: string, config?: RequestConfig) =>
+    apiRequest<T>("DELETE", path, undefined, config),
+};
 
 function tenantHeaders(tenant: string): Record<string, string> {
   const auth = typeof window !== "undefined" ? localStorage.getItem("store_access_token") : null;
@@ -70,13 +129,6 @@ function tenantHeaders(tenant: string): Record<string, string> {
   if (auth) h.Authorization = `Bearer ${auth}`;
   return h;
 }
-
-import {
-  FALLBACK_BOOKS,
-  FALLBACK_CATEGORIES,
-  FALLBACK_STORE,
-  isDatabaseProductId,
-} from "./catalog-fallback";
 
 function purgeLegacyLocalCart() {
   if (typeof window === "undefined") return;
@@ -94,7 +146,9 @@ export class StorefrontApi {
     const response = await api
       .get(`/public/store`, { headers: { "X-Tenant": tenant } })
       .catch(() => null);
-    return response?.data || FALLBACK_STORE;
+    if (response?.data) return response.data;
+    const { FALLBACK_STORE } = await import("./catalog-fallback");
+    return FALLBACK_STORE;
   }
 
   async getPages(tenant: string) {
@@ -112,10 +166,13 @@ export class StorefrontApi {
         params,
       });
       const data = response.data;
-      return Array.isArray(data) ? data : data.data || data.items || [];
-    } catch {
-      // fallback only on network error or server down
+      return Array.isArray(data) ? data : data?.data || data?.items || [];
+    } catch (err: any) {
+      if (err?.response?.status && err.response.status < 500) {
+        return [];
+      }
     }
+    const { FALLBACK_BOOKS } = await import("./catalog-fallback");
     return FALLBACK_BOOKS;
   }
 
@@ -126,10 +183,11 @@ export class StorefrontApi {
       });
       if (response.data) return response.data;
     } catch (err: any) {
-      if (err?.response?.status === 404) {
+      if (err?.response?.status && err.response.status < 500) {
         return null;
       }
     }
+    const { FALLBACK_BOOKS } = await import("./catalog-fallback");
     return (
       FALLBACK_BOOKS.find(
         (b) => b.id === id || b.slug === id || b.sku.toLowerCase() === id.toLowerCase(),
@@ -143,10 +201,13 @@ export class StorefrontApi {
         headers: { "X-Tenant": tenant },
       });
       const data = response.data;
-      return Array.isArray(data) ? data : data.data || data.items || [];
-    } catch {
-      // fallback
+      return Array.isArray(data) ? data : data?.data || data?.items || [];
+    } catch (err: any) {
+      if (err?.response?.status && err.response.status < 500) {
+        return [];
+      }
     }
+    const { FALLBACK_CATEGORIES } = await import("./catalog-fallback");
     return FALLBACK_CATEGORIES;
   }
 
@@ -179,7 +240,7 @@ export class StorefrontApi {
     variantId?: string,
   ) {
     purgeLegacyLocalCart();
-    if (!isDatabaseProductId(productId)) {
+    if (!isUuidProductId(productId)) {
       throw new Error("Store is temporarily unavailable, try again");
     }
     try {

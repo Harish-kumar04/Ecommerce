@@ -5,6 +5,7 @@ from __future__ import annotations
 import enum
 from sqlalchemy import (
     Column,
+    Index,
     Integer,
     String,
     JSON,
@@ -36,6 +37,10 @@ class Order(Base, TenantMixin):
     """
 
     __tablename__ = "orders"
+    __table_args__ = (
+        Index("ix_orders_tenant_customer_created", "tenant_id", "customer_id", "created_at"),
+        Index("ix_orders_tenant_created", "tenant_id", "created_at"),
+    )
 
     customer_id = Column(
         UUID(as_uuid=True), ForeignKey("customers.id"), nullable=True, index=True

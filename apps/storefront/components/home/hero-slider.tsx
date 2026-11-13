@@ -94,7 +94,14 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
                   key={c.src}
                   className={`relative -mx-4 aspect-[3/4] w-[clamp(150px,13vw,240px)] overflow-hidden rounded-xl bg-white shadow-glow-lg ring-1 ring-black/5 ${tilt[i] ?? ""}`}
                 >
-                  <Img src={cloudinaryImageUrl(c.src, 900)} alt={c.alt} fill sizes="(max-width: 1440px) 13vw, 240px" priority={first && i === 1} className="object-cover" />
+                  <Img
+                    src={c.src}
+                    alt={c.alt}
+                    fill
+                    sizes="(max-width: 1024px) 160px, 240px"
+                    priority={first && i === 1}
+                    className="object-cover"
+                  />
                 </div>
               ))}
             </div>
@@ -109,32 +116,41 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
 function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
   const hasText = Boolean(slide.title_ta || slide.title_en || slide.subtitle_ta || slide.subtitle_en);
   const alt = hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam";
-  const desktopSrc = cloudinaryImageUrl(slide.image_url, 1920);
-  const mobileSrc = cloudinaryImageUrl(slide.mobile_image_url || slide.image_url, 1920);
+  const hasSeparateMobile = Boolean(
+    slide.mobile_image_url && slide.mobile_image_url !== slide.image_url,
+  );
   return (
     <div className="relative h-full w-full bg-brand-red-light">
-      {/* Desktop (8:3) */}
-      <div className="hidden md:block absolute inset-0">
+      {hasSeparateMobile ? (
+        <picture className="absolute inset-0 block h-full w-full">
+          <source
+            media="(min-width: 768px)"
+            srcSet={`${cloudinaryImageUrl(slide.image_url, 1280)} 1280w, ${cloudinaryImageUrl(slide.image_url, 1920)} 1920w`}
+            sizes="100vw"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cloudinaryImageUrl(slide.mobile_image_url, 828)}
+            srcSet={`${cloudinaryImageUrl(slide.mobile_image_url, 640)} 640w, ${cloudinaryImageUrl(slide.mobile_image_url, 828)} 828w`}
+            sizes="100vw"
+            alt={alt}
+            loading={first ? "eager" : "lazy"}
+            decoding={first ? "sync" : "async"}
+            // @ts-expect-error React 18 lowercase fetchpriority attribute support
+            fetchpriority={first ? "high" : undefined}
+            className="h-full w-full object-cover"
+          />
+        </picture>
+      ) : (
         <Img
-          src={desktopSrc}
+          src={slide.image_url || ""}
           alt={alt}
           fill
           sizes="100vw"
           priority={first}
           className="object-cover"
         />
-      </div>
-      {/* Mobile (4:5) */}
-      <div className="block md:hidden absolute inset-0">
-        <Img
-          src={mobileSrc}
-          alt={alt}
-          fill
-          sizes="100vw"
-          priority={first}
-          className="object-cover"
-        />
-      </div>
+      )}
       {hasText ? (
         <>
           <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-transparent lg:via-white/50" aria-hidden="true" />

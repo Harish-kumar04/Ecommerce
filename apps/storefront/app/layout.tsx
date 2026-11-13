@@ -11,12 +11,16 @@ import { SITE_URL } from "@/lib/site-defaults";
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
+  preload: true,
   variable: "--font-inter",
 });
 
 const notoTamil = Noto_Sans_Tamil({
   subsets: ["tamil"],
+  weight: ["400", "700"],
   display: "swap",
+  preload: false,
+  adjustFontFallback: false,
   variable: "--font-tamil",
 });
 

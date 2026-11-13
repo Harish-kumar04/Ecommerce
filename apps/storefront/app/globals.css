@@ -79,6 +79,10 @@ html:not([lang="en"]) .i18n-en {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

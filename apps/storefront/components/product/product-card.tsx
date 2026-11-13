@@ -1,18 +1,8 @@
 import Image from "@/components/ui/img";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { BiName, BiSubName, T } from "@/components/i18n/t";
 import { splitBilingual } from "@/lib/i18n";
-import { cloudinaryImageUrl } from "@/lib/site-defaults";
-
-const CardAddButton = dynamic(() => import("./card-add-button"), {
-  ssr: false,
-  loading: () => (
-    <span className="inline-flex h-9 items-center justify-center rounded-full border border-brand-red bg-white px-3 text-[12px] font-bold text-brand-red">
-      <T ta="சேர்" en="Add" />
-    </span>
-  ),
-});
+import CardAddButton from "./card-add-button";
 
 const UUID_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -60,7 +50,7 @@ export default function ProductCard({
   product,
   tenant,
   priority = false,
-  sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1440px) 22vw, 320px",
+  sizes = "(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 260px",
 }: {
   product: CardProduct;
   tenant: string;
@@ -70,13 +60,15 @@ export default function ProductCard({
   const inStock = product.inventory === undefined || product.inventory > 0;
   const onSale = Boolean(product.sale_price_cents && product.sale_price_cents < product.price_cents);
   const price = onSale ? (product.sale_price_cents as number) : product.price_cents;
-  const rawImg = product.image_url || product.images?.[0];
-  const imgSrc = rawImg ? cloudinaryImageUrl(rawImg, 900) : null;
+  const rawImg = product.image_url || product.images?.[0] || null;
   const alt = splitBilingual(product.name, "|").join(" — ");
 
   return (
     <div className="card-glow group relative flex flex-col overflow-hidden rounded-xl border border-black/[0.08] bg-white transition-all duration-200 hover:-translate-y-[2px] hover:border-black/30 hover:shadow-glow">
-      <Link href={`/${tenant}/products/${product.id}`} className="relative aspect-[3/4] w-full overflow-hidden bg-[#fafafa]">
+      <Link
+        href={`/${tenant}/products/${product.id}`}
+        className="relative aspect-[3/4] w-full overflow-hidden bg-[#fafafa]"
+      >
         {/* Sale / Out of stock badge */}
         {!inStock ? (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-black/80 px-2.5 py-0.5 text-[11px] font-bold text-white">
@@ -88,9 +80,9 @@ export default function ProductCard({
           </span>
         ) : null}
 
-        {imgSrc ? (
+        {rawImg ? (
           <Image
-            src={imgSrc}
+            src={rawImg}
             alt={alt}
             fill
             sizes={sizes}
@@ -108,7 +100,7 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
         <div>
-          <Link href={`/${tenant}/products/${product.id}`}>
+          <Link href={`/${tenant}/products/${product.id}`} prefetch={false}>
             <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-[#111] transition-colors group-hover:text-brand-red sm:text-[16px]">
               <BiName value={product.name} />
             </h3>
@@ -132,6 +124,7 @@ export default function ProductCard({
             tenant={tenant}
             productId={product.id}
             productName={product.name}
+            unitPriceCents={price}
             inStock={inStock}
             isFallback={product.isFallback}
           />

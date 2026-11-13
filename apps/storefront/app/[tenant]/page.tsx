@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import HeroSlider, { type SlideView } from "@/components/home/hero-slider";
@@ -8,7 +9,6 @@ import { NewsletterSection } from "@/components/home/why-newsletter";
 import { toCardProduct } from "@/components/product/product-card";
 import {
   fetchBooksSafe,
-  getBooksWithFallback,
   getCategoriesWithFallback,
   getStoreWithFallback,
 } from "@/lib/catalog-fallback";
@@ -29,7 +29,7 @@ export function generateStaticParams() {
   return [{ tenant: DEFAULT_TENANT }];
 }
 
-async function fetchTenantData(tenant: string) {
+const fetchTenantData = cache(async (tenant: string) => {
   const [booksRes, store, categories] = await Promise.all([
     fetchBooksSafe(tenant),
     getStoreWithFallback(tenant),
@@ -41,10 +41,10 @@ async function fetchTenantData(tenant: string) {
     store,
     categories: categories as any[],
   };
-}
+});
 
 export async function generateMetadata({ params }: { params: { tenant: string } }): Promise<Metadata> {
-  const { store } = await fetchTenantData(params.tenant);
+  const store = await getStoreWithFallback(params.tenant);
   const title = `${BRAND.nameTa} | ${BRAND.nameEn} — Official Bookstore`;
   const description =
     store?.description ||
@@ -104,7 +104,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
   const saleBooks = cards.filter((c) => c.sale_price_cents && c.sale_price_cents < c.price_cents);
   const offersList = saleBooks.length > 0 ? saleBooks.slice(0, 4) : cards.slice(0, 4);
   const newArrivals = cards.slice(8, 12);
-  const collection = cards.slice(0, 12); // 12 books for complete collection preview
+  const collection = cards.length > 12 ? cards.slice(12, 20) : cards.slice(0, 8);
   const total = cards.length;
 
   const jsonLd = {
@@ -148,6 +148,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
       {/* 6. New Arrivals */}
       {newArrivals.length > 0 && (
         <BookGridSection
+          id="new-arrivals"
           tenant={tenant}
           books={newArrivals}
           eyebrow={{ ta: "புதிய வெளியீடுகள்", en: "Fresh Off the Press" }}

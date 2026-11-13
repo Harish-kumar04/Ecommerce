@@ -14,7 +14,7 @@ module.exports = {
   poweredByHeader: false,
   compress: true,
   images: {
-    formats: ["image/avif", "image/webp"],
+    formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
@@ -61,6 +61,13 @@ module.exports = {
         source: "/:file((?!_next/).+\\.(?:jpg|jpeg|png|webp|avif|svg|ico|gif))",
         headers: [
           { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=86400" },
+        ],
+      },
+      {
+        // Never cache cart, checkout, or customer account/orders pages.
+        source: "/:tenant/(cart|checkout|account|orders)(.*)",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" },
         ],
       },
     ];

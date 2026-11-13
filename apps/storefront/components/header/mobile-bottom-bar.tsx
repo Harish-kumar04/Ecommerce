@@ -17,7 +17,11 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
     const sync = () => setCount(readFromStorage().count);
     sync();
     window.addEventListener("infalette-cart-changed", sync);
-    return () => window.removeEventListener("infalette-cart-changed", sync);
+    window.addEventListener("infalette-cart-optimistic", sync);
+    return () => {
+      window.removeEventListener("infalette-cart-changed", sync);
+      window.removeEventListener("infalette-cart-optimistic", sync);
+    };
   }, []);
 
   const isActive = (path: string) => {
@@ -89,7 +93,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-40 flex h-16 items-center justify-around border-t border-black/10 bg-white/95 px-2 backdrop-blur lg:hidden"
+      className="fixed bottom-0 inset-x-0 z-40 flex h-16 items-center justify-around border-t border-black/10 bg-white/[0.98] px-2 lg:hidden"
     >
       {tabs.map((tab) => {
         const active = isActive(tab.path);
@@ -129,6 +133,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
           <Link
             key={tab.path}
             href={`${home}${tab.path}`}
+            prefetch={false}
             className={`flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
               active ? "text-brand-red font-bold" : "text-black/65 hover:text-brand-red"
             }`}

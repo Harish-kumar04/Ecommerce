@@ -358,8 +358,8 @@ export default function BooksCatalogClient({
               key={p.id}
               product={toCardProduct(p)}
               tenant={tenant}
-              priority={i < 2}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 270px"
+              priority={i === 0}
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 260px"
             />
           ))}
         </div>

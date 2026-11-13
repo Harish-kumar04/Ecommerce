@@ -53,9 +53,15 @@ function formatRupees(cents: number): string {
   })}`;
 }
 
-export default function MiniCart({ tenant }: { tenant: string }) {
+export default function MiniCart({
+  tenant,
+  initialOpen = false,
+}: {
+  tenant: string;
+  initialOpen?: boolean;
+}) {
   const { t, localizeName, localizeSubName } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<any>(null);
   const [items, setItems] = useState<CartItem[]>([]);
@@ -74,6 +80,12 @@ export default function MiniCart({ tenant }: { tenant: string }) {
       setLoading(false);
     }
   }, [tenant]);
+
+  useEffect(() => {
+    if (initialOpen) {
+      void fetchCart();
+    }
+  }, [initialOpen, fetchCart]);
 
   useEffect(() => {
     const handleOpen = () => {

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Column, String, Text, ForeignKey, Integer
+from sqlalchemy import Column, Index, String, Text, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 
 from infalette_database.base import Base, TenantMixin
@@ -15,6 +15,9 @@ class Category(Base, TenantMixin):
     """
 
     __tablename__ = "categories"
+    __table_args__ = (
+        Index("ix_categories_tenant_slug", "tenant_id", "slug"),
+    )
 
     name = Column(String(255), nullable=False)
     slug = Column(String(255), nullable=False, index=True)

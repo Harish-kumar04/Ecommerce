@@ -26,11 +26,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "ta" || saved === "en") {
-        setLangState(saved);
-        document.documentElement.lang = saved;
-      } else {
-        document.documentElement.lang = "ta";
+      const target: Lang = saved === "en" ? "en" : "ta";
+      if (target !== "ta") {
+        setLangState(target);
+      }
+      if (document.documentElement.lang !== target) {
+        document.documentElement.lang = target;
       }
     } catch {
       // ignore storage errors
@@ -41,7 +42,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLangState(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
-      document.documentElement.lang = next;
+      if (document.documentElement.lang !== next) {
+        document.documentElement.lang = next;
+      }
     } catch {
       // ignore
     }

@@ -331,7 +331,28 @@ def create_app() -> FastAPI:
     from apps.api.core.audit import AuditMiddleware
     from apps.api.core.bot_protection import BotProtectionMiddleware
 
+    from fastapi.middleware.gzip import GZipMiddleware
+    from starlette.middleware.base import BaseHTTPMiddleware
+
+    _NO_STORE_PREFIXES = (
+        f"{API_PREFIX}/cart",
+        f"{API_PREFIX}/checkout",
+        f"{API_PREFIX}/orders",
+        f"{API_PREFIX}/auth",
+        f"{API_PREFIX}/customers",
+        f"{API_PREFIX}/invoices",
+    )
+
+    class PrivateNoStoreMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            resp = await call_next(request)
+            path = request.url.path
+            if any(path == p or path.startswith(f"{p}/") for p in _NO_STORE_PREFIXES):
+                resp.headers["Cache-Control"] = "private, no-store, no-cache, must-revalidate"
+            return resp
+
     app.add_middleware(IdempotencyMiddleware)  # innermost, closest to handler
+    app.add_middleware(PrivateNoStoreMiddleware)
     app.add_middleware(RateLimitMiddleware, requests_per_minute=getattr(settings, "rate_limit_per_minute", 60))
     app.add_middleware(BotProtectionMiddleware)  # bot checks + stricter rate limit for bots
     app.add_middleware(RequestIDMiddleware)
@@ -344,6 +365,13 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(AuditMiddleware)  # logs POST/PATCH/DELETE after auth
     app.add_middleware(AuthMiddleware)  # must wrap Idempotency for tenant scoping
+    app.add_middleware(GZipMiddleware, minimum_size=500)
+    try:
+        from brotli_asgi import BrotliMiddleware  # type: ignore[import-not-found]
+
+        app.add_middleware(BrotliMiddleware, minimum_size=500)
+    except Exception:
+        pass
     if settings.sentry_dsn and SentryAsgiMiddleware is not None:
         app.add_middleware(SentryAsgiMiddleware)
 

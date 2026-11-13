@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 export function getServerApiUrl(): string {
   const bound = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
   const trimmed = bound.replace(/\/$/, "");
@@ -431,59 +433,64 @@ export const FALLBACK_BOOKS: CatalogBook[] = RAW_BOOKS.map((b) => ({
   is_fallback: true,
 }));
 
-export async function fetchBooksSafe(tenant: string): Promise<{ books: any[]; isFallback: boolean }> {
-  try {
-    const res = await fetch(`${getServerApiUrl()}/public/products`, {
-      headers: { "X-Tenant": tenant },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.data || [];
-      return { books: list, isFallback: false };
+const SERVER_FETCH_TIMEOUT_MS = 2500;
+
+export const fetchBooksSafe = cache(
+  async (tenant: string): Promise<{ books: any[]; isFallback: boolean }> => {
+    try {
+      const res = await fetch(`${getServerApiUrl()}/public/products`, {
+        headers: { "X-Tenant": tenant },
+        next: { revalidate: 60, tags: ["products", `products:${tenant}`] },
+        signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : data?.data || [];
+        return { books: list, isFallback: false };
+      }
+      if (res.status < 500) {
+        // 4xx (e.g. 404 empty/unknown tenant) -> API is reachable, never show static fallback
+        return { books: [], isFallback: false };
+      }
+    } catch {
+      // API is unreachable (network error or timeout)
     }
-    if (res.status === 404) {
-      return { books: [], isFallback: false };
-    }
-  } catch (err) {
-    // API is unreachable (network error or timeout)
-  }
-  return { books: FALLBACK_BOOKS, isFallback: true };
-}
+    return { books: FALLBACK_BOOKS, isFallback: true };
+  },
+);
 
 export async function getBooksWithFallback(tenant: string) {
   const result = await fetchBooksSafe(tenant);
   return result.books;
 }
 
-export async function getCategoriesWithFallback(tenant: string) {
+export const getCategoriesWithFallback = cache(async (tenant: string) => {
   try {
     const res = await fetch(`${getServerApiUrl()}/public/categories`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 60, tags: ["categories", `categories:${tenant}`] },
+      signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS),
     });
     if (res.ok) {
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.data || [];
       return list;
     }
-    if (res.status === 404) {
+    if (res.status < 500) {
       return [];
     }
   } catch {
-    // Fallback on network/5xx error
+    // Fallback only when API is down
   }
   return FALLBACK_CATEGORIES;
-}
+});
 
-export async function getStoreWithFallback(tenant: string) {
+export const getStoreWithFallback = cache(async (tenant: string) => {
   try {
     const res = await fetch(`${getServerApiUrl()}/public/store`, {
       headers: { "X-Tenant": tenant },
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 60, tags: ["store", `store:${tenant}`] },
+      signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS),
     });
     if (res.ok) {
       const data = await res.json();
@@ -491,33 +498,30 @@ export async function getStoreWithFallback(tenant: string) {
       if (store?.id) return store;
     }
   } catch {
-    // Fallback
+    // Fallback only when API is down
   }
   return FALLBACK_STORE;
-}
+});
 
 export type BookLookupResult =
   | { status: "ok"; product: any }
   | { status: "not_found" }
   | { status: "error"; httpStatus?: number };
 
-export async function fetchBookById(
-  tenant: string,
-  productIdOrSlug: string,
-): Promise<BookLookupResult> {
-  const url = `${getServerApiUrl()}/public/products/${encodeURIComponent(productIdOrSlug)}`;
-  let lastHttpStatus: number | undefined;
+export const fetchBookById = cache(
+  async (tenant: string, productIdOrSlug: string): Promise<BookLookupResult> => {
+    const url = `${getServerApiUrl()}/public/products/${encodeURIComponent(productIdOrSlug)}`;
+    let lastHttpStatus: number | undefined;
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const res = await fetch(url, {
         headers: { "X-Tenant": tenant },
-        next: { revalidate: 60 },
-        signal: AbortSignal.timeout(8000),
+        next: {
+          revalidate: 120,
+          tags: ["products", `products:${tenant}`, `book:${tenant}:${productIdOrSlug}`],
+        },
+        signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS),
       });
-      console.info(
-        `[getBookById] tenant=${tenant} id=${productIdOrSlug} status=${res.status} attempt=${attempt}`,
-      );
 
       if (res.ok) {
         const prod = await res.json();
@@ -531,39 +535,31 @@ export async function fetchBookById(
       }
 
       lastHttpStatus = res.status;
-      if (res.status >= 500 && attempt === 1) {
-        await new Promise((r) => setTimeout(r, 350));
-        continue;
+      if (res.status < 500) {
+        return { status: "error", httpStatus: res.status };
       }
-      return { status: "error", httpStatus: res.status };
-    } catch (err: any) {
-      console.warn(
-        `[getBookById] tenant=${tenant} id=${productIdOrSlug} status=NETWORK_OR_TIMEOUT attempt=${attempt} error=${err?.message || err}`,
+    } catch {
+      // Fast single-attempt timeout -> fall back to cached live list below
+    }
+
+    // If the single-book endpoint timed out or hit a 5xx burst,
+    // check the cached live API list (never the static fallback) before showing "try again".
+    const listRes = await fetchBooksSafe(tenant);
+    if (!listRes.isFallback) {
+      const key = productIdOrSlug.toLowerCase();
+      const match = listRes.books.find(
+        (b: any) =>
+          String(b?.id || "").toLowerCase() === key ||
+          String(b?.slug || "").toLowerCase() === key,
       );
-      if (attempt === 1) {
-        await new Promise((r) => setTimeout(r, 350));
-        continue;
+      if (match?.id) {
+        return { status: "ok", product: match };
       }
     }
-  }
 
-  // If the single-book endpoint timed out or hit a 5xx burst (e.g. during SSG),
-  // check the cached live API list (never the static fallback) before showing "try again".
-  const listRes = await fetchBooksSafe(tenant);
-  if (!listRes.isFallback) {
-    const key = productIdOrSlug.toLowerCase();
-    const match = listRes.books.find(
-      (b: any) =>
-        String(b?.id || "").toLowerCase() === key ||
-        String(b?.slug || "").toLowerCase() === key,
-    );
-    if (match?.id) {
-      return { status: "ok", product: match };
-    }
-  }
-
-  return { status: "error", httpStatus: lastHttpStatus };
-}
+    return { status: "error", httpStatus: lastHttpStatus };
+  },
+);
 
 export async function getBookByIdWithFallback(
   tenant: string,
@@ -573,4 +569,5 @@ export async function getBookByIdWithFallback(
   if (res.status === "ok") return res.product;
   return null;
 }
+
 

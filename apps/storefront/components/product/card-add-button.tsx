@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { isUuidProductId, quickAddToCart } from "@/lib/cart-client";
-import { notifyCartChanged, openMiniCart } from "@/lib/cart-events";
+import {
+  notifyCartChanged,
+  openMiniCart,
+  optimisticAdjustCart,
+} from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import { useLanguage } from "@/components/language-provider";
 import { CartIcon } from "@/components/brand/icons";
@@ -11,12 +15,14 @@ export default function CardAddButton({
   tenant,
   productId,
   productName,
+  unitPriceCents = 0,
   inStock = true,
   isFallback = false,
 }: {
   tenant: string;
   productId: string;
   productName: string;
+  unitPriceCents?: number;
   inStock?: boolean;
   isFallback?: boolean;
 }) {
@@ -55,11 +61,12 @@ export default function CardAddButton({
     e.stopPropagation();
     if (loading || unavailable) return;
 
+    // Optimistic UI: update cart badge + button state immediately
+    const rollback = optimisticAdjustCart(1, unitPriceCents);
     setLoading(true);
-    setSuccess(false);
+    setSuccess(true);
     try {
       await quickAddToCart(tenant, productId, 1);
-      setSuccess(true);
       notifyCartChanged(tenant);
       openMiniCart();
       toast({
@@ -69,6 +76,8 @@ export default function CardAddButton({
       });
       setTimeout(() => setSuccess(false), 1500);
     } catch (err: any) {
+      rollback();
+      setSuccess(false);
       toast({
         kind: "error",
         title: t("பிழை ஏற்பட்டது", "Failed to add"),

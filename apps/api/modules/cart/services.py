@@ -310,20 +310,30 @@ async def get_cart_with_items(cart_id: UUID, session: AsyncSession) -> dict:
     if not cart:
         return {}
     items = await get_cart_items(cart.id, session)
+    product_ids = {it.product_id for it in items if it.product_id is not None}
+    variant_ids = {it.variant_id for it in items if it.variant_id is not None}
+
+    products_by_id: dict[UUID, Product] = {}
+    if product_ids:
+        prod_rows = (
+            await session.execute(select(Product).where(Product.id.in_(product_ids)))
+        ).scalars().all()
+        products_by_id = {p.id: p for p in prod_rows}
+
+    variants_by_id: dict[UUID, ProductVariant] = {}
+    if variant_ids:
+        var_rows = (
+            await session.execute(
+                select(ProductVariant).where(ProductVariant.id.in_(variant_ids))
+            )
+        ).scalars().all()
+        variants_by_id = {v.id: v for v in var_rows}
+
     item_dicts = []
     dirty = False
     for it in items:
-        prod_result = await session.execute(
-            select(Product).where(Product.id == it.product_id)
-        )
-        product = prod_result.scalar_one_or_none()
-        variant = None
-        if it.variant_id is not None:
-            variant = (
-                await session.execute(
-                    select(ProductVariant).where(ProductVariant.id == it.variant_id)
-                )
-            ).scalar_one_or_none()
+        product = products_by_id.get(it.product_id)
+        variant = variants_by_id.get(it.variant_id) if it.variant_id is not None else None
 
         if variant is not None:
             var_sale = getattr(variant, "sale_price_cents", None)

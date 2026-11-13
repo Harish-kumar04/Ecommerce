@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import BookDetailClient from "@/components/product/book-detail-client";
+import BookDetailView from "@/components/product/book-detail-view";
 import { fetchBookById, getBooksWithFallback } from "@/lib/catalog-fallback";
 import { splitBilingual } from "@/lib/i18n";
 import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
 
-// ISR: book pages are pre-rendered for the default tenant and refreshed every minute;
-// other ids render on first request and are then cached.
-export const revalidate = 60;
+// ISR: book detail pages cached for 120 s and revalidated via /api/revalidate tags.
+export const revalidate = 120;
 
 export async function generateStaticParams() {
   const books = (await getBooksWithFallback(DEFAULT_TENANT)) as any[];
@@ -47,14 +46,17 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({ params }: { params: { tenant: string; id: string } }) {
-  const lookup = await fetchBookById(params.tenant, params.id);
+  const [lookup, allBooks] = await Promise.all([
+    fetchBookById(params.tenant, params.id),
+    getBooksWithFallback(params.tenant),
+  ]);
 
   // Only call notFound() when the API explicitly answered 404
   if (lookup.status === "not_found") {
     notFound();
   }
 
-  // Timeout or 5xx after retry -> friendly "try again" state (not 404)
+  // Timeout or 5xx -> friendly "try again" state (not 404)
   if (lookup.status !== "ok") {
     return (
       <div className="container-site py-20 text-center">
@@ -103,8 +105,6 @@ export default async function ProductDetailPage({ params }: { params: { tenant: 
   const image = absolute(product.image_url || product.images?.[0]);
   const inStock = (product.inventory_quantity ?? product.inventory ?? 1) > 0;
 
-  // Note: the old per-render analytics ping (POST /public/track) was removed; it made
-  // every product view a server request and blocked ISR. Views can be tracked client-side.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Book",
@@ -128,19 +128,18 @@ export default async function ProductDetailPage({ params }: { params: { tenant: 
     },
   };
 
-  const allBooks = (await getBooksWithFallback(params.tenant)) as any[];
-  const relatedBooks = allBooks
+  const relatedBooks = (allBooks as any[])
     .filter(
       (b) =>
         b.id !== product.id &&
-        (b.category_id === product.category_id || b.category === product.category)
+        (b.category_id === product.category_id || b.category === product.category),
     )
     .slice(0, 4);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <BookDetailClient
+      <BookDetailView
         tenant={params.tenant}
         product={product}
         relatedBooks={relatedBooks}

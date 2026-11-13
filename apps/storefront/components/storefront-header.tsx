@@ -1,17 +1,7 @@
-import dynamic from "next/dynamic";
 import LanguageToggle from "./language-toggle";
 import { CartButton, HeaderNav, type NavItem } from "./header/header-islands";
 import HeaderLogo from "./header/header-logo";
-import type { SearchBookItem } from "./header/header-search";
-
-const HeaderSearch = dynamic(() => import("./header/header-search"), {
-  ssr: false,
-  loading: () => (
-    <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
-      <div className="h-10 w-full rounded-full border border-black/15 bg-black/[0.03]" />
-    </div>
-  ),
-});
+import HeaderSearch, { type SearchBookItem } from "./header/header-search";
 
 const NAV: NavItem[] = [
   { path: "", ta: "முகப்பு", en: "Home" },
@@ -34,17 +24,17 @@ export default function StorefrontHeader({
       <div className="bg-black text-white text-[12px] py-1.5 px-4 font-medium tracking-wide">
         <div className="container-site flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-brand-red animate-pulse" />
+            <span className="inline-block h-2 w-2 rounded-full bg-brand-red" />
             <span className="i18n-ta">
-              🚚 ₹500-க்கு மேல் இலவச விநியோகம் • ⚡ ரொக்கப் பணம் செலுத்தும் வசதி (Cash on Delivery) உண்டு
+              ₹500-க்கு மேல் இலவச விநியோகம் • ரொக்கப் பணம் செலுத்தும் வசதி (Cash on Delivery) உண்டு
             </span>
             <span className="i18n-en">
-              🚚 Free Delivery above ₹500 • ⚡ Cash on Delivery & Online Payment Available
+              Free Delivery above ₹500 • Cash on Delivery & Online Payment Available
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-4 text-[11.5px] text-white/70">
             <a href="tel:919003324473" className="hover:text-white transition-colors">
-              📞 90033 24473
+              +91 90033 24473
             </a>
             <span>|</span>
             <span>முத்தமிழறிஞர் பதிப்பகம்</span>

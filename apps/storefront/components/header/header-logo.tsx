@@ -19,6 +19,7 @@ export default function HeaderLogo({ tenant }: { tenant: string }) {
   return (
     <Link
       href={`/${tenant}`}
+      prefetch={false}
       className="flex flex-shrink-0 items-center transition-all duration-200"
       aria-label="முத்தமிழறிஞர் பதிப்பகம் / Muthamilarignar Pathipagam"
     >
@@ -27,9 +28,10 @@ export default function HeaderLogo({ tenant }: { tenant: string }) {
         alt="முத்தமிழறிஞர் பதிப்பகம்"
         width={144}
         height={144}
-        priority
+        loading="eager"
+        placeholder="empty"
         sizes="(max-width: 640px) 56px, (max-width: 1024px) 56px, 72px"
-        className={`w-auto object-contain transition-all duration-300 ${
+        className={`w-auto object-contain transition-transform duration-300 ${
           scrolled ? "h-[48px] sm:h-[52px]" : "h-[56px] lg:h-[72px]"
         }`}
       />
