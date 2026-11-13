@@ -30,9 +30,9 @@ export default function HeaderLogo({ tenant }: { tenant: string }) {
         height={144}
         loading="eager"
         placeholder="empty"
-        sizes="(max-width: 640px) 56px, (max-width: 1024px) 56px, 72px"
+        sizes="(max-width: 640px) 62px, (max-width: 1024px) 66px, 78px"
         className={`w-auto object-contain transition-transform duration-300 ${
-          scrolled ? "h-[48px] sm:h-[52px]" : "h-[56px] lg:h-[72px]"
+          scrolled ? "h-[50px] sm:h-[56px]" : "h-[62px] lg:h-[78px]"
         }`}
       />
     </Link>

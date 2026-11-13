@@ -17,21 +17,19 @@ export interface SlideView {
   button_en: string;
   href?: string | null;
   external?: boolean;
-  /** Built-in brand slides: covers drawn on the sunburst background. */
   covers?: { src: string; alt: string }[];
 }
 
 /**
- * Hero slider (Server Component). Slides render on the server with zero JS; the
- * HeroCarousel island adds scroll-snap navigation, autoplay, dots and arrows.
- * Designed for 1920×700 on desktop; the first slide's image is `priority`.
+ * Admin-controlled 3-image Offer Slider (Server Component).
+ * Uses H2 headings because BrandHero owns the single page H1.
  */
 export default function HeroSlider({ slides }: { slides: SlideView[] }) {
   if (slides.length === 0) return null;
   return (
     <HeroCarousel>
-      {slides.map((s, i) =>
-        s.image_url ? <ImageSlide key={i} slide={s} first={i === 0} /> : <BrandSlide key={i} slide={s} first={i === 0} />,
+      {slides.slice(0, 6).map((s, i) =>
+        s.image_url ? <ImageSlide key={i} slide={s} /> : <BrandSlide key={i} slide={s} />,
       )}
     </HeroCarousel>
   );
@@ -50,56 +48,56 @@ function SlideCta({ slide, className }: { slide: SlideView; className: string })
       {label}
     </a>
   ) : (
-    <Link href={slide.href} className={className}>
+    <Link href={slide.href} prefetch={false} className={className}>
       {label}
     </Link>
   );
 }
 
-function SlideText({ slide, first }: { slide: SlideView; first: boolean }) {
-  const Heading = first ? "h1" : "h2";
+function SlideText({ slide }: { slide: SlideView }) {
   return (
     <div className="max-w-xl">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D11D1A] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+        <T ta="சிறப்புச் சலுகை" en="Publisher Highlight" />
+      </span>
       {(slide.title_ta || slide.title_en) && (
-        <Heading className="text-[34px] font-extrabold leading-[1.12] tracking-tight text-black sm:text-[46px] lg:text-[60px]">
+        <h2 className="mt-3 text-[26px] font-extrabold leading-[1.15] tracking-tight text-black sm:text-[36px] lg:text-[44px]">
           <T ta={slide.title_ta || slide.title_en} en={slide.title_en || slide.title_ta} />
-        </Heading>
+        </h2>
       )}
       {(slide.subtitle_ta || slide.subtitle_en) && (
-        <p className="mt-4 text-[16px] leading-relaxed text-black/70 sm:text-[18px] lg:mt-6 lg:text-[21px]">
+        <p className="mt-3 text-[15px] leading-relaxed text-black/75 sm:text-[17px]">
           <T ta={slide.subtitle_ta || slide.subtitle_en} en={slide.subtitle_en || slide.subtitle_ta} />
         </p>
       )}
-      <SlideCta slide={slide} className="btn-red mt-7 h-12 text-[15px] lg:mt-9 lg:h-14 lg:px-8 lg:text-[17px]" />
+      <SlideCta slide={slide} className="btn-black mt-6 h-12 px-7 text-[14.5px]" />
     </div>
   );
 }
 
-/** Built-in slide: white canvas, red sunburst and fanned book covers. */
-function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
+function BrandSlide({ slide }: { slide: SlideView }) {
   const covers = slide.covers ?? [];
-  const tilt = ["-rotate-6 translate-y-6", "z-10 scale-110", "rotate-6 translate-y-6"];
+  const tilt = ["-rotate-6 translate-y-4", "z-10 scale-105", "rotate-6 translate-y-4"];
   return (
-    <div className="relative h-full w-full bg-white">
-      <Sunburst className="pointer-events-none absolute -bottom-2 left-1/2 w-[760px] max-w-none -translate-x-1/2 opacity-[0.08] lg:left-auto lg:right-[4%] lg:w-[900px] lg:translate-x-0 lg:opacity-[0.14]" />
-      <div className="container-site relative flex h-full items-center">
+    <div className="pattern-red-dots relative h-full w-full bg-[#FAFAFA]">
+      <Sunburst className="pointer-events-none absolute -bottom-2 right-[5%] w-[640px] max-w-none opacity-[0.06]" />
+      <div className="container-site relative flex h-full items-center pb-10">
         <div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-12">
           <div className="lg:col-span-6">
-            <SlideText slide={slide} first={first} />
+            <SlideText slide={slide} />
           </div>
           {covers.length > 0 && (
             <div className="hidden items-end justify-center lg:col-span-6 lg:flex">
               {covers.slice(0, 3).map((c, i) => (
                 <div
                   key={c.src}
-                  className={`relative -mx-4 aspect-[3/4] w-[clamp(150px,13vw,240px)] overflow-hidden rounded-xl bg-white shadow-glow-lg ring-1 ring-black/5 ${tilt[i] ?? ""}`}
+                  className={`relative -mx-3 aspect-[3/4] w-[165px] overflow-hidden rounded-xl border-2 border-white bg-white shadow-glow-lg ${tilt[i] ?? ""}`}
                 >
                   <Img
                     src={c.src}
                     alt={c.alt}
                     fill
-                    sizes="(max-width: 1024px) 160px, 240px"
-                    priority={first && i === 1}
+                    sizes="170px"
                     className="object-cover"
                   />
                 </div>
@@ -112,10 +110,9 @@ function BrandSlide({ slide, first }: { slide: SlideView; first: boolean }) {
   );
 }
 
-/** Admin slide: full-bleed image with an optional white text panel for legibility. */
-function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
+function ImageSlide({ slide }: { slide: SlideView }) {
   const hasText = Boolean(slide.title_ta || slide.title_en || slide.subtitle_ta || slide.subtitle_en);
-  const alt = hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam";
+  const alt = hasText ? "" : slide.title_en || slide.title_ta || "Muthamilarignar Pathipagam Offer";
   const hasSeparateMobile = Boolean(
     slide.mobile_image_url && slide.mobile_image_url !== slide.image_url,
   );
@@ -134,10 +131,8 @@ function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
             srcSet={`${cloudinaryImageUrl(slide.mobile_image_url, 640)} 640w, ${cloudinaryImageUrl(slide.mobile_image_url, 828)} 828w`}
             sizes="100vw"
             alt={alt}
-            loading={first ? "eager" : "lazy"}
-            decoding={first ? "sync" : "async"}
-            // @ts-expect-error React 18 lowercase fetchpriority attribute support
-            fetchpriority={first ? "high" : undefined}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover"
           />
         </picture>
@@ -147,15 +142,14 @@ function ImageSlide({ slide, first }: { slide: SlideView; first: boolean }) {
           alt={alt}
           fill
           sizes="100vw"
-          priority={first}
           className="object-cover"
         />
       )}
       {hasText ? (
         <>
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-transparent lg:via-white/50" aria-hidden="true" />
-          <div className="container-site relative flex h-full items-center">
-            <SlideText slide={slide} first={first} />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-transparent lg:via-white/55" aria-hidden="true" />
+          <div className="container-site relative flex h-full items-center pb-10">
+            <SlideText slide={slide} />
           </div>
         </>
       ) : (

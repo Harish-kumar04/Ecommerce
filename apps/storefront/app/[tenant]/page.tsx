@@ -1,12 +1,20 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import BrandHero from "@/components/home/brand-hero";
 import HeroSlider, { type SlideView } from "@/components/home/hero-slider";
-import { CategoryStrip, TrustBar } from "@/components/home/highlights";
-import BookGridSection from "@/components/home/book-grid-section";
-import OffersBand from "@/components/home/offers-band";
+import { TrustBar } from "@/components/home/highlights";
+import CategoryTiles from "@/components/home/category-tiles";
+import TabbedBooks from "@/components/home/tabbed-books";
+import PublisherStory from "@/components/home/publisher-story";
+import Testimonials from "@/components/home/testimonials";
 import { NewsletterSection } from "@/components/home/why-newsletter";
-import { toCardProduct } from "@/components/product/product-card";
+import {
+  DiagonalStripeDivider,
+  SectionHeading,
+  SunburstBackdrop,
+} from "@/components/brand/patterns";
+import ProductCard, { toCardProduct, type CardProduct } from "@/components/product/product-card";
 import {
   fetchBooksSafe,
   getCategoriesWithFallback,
@@ -22,7 +30,7 @@ import {
   resolveLink,
 } from "@/lib/site-defaults";
 
-// ISR: static HTML, refreshed in the background at most once a minute.
+// ISR: static HTML, refreshed in the background every 60 seconds.
 export const revalidate = 60;
 
 export function generateStaticParams() {
@@ -43,7 +51,11 @@ const fetchTenantData = cache(async (tenant: string) => {
   };
 });
 
-export async function generateMetadata({ params }: { params: { tenant: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { tenant: string };
+}): Promise<Metadata> {
   const store = await getStoreWithFallback(params.tenant);
   const title = `${BRAND.nameTa} | ${BRAND.nameEn} — Official Bookstore`;
   const description =
@@ -65,6 +77,21 @@ export async function generateMetadata({ params }: { params: { tenant: string } 
   };
 }
 
+function renderTabGrid(tenant: string, list: CardProduct[]) {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+      {list.map((book) => (
+        <ProductCard
+          key={book.id}
+          product={book}
+          tenant={tenant}
+          sizes="(max-width: 640px) 46vw, (max-width: 1024px) 45vw, 310px"
+        />
+      ))}
+    </div>
+  );
+}
+
 export default async function TenantHomePage({ params }: { params: { tenant: string } }) {
   const { tenant } = params;
   if (!tenant) notFound();
@@ -74,8 +101,9 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
     toCardProduct(isFallback ? { ...p, is_fallback: true } : p),
   );
   const withCovers = cards.filter((c) => c.image_url);
+  const total = cards.length;
 
-  // Hero slides: admin-configured, or built-in brand slides decorated with real covers.
+  // Admin-configured 3-image Offer Slider (or built-in brand slides decorated with real covers)
   const { slides, isDefault } = getSlides(store);
   const slideViews: SlideView[] = slides.map((s, i) => {
     const href = resolveLink(tenant, s.link);
@@ -99,13 +127,27 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
     };
   });
 
-  // Section division
-  const featured = cards.slice(0, 8); // 8 featured books
-  const saleBooks = cards.filter((c) => c.sale_price_cents && c.sale_price_cents < c.price_cents);
-  const offersList = saleBooks.length > 0 ? saleBooks.slice(0, 4) : cards.slice(0, 4);
-  const newArrivals = cards.slice(8, 12);
-  const collection = cards.length > 12 ? cards.slice(12, 20) : cards.slice(0, 8);
-  const total = cards.length;
+  // Tabbed product groups from real catalog data
+  const newArrivals = [...cards].reverse().slice(0, 8);
+  const bestSellers = cards.slice(0, 8);
+  const saleBooks = cards.filter(
+    (c) => c.sale_price_cents && c.price_cents > 0 && c.sale_price_cents < c.price_cents,
+  );
+  const offers = (saleBooks.length > 0 ? saleBooks : cards).slice(0, 8);
+
+  const kalaignarCatIds = new Set(
+    categories
+      .filter((cat: any) =>
+        /kalaignar|karunanidhi|கலைஞர்/i.test(`${cat.name || ""} ${cat.slug || ""}`),
+      )
+      .map((cat: any) => String(cat.id)),
+  );
+  const kalaignarMatches = cards.filter(
+    (c) =>
+      (c.category_id && kalaignarCatIds.has(c.category_id)) ||
+      /kalaignar|karunanidhi|கலைஞர்/i.test(`${c.name} ${c.author || ""}`),
+  );
+  const kalaignarWorks = (kalaignarMatches.length > 0 ? kalaignarMatches : cards).slice(0, 8);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -118,65 +160,67 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
 
   return (
     <>
-      {/* Fallback Notice Banner */}
+      {/* Fallback Notice Banner when API is temporarily unreachable */}
       {Boolean(isFallback) && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-2 text-center text-xs font-medium">
+        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs font-semibold text-amber-950">
           சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை, மீண்டும் முயற்சிக்கவும் — Store is temporarily unavailable, try again.
         </div>
       )}
 
-      {/* 1. Offer Slider (reads theme_config.home_slides) */}
-      <HeroSlider slides={slideViews} />
-
-      {/* 2. Trust Strip (real features: COD, Secure payment) */}
-      <TrustBar />
-
-      {/* 3. Category Chips (horizontal scroll) */}
-      <CategoryStrip tenant={tenant} categories={categories} />
-
-      {/* 4. Featured (8 Books) */}
-      <BookGridSection
+      {/* 1. Brand Landing Hero (Red Arch + Tilted Covers + Floating Real Badges + Real Stats Row) */}
+      <BrandHero
         tenant={tenant}
-        books={featured}
-        eyebrow={{ ta: BRAND.nameTa, en: BRAND.nameEn }}
-        title={{ ta: "முதன்மை வெளியீடுகள்", en: "Featured Publications" }}
+        heroBooks={withCovers.length > 0 ? withCovers : cards}
+        totalBooks={total}
+        categoryCount={categories.length}
       />
 
-      {/* 5. Black Offers Band (books on sale) */}
-      <OffersBand tenant={tenant} books={offersList} />
+      {/* 2. Trust Badges (COD, Razorpay Secure, Official Publisher, Pan-India Delivery) */}
+      <TrustBar />
 
-      {/* 6. New Arrivals */}
-      {newArrivals.length > 0 && (
-        <BookGridSection
-          id="new-arrivals"
-          tenant={tenant}
-          books={newArrivals}
-          eyebrow={{ ta: "புதிய வெளியீடுகள்", en: "Fresh Off the Press" }}
-          title={{ ta: "புதிய வரவுகள்", en: "New Arrivals" }}
-        />
-      )}
+      {/* 3. Category Tiles with Custom Icons (#FAFAFA) */}
+      <CategoryTiles tenant={tenant} categories={categories} />
 
-      {/* 7. Complete Collection (12 + Show all, #complete-collection anchor) */}
-      <BookGridSection
-        id="complete-collection"
+      {/* 4. Tabbed Product Rows (New Arrivals | Best Sellers | Offers | Kalaignar Works) */}
+      <TabbedBooks
         tenant={tenant}
-        books={collection}
-        columns="dense"
-        divider
-        eyebrow={{ ta: "முழு நூல் பட்டியல்", en: "Complete Collection" }}
-        title={{ ta: "திராவிட இயக்க & கலைஞர் நூல்கள்", en: "Dravidian Movement & Kalaignar Titles" }}
-        cta={{
-          href: `/${tenant}/products`,
-          ta: `அனைத்து ${total} நூல்களையும் காண்க`,
-          en: `Show all ${total} books`,
+        totalCount={total}
+        backdrop={<SunburstBackdrop position="top-right" />}
+        heading={
+          <SectionHeading
+            eyebrow={{ ta: "முத்தமிழறிஞர் பதிப்பகம்", en: "Curated Shelf" }}
+            title={{ ta: "தேர்ந்தெடுக்கப்பட்ட வெளியீடுகள்", en: "Featured & Essential Titles" }}
+          />
+        }
+        panels={{
+          new: renderTabGrid(tenant, newArrivals),
+          bestsellers: renderTabGrid(tenant, bestSellers),
+          offers: renderTabGrid(tenant, offers),
+          kalaignar: renderTabGrid(tenant, kalaignarWorks),
         }}
       />
 
-      {/* 8. Newsletter */}
+      <DiagonalStripeDivider />
+
+      {/* 5. Admin-Controlled 3-Image Offer Slider */}
+      <HeroSlider slides={slideViews} />
+
+      {/* 6. Author & Publisher Story (#FAFAFA) */}
+      <PublisherStory tenant={tenant} totalBooks={total} />
+
+      <DiagonalStripeDivider />
+
+      {/* 7. Reader Testimonials (#FFFFFF) */}
+      <Testimonials />
+
+      {/* 8. Newsletter with Visible Inline Success (#FAFAFA) */}
       <NewsletterSection storeId={store?.id} />
 
       {/* JSON-LD Structured Data */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     </>
   );
 }

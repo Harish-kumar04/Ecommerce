@@ -90,10 +90,15 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
     },
   ];
 
+  const isProductDetail =
+    pathname.startsWith(`${home}/products/`) && pathname !== `${home}/products`;
+
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-40 flex h-16 items-center justify-around border-t border-black/10 bg-white/[0.98] px-2 lg:hidden"
+      className={`fixed bottom-0 inset-x-0 z-40 h-16 items-center justify-around border-t border-black/10 bg-white/[0.98] px-2 lg:hidden ${
+        isProductDetail ? "hidden sm:flex" : "flex"
+      }`}
     >
       {tabs.map((tab) => {
         const active = isActive(tab.path);
@@ -101,8 +106,9 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
           return (
             <button
               key={tab.en}
+              type="button"
               onClick={() => openMiniCart()}
-              className="flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors text-black/65 hover:text-brand-red"
+              className="flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors text-black/75 hover:text-brand-red-dark"
               aria-label={t(tab.ta, tab.en)}
             >
               {tab.icon}
@@ -114,6 +120,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
           return (
             <button
               key={tab.en}
+              type="button"
               onClick={() => {
                 const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
                 if (searchInput) {
@@ -121,7 +128,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
               }}
-              className="flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors text-black/65 hover:text-brand-red"
+              className="flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors text-black/75 hover:text-brand-red-dark"
               aria-label={t(tab.ta, tab.en)}
             >
               {tab.icon}
@@ -134,8 +141,8 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
             key={tab.path}
             href={`${home}${tab.path}`}
             prefetch={false}
-            className={`flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
-              active ? "text-brand-red font-bold" : "text-black/65 hover:text-brand-red"
+            className={`flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors ${
+              active ? "text-brand-red-dark font-bold" : "text-black/75 hover:text-brand-red-dark"
             }`}
             aria-current={active ? "page" : undefined}
           >

@@ -55,42 +55,47 @@ export function WhySection() {
 
 export function NewsletterSection({ storeId }: { storeId?: string | null }) {
   return (
-    <section className="cv-auto container-site pt-20 sm:pt-28">
-      <div className="relative overflow-hidden rounded-3xl border border-brand-red/15 bg-white px-6 py-14 text-center shadow-glow sm:px-12 lg:py-20">
-        <Sunburst className="pointer-events-none absolute -bottom-1 left-1/2 w-[640px] max-w-none -translate-x-1/2 opacity-[0.07]" />
-        <div className="relative">
-          <h2 className="mx-auto max-w-2xl text-[26px] font-extrabold leading-tight tracking-tight text-black sm:text-[34px]">
-            <T ta="புதிய நூல் வெளியீடுகளை உடனுக்குடன் அறிய" en="Hear about new releases first" />
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-[15px] text-black/65 sm:text-[16px]">
-            <T
-              ta="புதிய பதிப்புகள் மற்றும் புத்தகக் கண்காட்சித் தள்ளுபடி அறிவிப்புகளைப் பெற பதிவு செய்யுங்கள்."
-              en="Subscribe for new publications, reprints and book-fair offers."
-            />
-          </p>
-          <div className="mt-8">
-            <NewsletterLazy
-              storeId={storeId}
-              fallback={
-                <form className="mx-auto flex max-w-lg flex-col gap-3 sm:flex-row" aria-busy="true">
-                  <label htmlFor="newsletter-email" className="sr-only">
-                    <T ta="மின்னஞ்சல் முகவரி" en="Email address" />
-                  </label>
-                  <input
-                    id="newsletter-email"
-                    type="email"
-                    placeholder="உங்கள் மின்னஞ்சல் / Your email"
-                    autoComplete="email"
-                    className="h-12 flex-1 rounded-full border border-black/15 bg-white px-5 text-[15px] focus:border-brand-red focus:outline-none"
-                    required
-                  />
-                  <button type="button" className="btn-red h-12 text-[15px]">
-                    <T ta="பதிவு செய்க" en="Subscribe" />
-                  </button>
-                  <p className="text-[13px] sm:sr-only" />
-                </form>
-              }
-            />
+    <section className="cv-auto bg-[#FAFAFA] py-16 sm:py-24">
+      <div className="container-site">
+        <div className="pattern-red-dots relative overflow-hidden rounded-3xl border border-brand-red/20 bg-white px-6 py-14 text-center shadow-glow sm:px-12 lg:py-16">
+          <Sunburst className="pointer-events-none absolute -bottom-1 left-1/2 w-[640px] max-w-none -translate-x-1/2 opacity-[0.05]" />
+          <div className="relative">
+            <p className="eyebrow">
+              <T ta="வாசகர் வட்டம்" en="Reader Dispatch" />
+            </p>
+            <h2 className="mx-auto mt-2 max-w-2xl text-[26px] font-extrabold leading-tight tracking-tight text-black sm:text-[34px]">
+              <T ta="புதிய நூல் வெளியீடுகளை உடனுக்குடன் அறிய" en="Hear about new releases first" />
+            </h2>
+            <div aria-hidden="true" className="mx-auto mt-3 h-1 w-14 rounded-full bg-brand-red" />
+            <p className="mx-auto mt-3 max-w-xl text-[15px] text-black/70 sm:text-[16px]">
+              <T
+                ta="புதிய பதிப்புகள் மற்றும் புத்தகக் கண்காட்சித் தள்ளுபடி அறிவிப்புகளைப் பெற பதிவு செய்யுங்கள்."
+                en="Subscribe for new publications, reprints and book-fair offers."
+              />
+            </p>
+            <div className="mt-8">
+              <NewsletterLazy
+                storeId={storeId}
+                fallback={
+                  <form className="mx-auto flex max-w-lg flex-col gap-3 sm:flex-row" aria-busy="true">
+                    <label htmlFor="newsletter-email" className="sr-only">
+                      <T ta="மின்னஞ்சல் முகவரி" en="Email address" />
+                    </label>
+                    <input
+                      id="newsletter-email"
+                      type="email"
+                      placeholder="உங்கள் மின்னஞ்சல் முகவரி / Enter your email address"
+                      autoComplete="email"
+                      className="h-12 flex-1 rounded-full border border-black/20 bg-white px-5 text-[15px] focus:border-brand-red focus:outline-none"
+                      required
+                    />
+                    <button type="button" className="btn-red h-12 px-7 text-[15px]">
+                      <T ta="பதிவு செய்க" en="Subscribe" />
+                    </button>
+                  </form>
+                }
+              />
+            </div>
           </div>
         </div>
       </div>

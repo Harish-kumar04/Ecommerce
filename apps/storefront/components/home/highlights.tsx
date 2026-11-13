@@ -51,17 +51,22 @@ export function TrustBar() {
   ];
 
   return (
-    <section aria-label="Trust Strip" className="border-y border-black/[0.08] bg-white py-5 sm:py-6">
+    <section aria-label="Trust Strip" className="border-b border-black/[0.08] bg-white py-6 sm:py-8">
       <div className="container-site">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((it) => (
-            <div key={it.en} className="flex items-center gap-3.5 p-2 rounded-xl bg-black/[0.02] border border-black/[0.04]">
-              {it.icon}
+            <div
+              key={it.en}
+              className="flex items-center gap-3.5 rounded-2xl border border-black/[0.08] bg-[#FAFAFA] p-4"
+            >
+              <span className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-brand-red-light">
+                {it.icon}
+              </span>
               <div className="min-w-0">
                 <p className="text-[13.5px] font-bold text-black leading-snug">
                   <T ta={it.ta} en={it.en} />
                 </p>
-                <p className="text-[11.5px] text-black/60 leading-tight mt-0.5">
+                <p className="text-[12px] text-black/70 leading-tight mt-0.5">
                   <T ta={it.sub_ta} en={it.sub_en} />
                 </p>
               </div>

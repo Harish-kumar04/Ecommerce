@@ -145,10 +145,10 @@ export default function BooksCatalogClient({
   }, [products, search, selectedCategory, sortBy, inStockOnly, saleOnly]);
 
   const pill = (active: boolean) =>
-    `whitespace-nowrap rounded-full px-4 py-2 text-[13.5px] font-semibold transition-all ${
+    `inline-flex min-h-[44px] items-center whitespace-nowrap rounded-full px-4 py-2 text-[13.5px] font-semibold transition-all ${
       active
-        ? "bg-brand-red text-white shadow-glow"
-        : "border border-black/10 bg-white text-black hover:border-brand-red hover:text-brand-red"
+        ? "bg-[#D11D1A] text-white shadow-glow"
+        : "border border-black/15 bg-white text-black hover:border-brand-red-dark hover:text-brand-red-dark"
     }`;
 
   return (
@@ -160,7 +160,8 @@ export default function BooksCatalogClient({
         <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-black sm:text-[44px] lg:text-[52px]">
           <T ta="அனைத்து நூல்கள்" en="All books" />
         </h1>
-        <p className="mt-3 max-w-2xl text-[15px] text-black/65 sm:text-[16px]">
+        <div aria-hidden="true" className="mt-3 h-1 w-14 rounded-full bg-brand-red" />
+        <p className="mt-3 max-w-2xl text-[15px] text-black/70 sm:text-[16px]">
           <T
             ta={`முத்தமிழறிஞர் பதிப்பகத்தின் ${products.length} அதிகாரப்பூர்வ வெளியீடுகள் — திராவிட இயக்க வரலாறு, சமூகநீதி, திராவிட மாடல் மற்றும் கலைஞர் படைப்புகள்.`}
             en={`All ${products.length} official publications from Muthamilarignar Pathipagam — Dravidian history, social justice, the Dravidian Model and Kalaignar's works.`}
@@ -183,7 +184,7 @@ export default function BooksCatalogClient({
               "நூல் பெயர் அல்லது ஆசிரியர் மூலம் தேடுக…",
               "Search in Tamil or English by title or author…",
             )}
-            className="h-12 w-full rounded-full border border-black/15 bg-white pl-11 pr-4 text-[14.5px] text-black placeholder:text-black/45 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
+            className="h-12 w-full rounded-full border border-black/20 bg-white pl-11 pr-4 text-[14.5px] text-black placeholder:text-black/55 focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20"
           />
           <svg
             viewBox="0 0 24 24"
@@ -192,7 +193,7 @@ export default function BooksCatalogClient({
             strokeWidth="2"
             strokeLinecap="round"
             aria-hidden="true"
-            className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40"
+            className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-black/55"
           >
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
@@ -206,15 +207,14 @@ export default function BooksCatalogClient({
             onClick={() => setSortOpen((v) => !v)}
             aria-haspopup="listbox"
             aria-expanded={sortOpen}
-            aria-label={t("வரிசைப்படுத்து", "Sort books")}
             className={`flex h-12 w-full sm:w-auto items-center justify-between gap-2.5 rounded-full border px-5 text-[14px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-red/20 ${
               sortBy !== "default"
-                ? "border-brand-red bg-brand-red/5 text-brand-red"
-                : "border-black/15 bg-white text-black hover:border-black/35"
+                ? "border-brand-red bg-brand-red/5 text-brand-red-dark"
+                : "border-black/20 bg-white text-black hover:border-black/40"
             }`}
           >
             <span className="truncate">
-              <span className="text-black/55 font-medium mr-1">
+              <span className="text-black/65 font-medium mr-1">
                 {t("வரிசை:", "Sort:")}
               </span>
               <span>{selectedSortLabel}</span>
@@ -246,15 +246,15 @@ export default function BooksCatalogClient({
                     <button
                       type="button"
                       onClick={() => selectSort(opt.value)}
-                      className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+                      className={`flex min-h-[44px] w-full items-center justify-between px-4 py-2.5 text-left text-[13.5px] transition-colors ${
                         active
-                          ? "bg-brand-red/10 font-bold text-brand-red"
+                          ? "bg-brand-red/10 font-bold text-brand-red-dark"
                           : "font-medium text-black/80 hover:bg-black/[0.04]"
                       }`}
                     >
                       <span>{opt.label}</span>
                       {active && (
-                        <span aria-hidden="true" className="text-brand-red font-extrabold">
+                        <span aria-hidden="true" className="text-brand-red-dark font-extrabold">
                           ✓
                         </span>
                       )}
@@ -299,38 +299,42 @@ export default function BooksCatalogClient({
         )}
 
         {/* Filters: In-stock and Sale */}
-        <div className="flex items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <button
             type="button"
             onClick={toggleSale}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-all ${
+            aria-pressed={saleOnly}
+            className={`inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold transition-all ${
               saleOnly
-                ? "bg-brand-red text-white shadow-glow"
-                : "border border-black/15 bg-white text-black/75 hover:border-brand-red hover:text-brand-red"
+                ? "bg-[#D11D1A] text-white shadow-glow"
+                : "border border-black/20 bg-white text-black/80 hover:border-brand-red-dark hover:text-brand-red-dark"
             }`}
           >
-            <span>🏷️</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="h-4 w-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
             {t("சலுகை நூல்கள் மட்டும்", "On Sale Only")}
           </button>
 
           <button
             type="button"
             onClick={() => setInStockOnly(!inStockOnly)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-all ${
+            aria-pressed={inStockOnly}
+            className={`inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold transition-all ${
               inStockOnly
                 ? "bg-black text-white"
-                : "border border-black/15 bg-white text-black/75 hover:border-black/50"
+                : "border border-black/20 bg-white text-black/80 hover:border-black/50"
             }`}
           >
-            <span>●</span>
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-green-600" />
             {t("கையிருப்பில் உள்ளவை மட்டும்", "In Stock Only")}
           </button>
         </div>
       </div>
 
-      <p className="sr-only" role="status" aria-live="polite">
+      <h2 className="sr-only" role="status" aria-live="polite">
         {t(`${filtered.length} நூல்கள்`, `${filtered.length} books`)}
-      </p>
+      </h2>
 
       {/* Book Grid or Empty State */}
       {filtered.length === 0 ? (

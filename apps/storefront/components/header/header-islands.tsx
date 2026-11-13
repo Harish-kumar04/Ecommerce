@@ -48,13 +48,13 @@ export function HeaderNav({ tenant, items, variant }: { tenant: string; items: N
             aria-current={active ? "page" : undefined}
             className={
               desktop
-                ? `relative rounded-full px-3.5 py-2 text-[15px] font-medium transition-colors ${active ? "text-brand-red" : "text-black/75 hover:text-brand-red"}`
-                : `snap-start whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13.5px] font-medium ${active ? "bg-brand-red text-white" : "text-black/75"}`
+                ? `relative inline-flex min-h-[44px] items-center rounded-full px-3.5 py-2 text-[14.5px] font-semibold transition-colors ${active ? "text-brand-red-dark" : "text-black/80 hover:text-brand-red-dark"}`
+                : `inline-flex min-h-[40px] snap-start items-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13.5px] font-semibold ${active ? "bg-[#D11D1A] text-white" : "text-black/80"}`
             }
           >
             <T ta={item.ta} en={item.en} />
             {desktop && active && (
-              <span className="absolute inset-x-3.5 -bottom-[17px] h-[3px] rounded-full bg-brand-red" aria-hidden="true" />
+              <span className="absolute inset-x-3.5 -bottom-[11px] h-[3px] rounded-full bg-brand-red" aria-hidden="true" />
             )}
           </Link>
         );
@@ -93,14 +93,14 @@ export function CartButton({ tenant }: { tenant: string }) {
       onClick={() => openMiniCart()}
       aria-label={count > 0 ? t(`கூடை — ${label} பொருட்கள்`, `Cart — ${label} items`) : t("கூடை", "Cart")}
       className={`relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
-        active ? "border-brand-red bg-brand-red-light text-brand-red" : "border-black/10 text-black hover:border-brand-red hover:text-brand-red"
+        active ? "border-brand-red bg-brand-red-light text-brand-red-dark" : "border-black/15 text-black hover:border-brand-red hover:text-brand-red-dark"
       }`}
     >
       <CartIcon className="h-[22px] w-[22px]" />
       {count > 0 && (
         <span
           aria-hidden="true"
-          className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-red px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white"
+          className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D11D1A] px-1 text-[11px] font-bold leading-none text-white ring-2 ring-white"
         >
           {label}
         </span>

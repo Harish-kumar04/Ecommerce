@@ -44,7 +44,7 @@ export default function Img(props: ImageProps) {
   const { props: imgProps } = getImgProps(
     {
       loading: props.priority ? undefined : (props.loading ?? "lazy"),
-      decoding: "async",
+      decoding: props.priority ? "sync" : "async",
       ...rest,
       loader,
       unoptimized,

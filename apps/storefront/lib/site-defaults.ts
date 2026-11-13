@@ -265,6 +265,49 @@ export function isExternal(href: string): boolean {
   return /^(https?:|mailto:|tel:)/i.test(href);
 }
 
+export interface AnnouncementConfig {
+  enabled: boolean;
+  ta: string;
+  en: string;
+  link?: string | null;
+}
+
+export function getAnnouncement(store: any): AnnouncementConfig {
+  const tc = themeConfig(store);
+  const raw = tc.announcement;
+  if (raw && typeof raw === "object") {
+    if (raw.enabled === false) {
+      return { enabled: false, ta: "", en: "", link: null };
+    }
+    const ta = str(raw.text_ta || raw.ta);
+    const en = str(raw.text_en || raw.en);
+    if (ta || en) {
+      return {
+        enabled: true,
+        ta: ta || en,
+        en: en || ta,
+        link: str(raw.link) || null,
+      };
+    }
+  }
+  const topTa = str(tc.announcement_ta);
+  const topEn = str(tc.announcement_en);
+  if (topTa || topEn) {
+    return {
+      enabled: true,
+      ta: topTa || topEn,
+      en: topEn || topTa,
+      link: str(tc.announcement_link) || null,
+    };
+  }
+  return {
+    enabled: true,
+    ta: "₹500-க்கு மேல் இலவச விநியோகம் • ரொக்கப் பணம் செலுத்தும் வசதி (COD) • 100% அதிகாரப்பூர்வப் பதிப்புகள்",
+    en: "Free Pan-India Delivery above ₹500 • Cash on Delivery (COD) • 100% Official Publisher Editions",
+    link: null,
+  };
+}
+
 /**
  * If an image URL is hosted on Cloudinary (`/image/upload/`), inject
  * `f_auto,q_auto,w_<width>` immediately after `upload/` for fast WebP/AVIF delivery.

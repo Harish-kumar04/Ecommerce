@@ -76,8 +76,8 @@ export default function HeroCarousel({ children }: { children: ReactNode }) {
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="சிறப்பு அறிவிப்புகள் / Featured"
-      className="relative bg-white"
+      aria-label="சிறப்புச் சலுகைகள் / Featured Offers"
+      className="cv-auto relative border-y border-black/[0.08] bg-white"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)}
@@ -99,7 +99,7 @@ export default function HeroCarousel({ children }: { children: ReactNode }) {
             role="group"
             aria-roledescription="slide"
             aria-label={`${i + 1} / ${count}`}
-            className="relative h-[480px] w-full shrink-0 snap-start snap-always overflow-hidden sm:h-[540px] lg:h-[clamp(540px,36.5vw,700px)]"
+            className="relative h-[370px] w-full shrink-0 snap-start snap-always overflow-hidden sm:h-[410px] lg:h-[450px]"
           >
             {slide}
           </div>
@@ -114,19 +114,19 @@ export default function HeroCarousel({ children }: { children: ReactNode }) {
           <button type="button" onClick={() => goTo(index + 1)} aria-label="அடுத்த / Next slide" className={`${arrow} right-3 lg:right-6`}>
             <ChevronRightIcon />
           </button>
-          <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 lg:bottom-6">
+          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1 lg:bottom-4">
             {slides.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => goTo(i)}
-                aria-label={`${i + 1} / ${count}`}
+                aria-label={`Slide ${i + 1} of ${count}`}
                 aria-current={i === index ? "true" : undefined}
-                className="group inline-flex h-6 items-center justify-center px-0.5"
+                className="group inline-flex h-11 min-w-[44px] items-center justify-center px-1"
               >
                 <span
-                  className={`block h-2 rounded-full transition-all duration-300 ${
-                    i === index ? "w-8 bg-brand-red" : "w-2 bg-black/25 group-hover:bg-black/45"
+                  className={`block h-2.5 rounded-full transition-all duration-300 ${
+                    i === index ? "w-8 bg-brand-red" : "w-2.5 bg-black/30 group-hover:bg-black/55"
                   }`}
                 />
               </button>

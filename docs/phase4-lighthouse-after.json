@@ -1,0 +1,225 @@
+{
+  "measured_at": "2026-11-13T12:04:33+0530",
+  "next_build_bundles": {
+    "/": {
+      "size": "153 B",
+      "first_load_js": "87.6 kB"
+    },
+    "/_not-found": {
+      "size": "873 B",
+      "first_load_js": "88.3 kB"
+    },
+    "/[tenant]": {
+      "size": "2.8 kB",
+      "first_load_js": "105 kB"
+    },
+    "/[tenant]/account": {
+      "size": "6 kB",
+      "first_load_js": "106 kB"
+    },
+    "/[tenant]/account/consent": {
+      "size": "2.43 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/cart": {
+      "size": "8.25 kB",
+      "first_load_js": "111 kB"
+    },
+    "/[tenant]/checkout": {
+      "size": "12.6 kB",
+      "first_load_js": "115 kB"
+    },
+    "/[tenant]/forgot-password": {
+      "size": "1.03 kB",
+      "first_load_js": "88.5 kB"
+    },
+    "/[tenant]/login": {
+      "size": "2.42 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/orders": {
+      "size": "2.7 kB",
+      "first_load_js": "103 kB"
+    },
+    "/[tenant]/orders/[id]": {
+      "size": "6.3 kB",
+      "first_load_js": "109 kB"
+    },
+    "/[tenant]/products": {
+      "size": "7.28 kB",
+      "first_load_js": "112 kB"
+    },
+    "/[tenant]/products/[id]": {
+      "size": "6.65 kB",
+      "first_load_js": "111 kB"
+    },
+    "/[tenant]/reset-password": {
+      "size": "1.16 kB",
+      "first_load_js": "88.6 kB"
+    },
+    "/[tenant]/returns": {
+      "size": "2.23 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/signup": {
+      "size": "1.66 kB",
+      "first_load_js": "97.8 kB"
+    },
+    "/[tenant]/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/track": {
+      "size": "1.85 kB",
+      "first_load_js": "102 kB"
+    },
+    "/api/cart-summary": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/cover": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/health/[[...path]]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/revalidate": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/v1/[...path]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    }
+  },
+  "warm_ttfb_ms": {
+    "home": 75.8,
+    "books_list": 33.5,
+    "book_detail": 40.3,
+    "cart": 31.8
+  },
+  "lighthouse": {
+    "home": {
+      "url": "http://127.0.0.1:3194/demo-store",
+      "mobile": {
+        "performance_score": 96,
+        "accessibility_score": 99,
+        "lcp_ms": 1647.4,
+        "inp_proxy_max_fid_ms": 151,
+        "cls": 0,
+        "tbt_ms": 125,
+        "ttfb_ms": 75,
+        "total_js_kb": 139.0,
+        "image_kb": 83.7,
+        "total_transfer_kb": 546.9
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 99,
+        "lcp_ms": 308.8,
+        "inp_proxy_max_fid_ms": 62,
+        "cls": 0.0002,
+        "tbt_ms": 0,
+        "ttfb_ms": 20,
+        "total_js_kb": 139.0,
+        "image_kb": 97.3,
+        "total_transfer_kb": 560.8
+      }
+    },
+    "books_list": {
+      "url": "http://127.0.0.1:3194/demo-store/products",
+      "mobile": {
+        "performance_score": 100,
+        "accessibility_score": 99,
+        "lcp_ms": 964.5,
+        "inp_proxy_max_fid_ms": 206,
+        "cls": 0.0001,
+        "tbt_ms": 21,
+        "ttfb_ms": 15,
+        "total_js_kb": 136.3,
+        "image_kb": 173.0,
+        "total_transfer_kb": 591.3
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 99,
+        "lcp_ms": 738.0,
+        "inp_proxy_max_fid_ms": 54,
+        "cls": 0.0004,
+        "tbt_ms": 0,
+        "ttfb_ms": 14,
+        "total_js_kb": 136.3,
+        "image_kb": 269.3,
+        "total_transfer_kb": 687.6
+      }
+    },
+    "book_detail": {
+      "url": "http://127.0.0.1:3194/demo-store/products/60e0672d-a0d5-4cdb-bbaa-8b537696a012",
+      "mobile": {
+        "performance_score": 92,
+        "accessibility_score": 100,
+        "lcp_ms": 3319.7,
+        "inp_proxy_max_fid_ms": 287.0,
+        "cls": 0.0003,
+        "tbt_ms": 50,
+        "ttfb_ms": 28,
+        "total_js_kb": 134.7,
+        "image_kb": 12.4,
+        "total_transfer_kb": 427.0
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "lcp_ms": 745.5,
+        "inp_proxy_max_fid_ms": 92.0,
+        "cls": 0.0002,
+        "tbt_ms": 0,
+        "ttfb_ms": 15,
+        "total_js_kb": 134.7,
+        "image_kb": 64.7,
+        "total_transfer_kb": 479.3
+      }
+    },
+    "cart": {
+      "url": "http://127.0.0.1:3194/demo-store/cart",
+      "mobile": {
+        "performance_score": 95,
+        "accessibility_score": 100,
+        "lcp_ms": 2938.6,
+        "inp_proxy_max_fid_ms": 68,
+        "cls": 0.0294,
+        "tbt_ms": 9,
+        "ttfb_ms": 35,
+        "total_js_kb": 141.9,
+        "image_kb": 4.9,
+        "total_transfer_kb": 419.5
+      },
+      "desktop": {
+        "performance_score": 99,
+        "accessibility_score": 100,
+        "lcp_ms": 267.3,
+        "inp_proxy_max_fid_ms": 60,
+        "cls": 0.0772,
+        "tbt_ms": 0,
+        "ttfb_ms": 37,
+        "total_js_kb": 141.9,
+        "image_kb": 3.3,
+        "total_transfer_kb": 417.9
+      }
+    }
+  }
+}

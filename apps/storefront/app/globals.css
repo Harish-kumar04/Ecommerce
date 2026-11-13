@@ -51,24 +51,33 @@ html:not([lang="en"]) .i18n-en {
 }
 
 @layer components {
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-black focus:px-5 focus:py-3 focus:text-[14px] focus:font-bold focus:text-white focus:shadow-lg;
+  }
   .container-site {
     @apply mx-auto w-full max-w-site px-4 sm:px-6 lg:px-10;
   }
-  /* "Glowy white" card: soft shadow, faint red glow on hover */
+  /* Soft-shadow card with subtle lift & red glow on hover */
   .card-glow {
-    @apply rounded-2xl border border-black/[0.06] bg-white shadow-card transition-[box-shadow,transform,border-color] duration-300;
+    @apply rounded-2xl border border-black/[0.08] bg-white shadow-card transition-[box-shadow,transform,border-color] duration-200;
   }
   .card-glow:hover {
-    @apply -translate-y-0.5 border-brand-red/25 shadow-glow;
+    @apply -translate-y-1 border-brand-red/30 shadow-glow;
   }
+  /* Primary black pill button (21:1 contrast) */
+  .btn-black {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-black px-6 font-semibold text-white transition-colors hover:bg-brand-red-dark focus-visible:outline-offset-4;
+  }
+  /* Brand red CTA pill (WCAG AA >= 4.5:1 contrast with white text) */
   .btn-red {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-6 font-semibold text-white transition-colors hover:bg-brand-red-dark focus-visible:outline-offset-4;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#D11D1A] px-6 font-semibold text-white transition-colors hover:bg-brand-red-dark focus-visible:outline-offset-4;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-6 font-semibold text-black transition-colors hover:border-brand-red hover:text-brand-red;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-black/20 bg-white px-6 font-semibold text-black transition-colors hover:border-brand-red-dark hover:text-brand-red-dark;
   }
+  /* WCAG AA >= 4.5:1 small red eyebrow text on white/grey */
   .eyebrow {
-    @apply text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red;
+    @apply text-[12px] font-bold uppercase tracking-[0.18em] text-brand-red-dark;
   }
 }
 
@@ -82,6 +91,29 @@ html:not([lang="en"]) .i18n-en {
   .cv-auto {
     content-visibility: auto;
     contain-intrinsic-size: auto 600px;
+  }
+  /* (b) Thin red diagonal stripe divider */
+  .pattern-red-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(229, 35, 32, 0.2) 0px,
+      rgba(229, 35, 32, 0.2) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+  }
+  /* (c) Subtle red dotted-grid on light banners */
+  .pattern-red-dots {
+    background-image: radial-gradient(rgba(229, 35, 32, 0.14) 1.25px, transparent 1.25px);
+    background-size: 18px 18px;
+  }
+  /* (c) Subtle red/white dotted-grid on black banners and footer */
+  .pattern-white-dots {
+    background-image:
+      radial-gradient(rgba(229, 35, 32, 0.28) 1.25px, transparent 1.25px),
+      radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-position: 0 0, 9px 9px;
+    background-size: 18px 18px;
   }
 }
 
