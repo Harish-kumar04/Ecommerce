@@ -9,6 +9,7 @@ import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 export interface SearchBookItem {
   id: string;
+  slug?: string | null;
   name: string;
   author?: string | null;
   price_cents: number;
@@ -61,6 +62,7 @@ export default function HeaderSearch({
         const list = Array.isArray(data) ? data : data?.data || [];
         const mapped: SearchBookItem[] = list.map((b: any) => ({
           id: String(b.id),
+          slug: b.slug ? String(b.slug) : null,
           name: String(b.name || ""),
           author: b.author || b.dimensions_json?.book?.author || null,
           price_cents: Number(b.price_cents) || 0,
@@ -103,7 +105,7 @@ export default function HeaderSearch({
     e.preventDefault();
     if (!query.trim()) return;
     setIsOpen(false);
-    router.push(`/${tenant}/products?search=${encodeURIComponent(query.trim())}`);
+    router.push(`/${tenant}/books?q=${encodeURIComponent(query.trim())}`);
   };
 
   const rupees = (cents: number) => `₹${Math.round(cents / 100).toLocaleString("en-IN")}`;
@@ -154,7 +156,7 @@ export default function HeaderSearch({
                 return (
                   <Link
                     key={book.id}
-                    href={`/${tenant}/products/${book.id}`}
+                    href={`/${tenant}/books/${encodeURIComponent(book.slug || book.id)}`}
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-black/[0.04] transition-colors"
                   >

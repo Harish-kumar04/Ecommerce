@@ -13,8 +13,8 @@ import {
 
 const NAV: NavItem[] = [
   { path: "", ta: "முகப்பு", en: "Home" },
-  { path: "/products", ta: "நூல்கள்", en: "Books" },
-  { path: "/products?sale=1", ta: "சலுகைகள்", en: "Offers" },
+  { path: "/books", ta: "நூல்கள்", en: "Books" },
+  { path: "/books?sale=1", ta: "சலுகைகள்", en: "Offers" },
   { path: "/track", ta: "ஆர்டர் நிலை", en: "Track Order" },
   { path: "/account", ta: "கணக்கு", en: "Account" },
 ];

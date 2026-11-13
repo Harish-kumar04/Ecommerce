@@ -116,7 +116,7 @@ export default function PublisherStory({
 
             <div className="mt-8">
               <Link
-                href={`/${tenant}/products`}
+                href={`/${tenant}/books`}
                 prefetch={false}
                 className="btn-black h-12 px-7 text-[14.5px]"
               >

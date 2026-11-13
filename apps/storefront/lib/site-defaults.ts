@@ -88,7 +88,7 @@ export const DEFAULT_SLIDES: HomeSlide[] = [
     subtitle_en: "Dravidian history, social justice and the works of Kalaignar — the official online bookstore.",
     button_ta: "நூல்களைக் காண்க",
     button_en: "Browse books",
-    link: "/products",
+    link: "/books",
     active: true,
   },
   {
@@ -98,7 +98,7 @@ export const DEFAULT_SLIDES: HomeSlide[] = [
     subtitle_en: "The life, writing and legacy of Muthamilarignar Kalaignar.",
     button_ta: "தொகுப்பைப் பார்க்க",
     button_en: "View collection",
-    link: "/products?category=kalaignar-works",
+    link: "/categories/kalaignar-works",
     active: true,
   },
   {
@@ -108,7 +108,7 @@ export const DEFAULT_SLIDES: HomeSlide[] = [
     subtitle_en: "Reservation, state autonomy and language rights — books that make you think.",
     button_ta: "இப்போதே வாங்குக",
     button_en: "Shop now",
-    link: "/products?category=dravidian-model-social-justice",
+    link: "/categories/dravidian-model-social-justice",
     active: true,
   },
 ];

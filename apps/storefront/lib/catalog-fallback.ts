@@ -506,6 +506,7 @@ export const getStoreWithFallback = cache(async (tenant: string) => {
 export type BookLookupResult =
   | { status: "ok"; product: any }
   | { status: "not_found" }
+  | { status: "gone" }
   | { status: "error"; httpStatus?: number };
 
 export const fetchBookById = cache(
@@ -528,6 +529,10 @@ export const fetchBookById = cache(
         if (prod?.id) {
           return { status: "ok", product: prod };
         }
+      }
+
+      if (res.status === 410) {
+        return { status: "gone" };
       }
 
       if (res.status === 404) {

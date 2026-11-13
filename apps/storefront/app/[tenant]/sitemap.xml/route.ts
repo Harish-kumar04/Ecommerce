@@ -1,45 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  fetchBooksSafe,
+  getCategoriesWithFallback,
+} from "@/lib/catalog-fallback";
+import { SITE_URL } from "@/lib/site-defaults";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+function xmlEscape(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
 
-export async function GET(req: NextRequest, { params }: { params: { tenant: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { tenant: string } },
+) {
   const tenant = params.tenant;
-  const host = req.headers.get("host") || `${tenant}.infalette.com`;
+  const host = req.headers.get("host");
   const protocol = req.headers.get("x-forwarded-proto") || "https";
-  const baseUrl = `${protocol}://${host}`;
+  const baseOrigin = host ? `${protocol}://${host}` : SITE_URL;
+  const base = `${baseOrigin}/${tenant}`;
 
-  try {
-    // Try to fetch SEO sitemap from API
-    const res = await fetch(`${API_URL}/seo/sitemap?tenant=${tenant}`, {
-      headers: { "X-Tenant": tenant },
-      next: { revalidate: 3600 },
-    });
-    if (res.ok) {
-      const xml = await res.text();
-      // Ensure baseUrl is correct
-      return new NextResponse(xml, { headers: { "Content-Type": "application/xml" } });
-    }
-  } catch {}
+  const [booksRes, categories] = await Promise.all([
+    fetchBooksSafe(tenant),
+    getCategoriesWithFallback(tenant),
+  ]);
+  const publishedBooks = booksRes.isFallback
+    ? []
+    : (booksRes.books as any[]).filter((b) => b?.id || b?.slug);
+  const nowIso = new Date().toISOString();
 
-  // Fallback: generate minimal sitemap from products
-  let products: any[] = [];
-  try {
-    const r = await fetch(`${API_URL}/public/products`, {
-      headers: { "X-Tenant": tenant },
-      next: { revalidate: 3600 },
-    });
-    const data = await r.json();
-    products = Array.isArray(data) ? data : data.data || data.items || [];
-  } catch {}
+  const entries: Array<{ loc: string; lastmod: string; changefreq: string; priority: string }> = [
+    { loc: base, lastmod: nowIso, changefreq: "daily", priority: "1.0" },
+    { loc: `${base}/books`, lastmod: nowIso, changefreq: "daily", priority: "0.9" },
+    ...(categories as any[])
+      .filter((c) => c?.slug)
+      .map((c) => ({
+        loc: `${base}/categories/${encodeURIComponent(String(c.slug))}`,
+        lastmod: c.updated_at ? new Date(c.updated_at).toISOString() : nowIso,
+        changefreq: "weekly",
+        priority: "0.7",
+      })),
+    ...publishedBooks.map((b) => ({
+      loc: `${base}/books/${encodeURIComponent(String(b.slug || b.id))}`,
+      lastmod: b.updated_at ? new Date(b.updated_at).toISOString() : nowIso,
+      changefreq: "weekly",
+      priority: "0.8",
+    })),
+  ];
 
-  const urls = [
-    `<url><loc>${baseUrl}/${tenant}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
-    `<url><loc>${baseUrl}/${tenant}/products</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`,
-    ...products.map(
-      (p: any) => `<url><loc>${baseUrl}/${tenant}/products/${p.id}</loc><lastmod>${p.updated_at ? new Date(p.updated_at).toISOString() : new Date().toISOString()}</lastmod><priority>0.6</priority></url>`
-    ),
-  ].join("");
+  const urlsXml = entries
+    .map(
+      (u) =>
+        `<url><loc>${xmlEscape(u.loc)}</loc><lastmod>${u.lastmod}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`,
+    )
+    .join("");
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
-  return new NextResponse(xml, { headers: { "Content-Type": "application/xml" } });
+  const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urlsXml}</urlset>`;
+  return new NextResponse(xml, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+    },
+  });
 }

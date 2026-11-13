@@ -59,7 +59,7 @@ export default function BooksCatalogClient({
         setSortBy(sortParam);
       }
       if (params.get("sale") === "1") setSaleOnly(true);
-      const q = params.get("search");
+      const q = params.get("q") || params.get("search");
       if (q && q !== "1") setSearch(q);
     };
     apply();

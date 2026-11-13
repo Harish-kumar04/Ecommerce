@@ -10,6 +10,7 @@ const UUID_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 /** The only product fields a card needs (keeps RSC/client payloads small). */
 export interface CardProduct {
   id: string;
+  slug?: string | null;
   name: string;
   author?: string | null;
   category_id?: string | null;
@@ -36,6 +37,7 @@ export function toCardProduct(p: any): CardProduct {
 
   return {
     id: rawId,
+    slug: p.slug ? String(p.slug) : null,
     name: String(p.name ?? ""),
     author: author ? String(author) : null,
     category_id: p.category_id ? String(p.category_id) : null,
@@ -87,12 +89,13 @@ export default function ProductCard({
   const [titleTa, titleEn] = splitBilingual(product.name, "|");
   const hasDistinctSub = Boolean(titleEn && titleEn !== titleTa);
   const alt = hasDistinctSub ? `${titleTa} — ${titleEn}` : titleTa;
+  const bookHref = `/${tenant}/books/${encodeURIComponent(product.slug || product.id)}`;
 
   return (
     <article className="card-glow group relative flex flex-col overflow-hidden bg-white">
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#FAFAFA]">
         <Link
-          href={`/${tenant}/products/${product.id}`}
+          href={bookHref}
           prefetch={false}
           aria-label={alt}
           className="block h-full w-full"
@@ -136,7 +139,7 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-4">
         <div>
-          <Link href={`/${tenant}/products/${product.id}`} prefetch={false}>
+          <Link href={bookHref} prefetch={false}>
             <h3 className="line-clamp-2 text-[14.5px] font-bold leading-snug text-black transition-colors group-hover:text-brand-red-dark sm:text-[15.5px]">
               <BiName value={product.name} />
             </h3>

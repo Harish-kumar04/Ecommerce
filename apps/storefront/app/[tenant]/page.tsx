@@ -29,6 +29,7 @@ import {
   isExternal,
   resolveLink,
 } from "@/lib/site-defaults";
+import { buildHomeJsonLd } from "@/lib/seo-schema";
 
 // ISR: static HTML, refreshed in the background every 60 seconds.
 export const revalidate = 60;
@@ -57,11 +58,12 @@ export async function generateMetadata({
   params: { tenant: string };
 }): Promise<Metadata> {
   const store = await getStoreWithFallback(params.tenant);
-  const title = `${BRAND.nameTa} | ${BRAND.nameEn} — Official Bookstore`;
+  const title = `${BRAND.nameTa} | ${BRAND.nameEn} — Official Tamil & English Bookstore`;
   const description =
     store?.description ||
-    "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam";
+    "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam with Pan-India COD & online delivery.";
   const url = `${SITE_URL}/${params.tenant}`;
+  const ogImg = `${SITE_URL}/logo.jpg`;
   return {
     title,
     description,
@@ -70,10 +72,12 @@ export async function generateMetadata({
       title,
       description,
       url,
+      siteName: `${BRAND.nameTa} | ${BRAND.nameEn}`,
+      locale: "ta_IN",
       type: "website",
-      images: [{ url: "/logo.jpg", width: 1024, height: 1021, alt: BRAND.nameEn }],
+      images: [{ url: ogImg, width: 1024, height: 1021, alt: `${BRAND.nameTa} | ${BRAND.nameEn}` }],
     },
-    twitter: { card: "summary", title, description, images: ["/logo.jpg"] },
+    twitter: { card: "summary_large_image", title, description, images: [ogImg] },
   };
 }
 
@@ -149,14 +153,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
   );
   const kalaignarWorks = (kalaignarMatches.length > 0 ? kalaignarMatches : cards).slice(0, 8);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BookStore",
-    name: `${BRAND.nameEn} | ${BRAND.nameTa}`,
-    url: `${SITE_URL}/${tenant}`,
-    logo: `${SITE_URL}/logo.jpg`,
-    image: `${SITE_URL}/logo.jpg`,
-  };
+  const jsonLd = buildHomeJsonLd(tenant);
 
   return (
     <>

@@ -107,7 +107,7 @@ export default function BrandHero({
             {/* Two Pill CTAs (>=48px height) */}
             <div className="mt-7 flex flex-wrap items-center gap-3.5 sm:mt-8">
               <Link
-                href={`/${tenant}/products`}
+                href={`/${tenant}/books`}
                 className="btn-black h-12 px-7 text-[15px] shadow-card sm:h-[52px] sm:px-8 sm:text-[15.5px]"
               >
                 <T ta="நூல்களைக் காண்க" en="Browse books" />
@@ -115,7 +115,7 @@ export default function BrandHero({
               </Link>
 
               <Link
-                href={`/${tenant}/products?sale=1`}
+                href={`/${tenant}/books?sale=1`}
                 className="btn-red h-12 px-7 text-[15px] shadow-glow sm:h-[52px] sm:px-8 sm:text-[15.5px]"
               >
                 <T ta="சலுகைகள்" en="Offers" />
@@ -132,7 +132,7 @@ export default function BrandHero({
               {/* Floating Badge 1 (Top-Left): Best Seller / Featured Real Book */}
               {leadBook && (
                 <Link
-                  href={`/${tenant}/products/${leadBook.id}`}
+                  href={`/${tenant}/books/${encodeURIComponent(leadBook.slug || leadBook.id)}`}
                   prefetch={false}
                   className="absolute left-0 top-2 z-30 flex max-w-[200px] items-center gap-2 rounded-2xl border border-black/10 bg-white px-3 py-2 shadow-lg transition-transform hover:-translate-y-0.5 sm:left-2 sm:top-4 sm:px-3.5 sm:py-2.5"
                 >
@@ -181,7 +181,7 @@ export default function BrandHero({
                     return (
                       <Link
                         key={book.id}
-                        href={`/${tenant}/products/${book.id}`}
+                        href={`/${tenant}/books/${encodeURIComponent(book.slug || book.id)}`}
                         prefetch={false}
                         aria-label={alt}
                         className={`relative -mx-2.5 aspect-[3/4] w-[108px] overflow-hidden rounded-xl border-2 border-white bg-white shadow-2xl transition-transform duration-300 hover:z-30 hover:scale-110 sm:-mx-3.5 sm:w-[152px] lg:w-[164px] ${

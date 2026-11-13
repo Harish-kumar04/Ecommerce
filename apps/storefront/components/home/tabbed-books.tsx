@@ -33,25 +33,25 @@ export default function TabbedBooks({
       key: "new",
       ta: "புதிய வரவுகள்",
       en: "New Arrivals",
-      href: `/${tenant}/products?sort=newest`,
+      href: `/${tenant}/books?sort=newest`,
     },
     {
       key: "bestsellers",
       ta: "சிறந்த விற்பனை",
       en: "Best Sellers",
-      href: `/${tenant}/products`,
+      href: `/${tenant}/books`,
     },
     {
       key: "offers",
       ta: "சலுகைகள்",
       en: "Offers",
-      href: `/${tenant}/products?sale=1`,
+      href: `/${tenant}/books?sale=1`,
     },
     {
       key: "kalaignar",
       ta: "கலைஞர் படைப்புகள்",
       en: "Kalaignar Works",
-      href: `/${tenant}/products?category=kalaignar-works`,
+      href: `/${tenant}/categories/kalaignar-works`,
     },
   ];
 

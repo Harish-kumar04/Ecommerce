@@ -64,11 +64,32 @@ module.exports = {
         ],
       },
       {
-        // Never cache cart, checkout, or customer account/orders pages.
-        source: "/:tenant/(cart|checkout|account|orders)(.*)",
+        // Never cache or index cart, checkout, or customer account/orders pages.
+        source: "/:tenant/(cart|checkout|account|orders|login|signup|forgot-password|reset-password)(.*)",
         headers: [
           { key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
+      },
+    ];
+  },
+  async redirects() {
+    const defaultTenant = process.env.NEXT_PUBLIC_DEMO_TENANT || "demo-store";
+    return [
+      {
+        source: "/books",
+        destination: `/${defaultTenant}/books`,
+        permanent: true,
+      },
+      {
+        source: "/books/:slug",
+        destination: `/${defaultTenant}/books/:slug`,
+        permanent: true,
+      },
+      {
+        source: "/categories/:slug",
+        destination: `/${defaultTenant}/categories/:slug`,
+        permanent: true,
       },
     ];
   },

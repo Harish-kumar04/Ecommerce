@@ -211,6 +211,7 @@ def _serialize_public_list_product(product) -> dict:
         "tax_class": getattr(product, "tax_class", "zero"),
         "safety_info": getattr(product, "safety_info", None),
         "dimensions_json": getattr(product, "dimensions_json", None) or {},
+        "updated_at": product.updated_at.isoformat() if getattr(product, "updated_at", None) else None,
     }
 
 
@@ -342,9 +343,13 @@ async def public_get_product(
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    if str(product.get("visibility", "published") or "published").lower() in ("hidden", "draft"):
+    prod_status = str(product.get("status", "") or "").lower()
+    prod_vis = str(product.get("visibility", "published") or "published").lower()
+    if prod_status in ("archived", "discontinued") or prod_vis == "discontinued":
+        raise HTTPException(status_code=410, detail="Book is no longer available")
+    if prod_vis in ("hidden", "draft"):
         raise HTTPException(status_code=404, detail="Product not found")
-    if str(product.get("status", "")).lower() not in ("active", "published") and product.get("status") is not None:
+    if prod_status not in ("active", "published") and product.get("status") is not None:
         raise HTTPException(status_code=404, detail="Product not found")
     _set_public_cache(response, max_age=120, swr=600)
     return product

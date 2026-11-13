@@ -82,7 +82,7 @@ export default function StorefrontFooter({
                 <T ta="நூலகம்" en="Bookstore" />
               </p>
               <ul className="space-y-1.5 text-[14.5px]">
-                <li><Link href={`${home}/products`} prefetch={false} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
+                <li><Link href={`${home}/books`} prefetch={false} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
                 <li><Link href={`${home}/cart`} prefetch={false} className={linkCls}><T ta="கூடை" en="Cart" /></Link></li>
                 <li><Link href={`${home}/orders`} prefetch={false} className={linkCls}><T ta="எனது ஆர்டர்கள்" en="My orders" /></Link></li>
                 <li><Link href={`${home}/returns`} prefetch={false} className={linkCls}><T ta="மாற்று / திரும்பப் பெறுதல்" en="Returns & support" /></Link></li>

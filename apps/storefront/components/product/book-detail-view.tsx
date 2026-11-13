@@ -98,7 +98,7 @@ export default function BookDetailView({
             /
           </span>
           <Link
-            href={`/${tenant}/products`}
+            href={`/${tenant}/books`}
             prefetch={false}
             className="transition-colors hover:text-brand-red-dark"
           >

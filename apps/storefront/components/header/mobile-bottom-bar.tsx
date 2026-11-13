@@ -42,7 +42,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
       ),
     },
     {
-      path: "/products",
+      path: "/books",
       ta: "நூல்கள்",
       en: "Books",
       icon: (
@@ -52,7 +52,7 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
       ),
     },
     {
-      path: "/products?search=1",
+      path: "/books?search=1",
       action: "search",
       ta: "தேடல்",
       en: "Search",
@@ -91,7 +91,8 @@ export default function MobileBottomBar({ tenant }: { tenant: string }) {
   ];
 
   const isProductDetail =
-    pathname.startsWith(`${home}/products/`) && pathname !== `${home}/products`;
+    (pathname.startsWith(`${home}/books/`) && pathname !== `${home}/books`) ||
+    (pathname.startsWith(`${home}/products/`) && pathname !== `${home}/products`);
 
   return (
     <nav

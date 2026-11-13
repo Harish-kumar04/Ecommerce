@@ -80,7 +80,7 @@ export default function CategoryTiles({
             title={{ ta: "நூல் பிரிவுகள்", en: "Explore Categories" }}
           />
           <Link
-            href={`/${tenant}/products`}
+            href={`/${tenant}/books`}
             prefetch={false}
             className="btn-outline h-11 px-5 text-[14px]"
           >
@@ -93,7 +93,11 @@ export default function CategoryTiles({
           {categories.slice(0, 12).map((cat, idx) => (
             <Link
               key={cat.id}
-              href={`/${tenant}/products?category=${encodeURIComponent(cat.slug || cat.id)}`}
+              href={
+                cat.slug
+                  ? `/${tenant}/categories/${encodeURIComponent(cat.slug)}`
+                  : `/${tenant}/books?category=${encodeURIComponent(cat.id)}`
+              }
               prefetch={false}
               className="card-glow group flex min-h-[108px] flex-col justify-between p-4"
             >
