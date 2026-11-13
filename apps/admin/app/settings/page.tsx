@@ -4,6 +4,12 @@ import { toast } from "@/components/toaster";
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
+import ImageUploader from "@/components/image-uploader";
+import {
+  AdminBrandLogo,
+  DEFAULT_LOGO_URL,
+  resolveAdminLogoUrl,
+} from "@/components/brand-logo";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null);
@@ -18,7 +24,7 @@ export default function SettingsPage() {
     name: "",
     description: "",
     custom_domain: "",
-    logo: "",
+    logo: DEFAULT_LOGO_URL,
     primary_color: "#000000",
     currency: "INR",
     tax_rate: "18",
@@ -43,11 +49,12 @@ export default function SettingsPage() {
         if (storeRes) {
           setSettings(storeRes);
           const s = storeRes.store || storeRes;
+          const storedLogo = s.theme_config?.logo_url || s.logo_url || s.logo;
           setForm({
             name: s.name || "",
             description: s.description || "",
             custom_domain: s.custom_domain || s.domain || "",
-            logo: s.logo || s.logo_url || "",
+            logo: resolveAdminLogoUrl(storedLogo),
             primary_color: s.theme_config?.primary_color || s.primary_color || "#000000",
             currency: s.currency || "INR",
             tax_rate: String(s.tax_rate ?? 18),
@@ -96,15 +103,19 @@ export default function SettingsPage() {
     setMessage(null);
     setError(null);
     try {
+      const resolvedLogo = resolveAdminLogoUrl(form.logo);
+      const updatedTc = {
+        ...((settings?.theme_config as any) || (settings as any)?.store?.theme_config || {}),
+        primary_color: form.primary_color,
+        logo_url: resolvedLogo,
+      };
       await adminApi.updateStoreSettings({
         name: form.name,
         description: form.description,
         custom_domain: form.custom_domain,
-        logo: form.logo,
-        theme_config: {
-          ...((settings?.theme_config as any) || (settings as any)?.store?.theme_config || {}),
-          primary_color: form.primary_color,
-        },
+        logo: resolvedLogo,
+        logo_url: resolvedLogo,
+        theme_config: updatedTc,
         currency: form.currency,
         tax_rate: parseFloat(form.tax_rate),
         ...(shippingRules.trim() && parseJsonField(shippingRules, "Shipping rules") ? { shipping_rules: JSON.parse(shippingRules) } : {}),
@@ -112,6 +123,18 @@ export default function SettingsPage() {
         ...(menus.trim() && menus.trim() !== "[]" && parseJsonField(menus, "Menus") ? { menus: JSON.parse(menus) } : {}),
         ...(legalPages.trim() && legalPages.trim() !== "{}" && parseJsonField(legalPages, "Legal pages") ? { legal_pages: JSON.parse(legalPages) } : {}),
       });
+      setSettings((prev: any) => ({ ...(prev || {}), logo_url: resolvedLogo, theme_config: updatedTc }));
+      setForm((prev) => ({ ...prev, logo: resolvedLogo }));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("store-logo-updated", { detail: resolvedLogo }));
+      }
+      try {
+        void fetch("/api/revalidate-storefront", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant: "demo-store" }),
+        }).catch(() => {});
+      } catch {}
       setMessage("Settings saved successfully");
     } catch (e: any) {
       setError(e.message || "Failed to save");
@@ -155,9 +178,44 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-400 mt-1">Configure DNS CNAME to point to the platform after saving</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Logo URL</label>
-            <input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} className="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div className="space-y-3 rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <label className="block text-sm font-semibold">Brand Logo (`theme_config.logo_url`)</label>
+                <p className="text-xs text-gray-500">
+                  Used across storefront header, footer, favicon, Open Graph, JSON-LD, and admin.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, logo: DEFAULT_LOGO_URL })}
+                className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-gray-50"
+              >
+                Reset to Default Logo
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="inline-flex rounded-xl border bg-white p-2 shadow-sm">
+                <AdminBrandLogo src={form.logo} sizes="80px" className="h-16 w-16" penSize={20} />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Logo URL (Cloudinary or Blob HTTPS)</label>
+                <input
+                  value={form.logo}
+                  onChange={(e) => setForm({ ...form, logo: e.target.value })}
+                  placeholder={DEFAULT_LOGO_URL}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <ImageUploader
+              label="Upload New Brand Logo"
+              ratio={[1, 1]}
+              targetWidth={800}
+              value={form.logo}
+              onChange={(url) => setForm({ ...form, logo: url || DEFAULT_LOGO_URL })}
+              kind="logo"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

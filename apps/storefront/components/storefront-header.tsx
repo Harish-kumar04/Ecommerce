@@ -4,6 +4,7 @@ import { CartButton, HeaderNav, type NavItem } from "./header/header-islands";
 import HeaderLogo from "./header/header-logo";
 import HeaderSearch, { type SearchBookItem } from "./header/header-search";
 import {
+  DEFAULT_LOGO_URL,
   DEFAULT_SOCIAL,
   isExternal,
   resolveLink,
@@ -24,11 +25,13 @@ export default function StorefrontHeader({
   searchBooks = [],
   announcement,
   social = DEFAULT_SOCIAL,
+  logoUrl = DEFAULT_LOGO_URL,
 }: {
   tenant: string;
   searchBooks?: SearchBookItem[];
   announcement?: AnnouncementConfig;
   social?: SocialConfig;
+  logoUrl?: string;
 }) {
   const showAnnouncement = announcement ? announcement.enabled : true;
   const annTa =
@@ -48,8 +51,8 @@ export default function StorefrontHeader({
   );
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-black/[0.08] bg-white shadow-sm transition-all">
-      {/* 1. Admin-Controlled Top Announcement Ticker (Solid Black, High Contrast) */}
+    <>
+      {/* 1. Admin-Controlled Top Announcement Ticker (scrolls away cleanly so sticky header stays <=64px mobile / <=88px desktop) */}
       {showAnnouncement && (
         <div
           role="region"
@@ -76,7 +79,7 @@ export default function StorefrontHeader({
               <div className="flex min-w-0 items-center gap-2">{tickerText}</div>
             )}
 
-            <div className="hidden items-center gap-4 text-[12px] text-white/80 md:flex flex-shrink-0">
+            <div className="hidden flex-shrink-0 items-center gap-4 text-[12px] text-white/80 md:flex">
               <a
                 href={`tel:${social.whatsapp}`}
                 className="transition-colors hover:text-white"
@@ -92,28 +95,27 @@ export default function StorefrontHeader({
         </div>
       )}
 
-      {/* 2. Main Header Row */}
-      <div className="container-site flex items-center gap-2.5 py-2 sm:gap-5 lg:py-2.5">
-        {/* Prominent Publisher Logo */}
-        <HeaderLogo tenant={tenant} />
+      {/* 2. Sticky Header Bar: max 64px on mobile (~62px unscrolled, ~52px scrolled) and max 88px on desktop (~85px unscrolled, ~71px scrolled) */}
+      <header className="sticky top-0 z-40 w-full max-h-[64px] border-b border-black/[0.08] bg-white/95 backdrop-blur-md shadow-sm transition-all lg:max-h-[88px]">
+        <div className="container-site flex items-center gap-2.5 py-1 sm:gap-4 lg:py-2">
+          {/* Prominent Publisher Logo (50px mobile, 68px desktop, shrinks slightly on scroll) */}
+          <HeaderLogo tenant={tenant} logoUrl={logoUrl} />
 
-        {/* Rounded Instant Search Bar */}
-        <div className="mx-auto flex-1 max-w-md">
-          <HeaderSearch tenant={tenant} books={searchBooks} />
+          {/* Rounded Instant Search Bar */}
+          <div className="mx-auto flex-1 max-w-md">
+            <HeaderSearch tenant={tenant} books={searchBooks} />
+          </div>
+
+          {/* Desktop Nav (mobile uses fixed bottom navigation bar) */}
+          <HeaderNav tenant={tenant} items={NAV} variant="desktop" />
+
+          {/* Actions: Language Toggle & Live Cart */}
+          <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2.5">
+            <LanguageToggle />
+            <CartButton tenant={tenant} />
+          </div>
         </div>
-
-        {/* Desktop Nav */}
-        <HeaderNav tenant={tenant} items={NAV} variant="desktop" />
-
-        {/* Actions: Language Toggle & Live Cart */}
-        <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
-          <LanguageToggle />
-          <CartButton tenant={tenant} />
-        </div>
-      </div>
-
-      {/* Mobile Swipe Nav Bar */}
-      <HeaderNav tenant={tenant} items={NAV} variant="mobile" />
-    </header>
+      </header>
+    </>
   );
 }

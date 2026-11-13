@@ -1,5 +1,13 @@
 import { splitBilingual } from "@/lib/i18n";
-import { BRAND, DEFAULT_SOCIAL, SITE_URL } from "@/lib/site-defaults";
+import {
+  BRAND,
+  DEFAULT_LOGO_URL,
+  DEFAULT_SOCIAL,
+  LOGO_ALT,
+  LOGO_HEIGHT,
+  LOGO_WIDTH,
+  SITE_URL,
+} from "@/lib/site-defaults";
 
 /**
  * Canonical publisher entity facts kept 100% identical across Organization, BookStore,
@@ -65,9 +73,9 @@ export function buildBreadcrumbNode(items: BreadcrumbItem[], id?: string) {
   };
 }
 
-export function buildOrganizationNodes(tenant: string) {
+export function buildOrganizationNodes(tenant: string, customLogoUrl?: string) {
   const homeUrl = `${SITE_URL}/${tenant}`;
-  const logoUrl = `${SITE_URL}/logo.jpg`;
+  const logoUrl = customLogoUrl || DEFAULT_LOGO_URL;
   const orgId = `${SITE_URL}/#organization`;
   const storeId = `${homeUrl}#bookstore`;
 
@@ -90,8 +98,9 @@ export function buildOrganizationNodes(tenant: string) {
       logo: {
         "@type": "ImageObject",
         url: logoUrl,
-        width: 1024,
-        height: 1021,
+        width: LOGO_WIDTH,
+        height: LOGO_HEIGHT,
+        caption: LOGO_ALT,
       },
       email: PUBLISHER_ENTITY.email,
       telephone: PUBLISHER_ENTITY.phoneE164,
@@ -124,14 +133,14 @@ export function buildOrganizationNodes(tenant: string) {
   ];
 }
 
-export function buildHomeJsonLd(tenant: string) {
+export function buildHomeJsonLd(tenant: string, customLogoUrl?: string) {
   const homeUrl = `${SITE_URL}/${tenant}`;
   const orgId = `${SITE_URL}/#organization`;
 
   return {
     "@context": "https://schema.org",
     "@graph": [
-      ...buildOrganizationNodes(tenant),
+      ...buildOrganizationNodes(tenant, customLogoUrl),
       {
         "@type": "WebSite",
         "@id": `${homeUrl}#website`,

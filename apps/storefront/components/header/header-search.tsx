@@ -127,7 +127,7 @@ export default function HeaderSearch({
             if (query.trim().length >= 2) setIsOpen(true);
           }}
           placeholder={t("நூல் அல்லது ஆசிரியர் தேடுக…", "Search books or author…")}
-          className="h-11 w-full rounded-full border border-black/20 bg-[#FAFAFA] pl-10 pr-4 text-[13.5px] text-black placeholder:text-black/55 focus:border-brand-red focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all"
+          className="h-10 lg:h-11 w-full rounded-full border border-black/20 bg-[#FAFAFA] pl-10 pr-4 text-[13.5px] text-black placeholder:text-black/55 focus:border-brand-red focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all"
         />
         <svg
           className="pointer-events-none absolute left-3.5 h-4 w-4 text-black/55"

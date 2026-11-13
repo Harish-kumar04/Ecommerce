@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import BookDetailView from "@/components/product/book-detail-view";
 import { fetchBookById, getBooksWithFallback } from "@/lib/catalog-fallback";
 import { splitBilingual } from "@/lib/i18n";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import { BRAND, DEFAULT_TENANT, LOGO_ALT, SITE_URL, getShareLogoUrl } from "@/lib/site-defaults";
 import {
   absoluteUrl,
   bookCanonicalUrl,
@@ -61,9 +61,9 @@ export async function generateMetadata({
   ).slice(0, 300);
 
   const canonical = bookCanonicalUrl(params.tenant, product);
-  const image =
-    absoluteUrl(product.image_url || product.images?.[0]) || `${SITE_URL}/logo.jpg`;
-  const alt = hasDistinctEn ? `${ta} — ${en}` : ta;
+  const coverUrl = absoluteUrl(product.image_url || product.images?.[0]);
+  const image = coverUrl || getShareLogoUrl();
+  const alt = coverUrl ? (hasDistinctEn ? `${ta} — ${en}` : ta) : LOGO_ALT;
 
   return {
     title,
@@ -82,7 +82,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      images: [{ url: image, alt }],
     },
   };
 }

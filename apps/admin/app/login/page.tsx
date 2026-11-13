@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { adminApi } from "@/lib/api";
 import { AuthManager } from "@/lib/auth";
 import { toast } from "@/components/toaster";
+import { AdminBrandLogo, DEFAULT_LOGO_URL, resolveAdminLogoUrl } from "@/components/brand-logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,6 +16,25 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>(DEFAULT_LOGO_URL);
+
+  useEffect(() => {
+    let active = true;
+    const rawApi = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const storeEndpoint = rawApi ? `${rawApi}/api/v1/public/store` : "";
+    if (!storeEndpoint) return;
+    fetch(storeEndpoint)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (!active || !s) return;
+        const tcLogo = s?.theme_config?.logo_url || s?.store?.theme_config?.logo_url || s?.logo_url;
+        setLogoUrl(resolveAdminLogoUrl(tcLogo));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +58,15 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-6">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.jpg"
-            alt="Muthamilarignar Pathipagam"
-            className="mx-auto h-20 w-20 rounded-2xl object-contain bg-white border border-gray-200 dark:border-neutral-800 p-1 shadow-sm"
-          />
+          <div className="mx-auto inline-flex rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white p-2 shadow-sm">
+            <AdminBrandLogo
+              src={logoUrl}
+              sizes="96px"
+              priority
+              className="h-20 w-20"
+              penSize={24}
+            />
+          </div>
           <h1 className="mt-5 text-[24px] font-bold tracking-tight text-gray-900 dark:text-neutral-100">
             முத்தமிழறிஞர் பதிப்பகம்
           </h1>

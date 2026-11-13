@@ -1,24 +1,25 @@
-import Image from "@/components/ui/img";
 import Link from "next/link";
+import BrandLogo from "./brand/brand-logo";
 import { T } from "./i18n/t";
 import PageLines from "./brand/page-lines";
 import Sunburst from "./brand/sunburst";
 import { FacebookIcon, MailIcon, WhatsAppIcon } from "./brand/icons";
-import { type SocialConfig, whatsappHref } from "@/lib/site-defaults";
-import footerLogo from "@/public/brand/logo-192.webp";
+import { DEFAULT_LOGO_URL, LOGO_ALT, type SocialConfig, whatsappHref } from "@/lib/site-defaults";
 
 /**
- * Storefront footer (Server Component, zero client JS): solid black with red accents,
+ * Storefront footer (Server Component): solid black with red accents,
  * a layered "book pages" top edge, contact details and social icon buttons.
  */
 export default function StorefrontFooter({
   tenant,
   social,
   bookCount,
+  logoUrl = DEFAULT_LOGO_URL,
 }: {
   tenant: string;
   social: SocialConfig;
   bookCount?: number;
+  logoUrl?: string;
 }) {
   const year = new Date().getFullYear();
   const home = `/${tenant}`;
@@ -41,15 +42,13 @@ export default function StorefrontFooter({
         <div className="container-site relative py-14 lg:py-16">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <Link href={home} prefetch={false} className="inline-block" aria-label="முத்தமிழறிஞர் பதிப்பகம்">
-                <div className="inline-flex items-center justify-center rounded-2xl bg-white p-3 shadow-md">
-                  <Image
-                    src={footerLogo}
-                    alt="முத்தமிழறிஞர் பதிப்பகம்"
-                    width={96}
-                    height={96}
-                    sizes="96px"
-                    className="h-24 w-24 object-contain"
+              <Link href={home} prefetch={false} className="inline-block" aria-label={LOGO_ALT}>
+                <div className="inline-flex items-center justify-center rounded-2xl bg-white p-3.5 shadow-md">
+                  <BrandLogo
+                    src={logoUrl}
+                    sizes="(max-width: 640px) 112px, 128px"
+                    className="h-28 sm:h-32"
+                    penSize="md"
                   />
                 </div>
               </Link>

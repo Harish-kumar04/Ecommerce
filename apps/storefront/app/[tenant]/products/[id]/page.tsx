@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import BookDetailView from "@/components/product/book-detail-view";
 import { fetchBookById, getBooksWithFallback } from "@/lib/catalog-fallback";
 import { splitBilingual } from "@/lib/i18n";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import { BRAND, DEFAULT_TENANT, LOGO_ALT, getShareLogoUrl } from "@/lib/site-defaults";
 import { absoluteUrl, bookCanonicalUrl, buildBookJsonLd } from "@/lib/seo-schema";
 
 // ISR: book detail pages cached for 120 s and revalidated via /api/revalidate tags.
@@ -30,7 +30,9 @@ export async function generateMetadata({
   const title = product.meta_title || `${ta}${en && en !== ta ? ` | ${en}` : ""} — ${BRAND.nameTa}`;
   const description = (product.meta_description || descTa || descEn || `Buy ${en} from ${BRAND.nameEn}`).slice(0, 300);
   const canonical = bookCanonicalUrl(params.tenant, product);
-  const image = absoluteUrl(product.image_url || product.images?.[0]) || `${SITE_URL}/logo.jpg`;
+  const coverUrl = absoluteUrl(product.image_url || product.images?.[0]);
+  const image = coverUrl || getShareLogoUrl();
+  const alt = coverUrl ? `${ta} — ${en}` : LOGO_ALT;
   return {
     title,
     description,
@@ -41,9 +43,9 @@ export async function generateMetadata({
       description,
       url: canonical,
       type: "book",
-      images: [{ url: image, alt: `${ta} — ${en}` }],
+      images: [{ url: image, alt }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [{ url: image, alt }] },
   };
 }
 

@@ -4,8 +4,9 @@ import {
   fetchBooksSafe,
   getBooksWithFallback,
   getCategoriesWithFallback,
+  getStoreWithFallback,
 } from "@/lib/catalog-fallback";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import { BRAND, DEFAULT_TENANT, LOGO_ALT, SITE_URL, getShareLogoUrl } from "@/lib/site-defaults";
 import { absoluteUrl, buildListingJsonLd, PUBLISHER_ENTITY } from "@/lib/seo-schema";
 
 export const revalidate = 60;
@@ -19,13 +20,16 @@ export async function generateMetadata({
 }: {
   params: { tenant: string };
 }): Promise<Metadata> {
-  const books = await getBooksWithFallback(params.tenant);
+  const [books, store] = await Promise.all([
+    getBooksWithFallback(params.tenant),
+    getStoreWithFallback(params.tenant),
+  ]);
   const title = `அனைத்து நூல்கள் | All Books — ${BRAND.nameTa} | ${BRAND.nameEn}`;
   const description = `முத்தமிழறிஞர் பதிப்பகத்தின் ${books.length} அதிகாரப்பூர்வ வெளியீடுகள் — திராவிட இயக்க வரலாறு, சமூகநீதி, திராவிட மாடல் மற்றும் கலைஞர் படைப்புகள். Browse all ${books.length} official Tamil & English books from ${BRAND.nameEn}.`;
   const url = `${SITE_URL}/${params.tenant}/books`;
   const leadCover =
     absoluteUrl((books[0] as any)?.image_url || (books[0] as any)?.images?.[0]) ||
-    `${SITE_URL}/logo.jpg`;
+    getShareLogoUrl(store);
 
   return {
     title,
@@ -38,13 +42,13 @@ export async function generateMetadata({
       siteName: `${BRAND.nameTa} | ${BRAND.nameEn}`,
       locale: "ta_IN",
       type: "website",
-      images: [{ url: leadCover, alt: `${BRAND.nameTa} | ${BRAND.nameEn}` }],
+      images: [{ url: leadCover, alt: LOGO_ALT }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [leadCover],
+      images: [{ url: leadCover, alt: LOGO_ALT }],
     },
   };
 }

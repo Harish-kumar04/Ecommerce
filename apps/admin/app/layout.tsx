@@ -4,11 +4,29 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppShell } from "@/components/app-shell";
 
+import { ADMIN_LOGO_ALT, DEFAULT_LOGO_URL, cloudinaryLogoTransform } from "@/lib/logo";
+
+const ADMIN_FAVICON_URL = cloudinaryLogoTransform(DEFAULT_LOGO_URL, 192);
+const ADMIN_APPLE_ICON_URL = cloudinaryLogoTransform(DEFAULT_LOGO_URL, 180);
+const ADMIN_SHARE_LOGO_URL = cloudinaryLogoTransform(DEFAULT_LOGO_URL, 1200, "c_pad,b_white");
+
 export const metadata: Metadata = {
   title: "Muthamilarignar Pathipagam — Admin | முத்தமிழறிஞர் பதிப்பகம்",
   description: "Manage Muthamilarignar Pathipagam bookstore, catalog, and orders",
   icons: {
-    icon: "/logo.jpg",
+    icon: [{ url: ADMIN_FAVICON_URL, sizes: "192x192" }],
+    apple: [{ url: ADMIN_APPLE_ICON_URL, sizes: "180x180" }],
+  },
+  openGraph: {
+    title: "Muthamilarignar Pathipagam — Admin | முத்தமிழறிஞர் பதிப்பகம்",
+    description: "Manage Muthamilarignar Pathipagam bookstore, catalog, and orders",
+    images: [{ url: ADMIN_SHARE_LOGO_URL, width: 1200, height: 1197, alt: ADMIN_LOGO_ALT }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Muthamilarignar Pathipagam — Admin | முத்தமிழறிஞர் பதிப்பகம்",
+    description: "Manage Muthamilarignar Pathipagam bookstore, catalog, and orders",
+    images: [{ url: ADMIN_SHARE_LOGO_URL, alt: ADMIN_LOGO_ALT }],
   },
 };
 

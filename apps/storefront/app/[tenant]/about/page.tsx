@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Img from "@/components/ui/img";
+import BrandLogo from "@/components/brand/brand-logo";
 import { T } from "@/components/i18n/t";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import {
+  BRAND,
+  DEFAULT_TENANT,
+  LOGO_ALT,
+  SITE_URL,
+  getLogoUrl,
+  getShareLogoUrl,
+} from "@/lib/site-defaults";
 import {
   PUBLISHER_ENTITY,
   buildBreadcrumbNode,
   buildOrganizationNodes,
 } from "@/lib/seo-schema";
 import { AUTHORS, POLICY_LAST_UPDATED_EN, POLICY_LAST_UPDATED_ISO, POLICY_LAST_UPDATED_TA } from "@/lib/aeo-data";
-import { fetchBooksSafe } from "@/lib/catalog-fallback";
-import publisherLogo from "@/public/brand/logo-192.webp";
+import { fetchBooksSafe, getStoreWithFallback } from "@/lib/catalog-fallback";
 
 export const revalidate = 3600;
 
@@ -18,7 +24,9 @@ export function generateStaticParams() {
   return [{ tenant: DEFAULT_TENANT }];
 }
 
-export function generateMetadata({ params }: { params: { tenant: string } }): Metadata {
+export async function generateMetadata({ params }: { params: { tenant: string } }): Promise<Metadata> {
+  const store = await getStoreWithFallback(params.tenant);
+  const shareLogo = getShareLogoUrl(store);
   const title = `எங்களைப் பற்றி | About ${BRAND.nameTa} (${BRAND.nameEn})`;
   const description =
     "Official publisher profile for Muthamilarignar Pathipagam (முத்தமிழறிஞர் பதிப்பகம்), Anna Arivalayam Campus, Teynampet, Chennai — publishing Dravidian history, social justice, and Kalaignar's works.";
@@ -27,7 +35,8 @@ export function generateMetadata({ params }: { params: { tenant: string } }): Me
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, type: "website", images: [{ url: `${SITE_URL}/logo.jpg`, alt: BRAND.nameEn }] },
+    openGraph: { title, description, url, type: "website", images: [{ url: shareLogo, alt: LOGO_ALT }] },
+    twitter: { card: "summary_large_image", title, description, images: [{ url: shareLogo, alt: LOGO_ALT }] },
   };
 }
 
@@ -36,14 +45,18 @@ export default async function AboutPublisherPage({
 }: {
   params: { tenant: string };
 }) {
-  const booksRes = await fetchBooksSafe(params.tenant);
+  const [booksRes, store] = await Promise.all([
+    fetchBooksSafe(params.tenant),
+    getStoreWithFallback(params.tenant),
+  ]);
+  const logoUrl = getLogoUrl(store);
   const totalBooks = booksRes.books.length;
   const pageUrl = `${SITE_URL}/${params.tenant}/about`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      ...buildOrganizationNodes(params.tenant),
+      ...buildOrganizationNodes(params.tenant, logoUrl),
       buildBreadcrumbNode(
         [
           { name: `${PUBLISHER_ENTITY.nameTa} | Home`, url: `${SITE_URL}/${params.tenant}` },
@@ -127,13 +140,11 @@ export default async function AboutPublisherPage({
         <aside className="lg:col-span-4">
           <div className="card-glow bg-[#FAFAFA] p-6">
             <div className="mb-4 inline-flex rounded-2xl border border-black/10 bg-white p-3">
-              <Img
-                src={publisherLogo}
-                alt={`${PUBLISHER_ENTITY.nameTa} | ${PUBLISHER_ENTITY.nameEn}`}
-                width={88}
-                height={88}
+              <BrandLogo
+                src={logoUrl}
                 sizes="88px"
-                className="h-20 w-20 object-contain"
+                className="h-20"
+                penSize="sm"
               />
             </div>
             <h2 className="text-[18px] font-extrabold text-black">

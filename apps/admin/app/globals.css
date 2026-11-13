@@ -77,3 +77,33 @@ html.dark select {
   outline: 2px solid rgb(var(--ring));
   outline-offset: 2px;
 }
+
+@keyframes adminPenTilt {
+  0%, 100% { transform: translate(-2px, 1px) rotate(-14deg); }
+  50% { transform: translate(3px, -2px) rotate(-6deg); }
+}
+
+@keyframes adminPenStroke {
+  0% { stroke-dashoffset: 64; opacity: 0.35; }
+  50% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: -64; opacity: 0.35; }
+}
+
+.admin-pen-nib {
+  transform-origin: 32px 24px;
+  animation: adminPenTilt 1.3s ease-in-out infinite;
+}
+
+.admin-pen-stroke {
+  stroke-dasharray: 64;
+  stroke-dashoffset: 64;
+  animation: adminPenStroke 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-pen-nib,
+  .admin-pen-stroke {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

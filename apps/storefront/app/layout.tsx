@@ -6,7 +6,12 @@ import { LanguageProvider } from "@/components/language-provider";
 import Toaster from "@/components/toaster-lazy";
 import { CartRefreshBridge } from "@/components/cart-refresh-bridge";
 import { LANG_BOOT_SCRIPT } from "@/lib/i18n";
-import { SITE_URL } from "@/lib/site-defaults";
+import {
+  DEFAULT_LOGO_URL,
+  LOGO_ALT,
+  SITE_URL,
+  cloudinaryImageUrl,
+} from "@/lib/site-defaults";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,19 +29,26 @@ const notoTamil = Noto_Sans_Tamil({
   variable: "--font-tamil",
 });
 
+const defaultShareImg = cloudinaryImageUrl(DEFAULT_LOGO_URL, 1200);
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Muthamilarignar Pathipagam | முத்தமிழறிஞர் பதிப்பகம்",
   description:
     "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam",
   icons: {
-    icon: "/logo.jpg",
+    icon: cloudinaryImageUrl(DEFAULT_LOGO_URL, 192),
+    apple: cloudinaryImageUrl(DEFAULT_LOGO_URL, 180),
   },
   openGraph: {
-    siteName: "முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam",
-    images: [{ url: "/logo.jpg", alt: "Muthamilarignar Pathipagam" }],
+    siteName: LOGO_ALT,
+    images: [{ url: defaultShareImg, width: 1200, height: 1197, alt: LOGO_ALT }],
     locale: "ta_IN",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [defaultShareImg],
   },
 };
 

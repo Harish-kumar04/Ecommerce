@@ -2,16 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Img from "@/components/ui/img";
-import logo from "@/public/brand/logo-144.webp";
+import BrandLogo from "@/components/brand/brand-logo";
+import { DEFAULT_LOGO_URL, LOGO_ALT } from "@/lib/site-defaults";
 
-export default function HeaderLogo({ tenant }: { tenant: string }) {
+export default function HeaderLogo({
+  tenant,
+  logoUrl = DEFAULT_LOGO_URL,
+}: {
+  tenant: string;
+  logoUrl?: string;
+}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      setScrolled(window.scrollY > 28);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -20,18 +27,16 @@ export default function HeaderLogo({ tenant }: { tenant: string }) {
     <Link
       href={`/${tenant}`}
       prefetch={false}
-      className="flex flex-shrink-0 items-center transition-all duration-200"
-      aria-label="முத்தமிழறிஞர் பதிப்பகம் / Muthamilarignar Pathipagam"
+      aria-label={LOGO_ALT}
+      className="flex flex-shrink-0 items-center rounded-lg bg-white p-0.5 transition-all duration-200"
     >
-      <Img
-        src={logo}
-        alt="முத்தமிழறிஞர் பதிப்பகம்"
-        width={144}
-        height={144}
-        placeholder="empty"
-        sizes="(max-width: 640px) 62px, (max-width: 1024px) 66px, 78px"
-        className={`w-auto object-contain transition-transform duration-300 ${
-          scrolled ? "h-[50px] sm:h-[56px]" : "h-[62px] lg:h-[78px]"
+      <BrandLogo
+        src={logoUrl}
+        sizes="(max-width: 1024px) 52px, 72px"
+        className={`transition-all duration-200 ${
+          scrolled
+            ? "h-[42px] lg:h-[56px]"
+            : "h-[50px] lg:h-[68px]"
         }`}
       />
     </Link>

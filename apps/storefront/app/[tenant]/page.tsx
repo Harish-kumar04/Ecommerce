@@ -25,7 +25,10 @@ import { splitBilingual } from "@/lib/i18n";
 import {
   BRAND,
   DEFAULT_TENANT,
+  LOGO_ALT,
   SITE_URL,
+  getLogoUrl,
+  getShareLogoUrl,
   getSlides,
   isExternal,
   resolveLink,
@@ -65,7 +68,7 @@ export async function generateMetadata({
     store?.description ||
     "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam with Pan-India COD & online delivery.";
   const url = `${SITE_URL}/${params.tenant}`;
-  const ogImg = `${SITE_URL}/logo.jpg`;
+  const ogImg = getShareLogoUrl(store);
   return {
     title,
     description,
@@ -74,10 +77,10 @@ export async function generateMetadata({
       title,
       description,
       url,
-      siteName: `${BRAND.nameTa} | ${BRAND.nameEn}`,
+      siteName: LOGO_ALT,
       locale: "ta_IN",
       type: "website",
-      images: [{ url: ogImg, width: 1024, height: 1021, alt: `${BRAND.nameTa} | ${BRAND.nameEn}` }],
+      images: [{ url: ogImg, width: 1200, height: 1197, alt: LOGO_ALT }],
     },
     twitter: { card: "summary_large_image", title, description, images: [ogImg] },
   };
@@ -174,7 +177,8 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
   );
   const kalaignarWorks = (kalaignarMatches.length > 0 ? kalaignarMatches : cards).slice(0, 8);
 
-  const jsonLd = buildHomeJsonLd(tenant);
+  const logoUrl = getLogoUrl(store);
+  const jsonLd = buildHomeJsonLd(tenant, logoUrl);
 
   return (
     <>
@@ -224,7 +228,7 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
       <HeroSlider slides={slideViews} />
 
       {/* 6. Author & Publisher Story (#FAFAFA) */}
-      <PublisherStory tenant={tenant} totalBooks={total} />
+      <PublisherStory tenant={tenant} totalBooks={total} logoUrl={logoUrl} />
 
       <DiagonalStripeDivider />
 

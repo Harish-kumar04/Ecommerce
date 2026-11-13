@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { sanitizeBookCovers } from "./site-defaults";
+import { DEFAULT_LOGO_URL, sanitizeBookCovers } from "./site-defaults";
 
 export function getServerApiUrl(): string {
   const bound = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -44,9 +44,13 @@ export const FALLBACK_STORE = {
   slug: "demo-store-main",
   description:
     "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam.",
-  logo_url: "/logo.jpg",
+  logo_url: DEFAULT_LOGO_URL,
   currency: "INR",
-  theme_config: { primary_color: "#E52320", secondary_color: "#0a0a0a" },
+  theme_config: {
+    primary_color: "#E52320",
+    secondary_color: "#0a0a0a",
+    logo_url: DEFAULT_LOGO_URL,
+  },
   status: "published",
 };
 

@@ -261,6 +261,7 @@ async def main() -> None:
                 puser.status = UserStatus.ACTIVE
 
         # Store
+        default_logo_url = "https://res.cloudinary.com/dikaxqooz/image/upload/v1794509921/Logo_vuhujt.jpg"
         store = (
             await s.execute(select(Store).where(Store.tenant_id == tenant.id))
         ).scalar_one_or_none()
@@ -270,8 +271,12 @@ async def main() -> None:
                 name="Muthamilarignar Pathipagam",
                 slug=f"{TENANT_SLUG}-main",
                 description="முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam.",
-                logo_url="/logo.jpg",
-                theme_config={"primary_color": "#dc2626", "secondary_color": "#0a0a0a"},
+                logo_url=default_logo_url,
+                theme_config={
+                    "primary_color": "#dc2626",
+                    "secondary_color": "#0a0a0a",
+                    "logo_url": default_logo_url,
+                },
                 status=StoreStatus.PUBLISHED,
                 published_at=datetime.now(timezone.utc),
             )
@@ -279,10 +284,22 @@ async def main() -> None:
             await s.flush()
             created.append("store")
         else:
+            existing_tc = dict(store.theme_config or {})
+            custom_logo = existing_tc.get("logo_url") or store.logo_url
+            resolved_logo = (
+                custom_logo
+                if isinstance(custom_logo, str) and custom_logo.strip() and custom_logo.strip() != "/logo.jpg"
+                else default_logo_url
+            )
             store.name = "Muthamilarignar Pathipagam"
             store.description = "முத்தமிழறிஞர் பதிப்பகம் — திராவிட இயக்க வரலாறு, சமூகநீதி மற்றும் கலைஞர் படைப்புகள் | Official Bookstore of Muthamilarignar Pathipagam."
-            store.logo_url = "/logo.jpg"
-            store.theme_config = {"primary_color": "#dc2626", "secondary_color": "#0a0a0a"}
+            store.logo_url = resolved_logo
+            store.theme_config = {
+                **existing_tc,
+                "primary_color": existing_tc.get("primary_color") or "#dc2626",
+                "secondary_color": existing_tc.get("secondary_color") or "#0a0a0a",
+                "logo_url": resolved_logo,
+            }
             store.status = StoreStatus.PUBLISHED
 
         # Primary domain

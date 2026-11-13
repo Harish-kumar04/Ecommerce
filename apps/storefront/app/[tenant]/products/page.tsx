@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BooksCatalogClient from "@/components/product/books-catalog-client";
-import { fetchBooksSafe, getBooksWithFallback, getCategoriesWithFallback } from "@/lib/catalog-fallback";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import { fetchBooksSafe, getBooksWithFallback, getCategoriesWithFallback, getStoreWithFallback } from "@/lib/catalog-fallback";
+import { BRAND, DEFAULT_TENANT, LOGO_ALT, SITE_URL, getShareLogoUrl } from "@/lib/site-defaults";
 import { buildListingJsonLd, PUBLISHER_ENTITY } from "@/lib/seo-schema";
 
 // ISR: the category filter is applied client-side from ?category=, so this page stays static.
@@ -12,7 +12,11 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { tenant: string } }): Promise<Metadata> {
-  const books = await getBooksWithFallback(params.tenant);
+  const [books, store] = await Promise.all([
+    getBooksWithFallback(params.tenant),
+    getStoreWithFallback(params.tenant),
+  ]);
+  const shareLogo = getShareLogoUrl(store);
   const title = `நூல்கள் | Books — ${BRAND.nameTa} | ${BRAND.nameEn}`;
   const description = `Browse all ${books.length} books published by ${BRAND.nameEn} (${BRAND.nameTa}) — Dravidian movement history, social justice and Kalaignar literature.`;
   const canonicalUrl = `${SITE_URL}/${params.tenant}/books`;
@@ -21,8 +25,8 @@ export async function generateMetadata({ params }: { params: { tenant: string } 
     description,
     alternates: { canonical: canonicalUrl },
     robots: { index: false, follow: true },
-    openGraph: { title, description, url: canonicalUrl, type: "website", images: [{ url: `${SITE_URL}/logo.jpg`, alt: BRAND.nameEn }] },
-    twitter: { card: "summary_large_image", title, description, images: [`${SITE_URL}/logo.jpg`] },
+    openGraph: { title, description, url: canonicalUrl, type: "website", images: [{ url: shareLogo, alt: LOGO_ALT }] },
+    twitter: { card: "summary_large_image", title, description, images: [{ url: shareLogo, alt: LOGO_ALT }] },
   };
 }
 

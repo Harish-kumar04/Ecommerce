@@ -1,21 +1,23 @@
 import Link from "next/link";
-import Image from "@/components/ui/img";
+import BrandLogo from "@/components/brand/brand-logo";
 import { T } from "@/components/i18n/t";
 import { ArrowRightIcon } from "@/components/brand/icons";
 import { SectionHeading, SunburstBackdrop } from "@/components/brand/patterns";
-import publisherLogo from "@/public/brand/logo-192.webp";
+import { DEFAULT_LOGO_URL } from "@/lib/site-defaults";
 
 /**
- * Author & Publisher Story section (Server Component, zero client JS).
+ * Author & Publisher Story section (Server Component).
  * Celebrates Muthamilarignar Pathipagam's mission preserving Dravidian movement history,
  * social justice, language rights, and Muthamilarignar Kalaignar's literary works.
  */
 export default function PublisherStory({
   tenant,
   totalBooks,
+  logoUrl = DEFAULT_LOGO_URL,
 }: {
   tenant: string;
   totalBooks: number;
+  logoUrl?: string;
 }) {
   const pillars = [
     {
@@ -51,13 +53,11 @@ export default function PublisherStory({
           <div className="lg:col-span-5">
             <div className="card-glow pattern-red-dots relative overflow-hidden p-8 sm:p-10 text-center">
               <div className="mx-auto inline-flex rounded-3xl border border-black/10 bg-white p-5 shadow-md">
-                <Image
-                  src={publisherLogo}
-                  alt="முத்தமிழறிஞர் பதிப்பகம் இலச்சினை / Muthamilarignar Pathipagam Emblem"
-                  width={144}
-                  height={144}
+                <BrandLogo
+                  src={logoUrl}
                   sizes="144px"
-                  className="h-32 w-32 object-contain sm:h-36 sm:w-36"
+                  className="h-32 sm:h-36"
+                  penSize="md"
                 />
               </div>
 

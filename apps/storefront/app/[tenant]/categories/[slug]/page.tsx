@@ -7,8 +7,9 @@ import { splitBilingual } from "@/lib/i18n";
 import {
   fetchBooksSafe,
   getCategoriesWithFallback,
+  getStoreWithFallback,
 } from "@/lib/catalog-fallback";
-import { BRAND, DEFAULT_TENANT, SITE_URL } from "@/lib/site-defaults";
+import { BRAND, DEFAULT_TENANT, LOGO_ALT, SITE_URL, getShareLogoUrl } from "@/lib/site-defaults";
 import { absoluteUrl, buildListingJsonLd, PUBLISHER_ENTITY } from "@/lib/seo-schema";
 
 export const revalidate = 60;
@@ -25,7 +26,10 @@ export async function generateMetadata({
 }: {
   params: { tenant: string; slug: string };
 }): Promise<Metadata> {
-  const categories = (await getCategoriesWithFallback(params.tenant)) as any[];
+  const [categories, store] = await Promise.all([
+    getCategoriesWithFallback(params.tenant) as Promise<any[]>,
+    getStoreWithFallback(params.tenant),
+  ]);
   const cat = categories.find(
     (c) => String(c.slug || "").toLowerCase() === params.slug.toLowerCase(),
   );
@@ -38,6 +42,7 @@ export async function generateMetadata({
     cat.description ||
     `Explore ${en || ta} publications from ${BRAND.nameEn} (${BRAND.nameTa}).`;
   const url = `${SITE_URL}/${params.tenant}/categories/${cat.slug}`;
+  const shareLogo = getShareLogoUrl(store);
   return {
     title,
     description,
@@ -49,9 +54,9 @@ export async function generateMetadata({
       siteName: `${BRAND.nameTa} | ${BRAND.nameEn}`,
       locale: "ta_IN",
       type: "website",
-      images: [{ url: `${SITE_URL}/logo.jpg`, alt: title }],
+      images: [{ url: shareLogo, alt: LOGO_ALT }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [`${SITE_URL}/logo.jpg`] },
+    twitter: { card: "summary_large_image", title, description, images: [{ url: shareLogo, alt: LOGO_ALT }] },
   };
 }
 

@@ -20,6 +20,12 @@ export const BRAND = {
   nameEn: "Muthamilarignar Pathipagam",
 } as const;
 
+export const DEFAULT_LOGO_URL =
+  "https://res.cloudinary.com/dikaxqooz/image/upload/v1794509921/Logo_vuhujt.jpg";
+export const LOGO_ALT = "முத்தமிழறிஞர் பதிப்பகம் | Muthamilarignar Pathipagam";
+export const LOGO_WIDTH = 1600;
+export const LOGO_HEIGHT = 1596;
+
 /* ------------------------------------------------------------------ */
 /* Social / contact                                                    */
 /* ------------------------------------------------------------------ */
@@ -387,3 +393,24 @@ export function sanitizeBookCovers<T extends Record<string, any>>(book: T): T {
   };
 }
 
+/**
+ * Resolve the publisher logo URL from `store.theme_config.logo_url`, falling back to
+ * the official Cloudinary logo (`DEFAULT_LOGO_URL`). Legacy `/logo.jpg` is ignored.
+ */
+export function getLogoUrl(store?: any): string {
+  const fromTheme = sanitizeCoverUrl(themeConfig(store).logo_url);
+  if (fromTheme && fromTheme !== "/logo.jpg") return fromTheme;
+  const fromStore = sanitizeCoverUrl(store?.logo_url || store?.logo);
+  if (fromStore && fromStore !== "/logo.jpg") return fromStore;
+  return DEFAULT_LOGO_URL;
+}
+
+export function getShareLogoUrl(store?: any, width = 1200): string {
+  const raw = getLogoUrl(store);
+  return isCloudinaryUrl(raw) ? cloudinaryImageUrl(raw, width) : raw;
+}
+
+export function getFaviconUrl(store?: any, width = 192): string {
+  const raw = getLogoUrl(store);
+  return isCloudinaryUrl(raw) ? cloudinaryImageUrl(raw, width) : raw;
+}

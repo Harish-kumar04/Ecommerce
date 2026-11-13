@@ -7,7 +7,9 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import AuthGuard from "./auth-guard";
 import ThemeToggle from "./theme-toggle";
 import { AuthManager } from "@/lib/auth";
+import { adminApi } from "@/lib/api";
 import { Toaster } from "./toaster";
+import { AdminBrandLogo, DEFAULT_LOGO_URL, resolveAdminLogoUrl } from "./brand-logo";
 
 /**
  * AppShell wraps the admin layout. Apple-inspired chrome:
@@ -19,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>(DEFAULT_LOGO_URL);
 
   useEffect(() => {
     setIsLoggedIn(AuthManager.isAuthenticated());
@@ -26,6 +29,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isLogin = pathname === "/login";
   const showChrome = !isLogin && isLoggedIn;
+
+  useEffect(() => {
+    if (!showChrome) return;
+    let active = true;
+    adminApi
+      .getStoreSettings()
+      .then((res: any) => {
+        if (!active || !res) return;
+        const s = res.store || res;
+        const custom = s?.theme_config?.logo_url || s?.logo_url || s?.logo;
+        setLogoUrl(resolveAdminLogoUrl(custom));
+      })
+      .catch(() => {});
+
+    const handleLogoUpdated = (ev: Event) => {
+      const detail = (ev as CustomEvent<string>).detail;
+      setLogoUrl(resolveAdminLogoUrl(detail));
+    };
+    window.addEventListener("store-logo-updated", handleLogoUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener("store-logo-updated", handleLogoUpdated);
+    };
+  }, [showChrome]);
 
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -67,13 +94,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {showChrome && (
         <nav className="w-64 flex-shrink-0 border-r border-gray-100 dark:border-neutral-900 bg-white dark:bg-black flex flex-col">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-neutral-900">
-            <Link href="/dashboard" className="flex items-center gap-2.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.jpg"
-                alt="Muthamilarignar Pathipagam"
-                className="h-9 w-9 rounded-lg object-contain bg-white border border-gray-200 dark:border-neutral-800 p-0.5 flex-shrink-0"
-              />
+            <Link href="/dashboard" className="flex items-center gap-3">
+              <span className="inline-flex rounded-xl border border-gray-200 dark:border-neutral-800 bg-white p-1 flex-shrink-0 shadow-sm">
+                <AdminBrandLogo
+                  src={logoUrl}
+                  sizes="48px"
+                  priority
+                  className="h-11 w-11"
+                  penSize={18}
+                />
+              </span>
               <div className="min-w-0">
                 <p className="text-[13.5px] font-bold tracking-tight truncate">
                   முத்தமிழறிஞர் பதிப்பகம்
