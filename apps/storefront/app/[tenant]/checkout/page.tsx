@@ -5,6 +5,7 @@ import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
 import CheckoutForm from "@/components/checkout/checkout-form";
+import PenLoader from "@/components/ui/pen-loader";
 
 function hasRealOrderId(orderObj: any): boolean {
   const oid = orderObj?.order_id || orderObj?.id;
@@ -229,7 +230,7 @@ export default function CheckoutPage({ params }: { params: { tenant: string } })
 
       {step === 2 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center">
-          <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-100 border-t-brand-red animate-spin" />
+          <PenLoader size="lg" label="Redirecting to payment" />
           <h2 className="mt-5 text-[20px] font-semibold text-gray-900">
             Redirecting to payment
           </h2>

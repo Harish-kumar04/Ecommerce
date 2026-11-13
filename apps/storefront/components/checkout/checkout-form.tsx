@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "@/components/toaster";
 import { useLanguage } from "@/components/language-provider";
 import { storefrontApi } from "@/lib/api";
+import PenLoader from "@/components/ui/pen-loader";
 
 interface AppliedCoupon {
   code: string;
@@ -347,10 +348,15 @@ export default function CheckoutForm({
             <button
               type="button"
               disabled={couponLoading}
+              aria-busy={couponLoading || undefined}
               onClick={handleApplyCoupon}
-              className="h-11 px-5 rounded-xl bg-black text-white text-[13.5px] font-semibold hover:bg-black/85 disabled:opacity-50"
+              className="h-11 px-5 rounded-xl bg-black text-white text-[13.5px] font-semibold hover:bg-black/85 disabled:opacity-60 inline-flex items-center justify-center"
             >
-              {couponLoading ? "…" : t("பயன்படுத்து", "Apply")}
+              {couponLoading ? (
+                <PenLoader size="sm" tone="light" label="Applying coupon" />
+              ) : (
+                t("பயன்படுத்து", "Apply")
+              )}
             </button>
           </div>
         )}
@@ -443,11 +449,12 @@ export default function CheckoutForm({
         <button
           type="submit"
           disabled={loading}
+          aria-busy={loading || undefined}
           className="btn-red h-14 w-full text-[16px] font-bold shadow-glow"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <PenLoader size="sm" tone="light" label={t("ஆர்டர் செய்யப்படுகிறது", "Processing Order")} />
               {t("ஆர்டர் செய்யப்படுகிறது…", "Processing Order…")}
             </span>
           ) : (
@@ -455,7 +462,7 @@ export default function CheckoutForm({
           )}
         </button>
         <p className="text-[11.5px] text-center text-black/50 mt-2">
-          🔒 {t("100% பாதுகாப்பான பரிவர்த்தனை • உடனடி வாட்ஸ்அப் உதவி", "100% Secure Checkout • Instant WhatsApp Support")}
+          {t("100% பாதுகாப்பான பரிவர்த்தனை • உடனடி வாட்ஸ்அப் உதவி", "100% Secure Checkout • Instant WhatsApp Support")}
         </p>
       </div>
     </form>

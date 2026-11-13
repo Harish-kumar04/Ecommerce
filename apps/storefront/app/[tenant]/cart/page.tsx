@@ -4,6 +4,7 @@ import { toast } from "@/components/toaster";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "@/components/ui/img";
+import PenLoader from "@/components/ui/pen-loader";
 import { storefrontApi } from "@/lib/api";
 import { notifyCartChanged } from "@/lib/cart-events";
 import { useLanguage } from "@/components/language-provider";
@@ -166,10 +167,11 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
     }
   };
 
-  if (loading)
+  if (loading && items.length === 0)
     return (
-      <div className="max-w-5xl mx-auto px-6 py-24 text-center text-[15px] text-gray-500">
-        {t("உங்கள் கூடை ஏற்றப்படுகிறது…", "Loading your cart…")}
+      <div className="max-w-5xl mx-auto px-6 py-24 flex flex-col items-center justify-center gap-3 text-center text-[15px] text-gray-600">
+        <PenLoader size="lg" label={t("உங்கள் கூடை ஏற்றப்படுகிறது", "Loading your cart")} />
+        <span>{t("உங்கள் கூடை ஏற்றப்படுகிறது…", "Loading your cart…")}</span>
       </div>
     );
   if (error)
@@ -303,9 +305,13 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                       >
                         +
                       </button>
+                      {updating === it.id && (
+                        <PenLoader size="sm" label={t("புதுப்பிக்கப்படுகிறது", "Updating cart")} />
+                      )}
                       <button
+                        disabled={!!updating}
                         onClick={() => removeItem(it.id)}
-                        className="ml-3 text-[12px] text-gray-500 hover:text-brand-red hover:underline"
+                        className="ml-3 text-[12px] text-gray-500 hover:text-brand-red hover:underline disabled:opacity-40"
                       >
                         {t("நீக்குக", "Remove")}
                       </button>
@@ -364,9 +370,13 @@ export default function CartPage({ params }: { params: { tenant: string } }) {
                     type="button"
                     disabled={couponLoading}
                     onClick={() => handleApplyCoupon(total)}
-                    className="h-9 px-3.5 rounded-lg bg-gray-900 text-white text-[12.5px] font-semibold hover:bg-gray-800 disabled:opacity-50"
+                    className="h-9 px-3.5 rounded-lg bg-gray-900 text-white text-[12.5px] font-semibold hover:bg-gray-800 disabled:opacity-50 inline-flex items-center justify-center"
                   >
-                    {couponLoading ? "…" : t("பயன்படுத்து", "Apply")}
+                    {couponLoading ? (
+                      <PenLoader size="sm" tone="light" label={t("சரிபார்க்கப்படுகிறது", "Applying coupon")} />
+                    ) : (
+                      t("பயன்படுத்து", "Apply")
+                    )}
                   </button>
                 </div>
               )}

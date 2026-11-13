@@ -12,6 +12,7 @@ import {
 } from "@/lib/cart-events";
 import { toast } from "@/components/toaster";
 import { CartIcon } from "@/components/brand/icons";
+import PenLoader from "@/components/ui/pen-loader";
 import { cloudinaryImageUrl } from "@/lib/site-defaults";
 
 function formatPrice(cents?: number | null) {
@@ -222,19 +223,37 @@ export function BookPurchaseIslands({
             type="button"
             onClick={handleAddToCart}
             disabled={adding || unavailable}
+            aria-busy={adding || undefined}
             className="btn-outline h-12 px-7 text-[15px] font-bold"
           >
-            <CartIcon className="h-4 w-4" />
-            {adding ? t("சேர்க்கிறது…", "Adding…") : t("கூடையில் சேர்", "Add to cart")}
+            {adding ? (
+              <>
+                <PenLoader size="sm" label={t("சேர்க்கிறது", "Adding")} />
+                {t("சேர்க்கிறது…", "Adding…")}
+              </>
+            ) : (
+              <>
+                <CartIcon className="h-4 w-4" />
+                {t("கூடையில் சேர்", "Add to cart")}
+              </>
+            )}
           </button>
 
           <button
             type="button"
             onClick={handleBuyNow}
             disabled={buying || unavailable}
+            aria-busy={buying || undefined}
             className="btn-red h-12 px-8 text-[15px] font-bold shadow-glow"
           >
-            {buying ? t("தயாராகிறது…", "Processing…") : t("இப்போதே வாங்குக", "Buy now")}
+            {buying ? (
+              <>
+                <PenLoader size="sm" tone="light" label={t("தயாராகிறது", "Processing")} />
+                {t("தயாராகிறது…", "Processing…")}
+              </>
+            ) : (
+              t("இப்போதே வாங்குக", "Buy now")
+            )}
           </button>
         </div>
       )}
@@ -262,17 +281,19 @@ export function BookPurchaseIslands({
               type="button"
               onClick={handleAddToCart}
               disabled={!inStock || adding}
+              aria-busy={adding || undefined}
               className="btn-outline h-11 px-4 text-[13px] font-bold"
             >
-              {adding ? "…" : t("கூடை", "Cart")}
+              {adding ? <PenLoader size="sm" label="Adding" /> : t("கூடை", "Cart")}
             </button>
             <button
               type="button"
               onClick={handleBuyNow}
               disabled={!inStock || buying}
+              aria-busy={buying || undefined}
               className="btn-red h-11 px-5 text-[13.5px] font-bold"
             >
-              {buying ? "…" : t("வாங்க", "Buy now")}
+              {buying ? <PenLoader size="sm" tone="light" label="Processing" /> : t("வாங்க", "Buy now")}
             </button>
           </div>
         )}

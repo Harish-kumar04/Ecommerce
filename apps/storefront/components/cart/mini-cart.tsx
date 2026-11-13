@@ -8,6 +8,7 @@ import { useLanguage } from "@/components/language-provider";
 import Sunburst from "@/components/brand/sunburst";
 import { CartIcon, CloseIcon } from "@/components/brand/icons";
 import Img from "@/components/ui/img";
+import PenLoader from "@/components/ui/pen-loader";
 import { cloudinaryImageUrl } from "@/lib/site-defaults";
 import { toast } from "@/components/toaster";
 
@@ -63,6 +64,7 @@ export default function MiniCart({
   const { t, localizeName, localizeSubName } = useLanguage();
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [loading, setLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [cart, setCart] = useState<any>(null);
   const [items, setItems] = useState<CartItem[]>([]);
 
@@ -119,6 +121,7 @@ export default function MiniCart({
       await removeItem(itemId);
       return;
     }
+    setUpdatingId(itemId);
     setItems((prev) =>
       prev.map((it) =>
         it.id === itemId
@@ -133,30 +136,35 @@ export default function MiniCart({
     try {
       await storefrontApi.updateCartItem(tenant, itemId, newQty);
       notifyCartChanged(tenant);
-      void fetchCart();
+      await fetchCart();
     } catch (err: any) {
       toast({
         kind: "error",
         title: t("பிழை ஏற்பட்டது", "Could not update quantity"),
         description: err?.message || t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
       });
-      void fetchCart();
+      await fetchCart();
+    } finally {
+      setUpdatingId(null);
     }
   };
 
   const removeItem = async (itemId: string) => {
+    setUpdatingId(itemId);
     setItems((prev) => prev.filter((it) => it.id !== itemId));
     try {
       await storefrontApi.removeCartItem(tenant, itemId);
       notifyCartChanged(tenant);
-      void fetchCart();
+      await fetchCart();
     } catch (err: any) {
       toast({
         kind: "error",
         title: t("பிழை ஏற்பட்டது", "Could not remove item"),
         description: err?.message || t("மீண்டும் முயற்சிக்கவும்", "Please try again"),
       });
-      void fetchCart();
+      await fetchCart();
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -207,8 +215,9 @@ export default function MiniCart({
         {/* Items List */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {loading && items.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-sm text-black/40">
-              {t("ஏற்றுகிறது…", "Loading cart…")}
+            <div className="flex h-44 flex-col items-center justify-center gap-3 text-sm text-black/60">
+              <PenLoader size="md" label={t("கூடை ஏற்றப்படுகிறது", "Loading cart")} />
+              <span>{t("கூடை ஏற்றப்படுகிறது…", "Loading cart…")}</span>
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -237,6 +246,7 @@ export default function MiniCart({
                 const lineTotalCents = item.line_total_cents ?? unitPrice * item.quantity;
                 const maxStock = item.stock ?? item.inventory_quantity;
                 const atMaxStock = typeof maxStock === "number" && item.quantity >= maxStock;
+                const isItemUpdating = updatingId === item.id;
                 return (
                   <div key={item.id} className="flex gap-4 pt-4 first:pt-0">
                     <Link
@@ -275,33 +285,40 @@ export default function MiniCart({
                         </p>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center rounded-full border border-black/15 bg-white text-xs">
-                          <button
-                            onClick={() => updateQty(item.id, item.quantity - 1)}
-                            className="h-7 w-7 rounded-l-full font-bold hover:bg-black/5 transition-colors"
-                            aria-label="Decrease quantity"
-                          >
-                            –
-                          </button>
-                          <span className="w-8 text-center font-semibold text-black">
-                            {item.quantity}
-                          </span>
-                          <button
-                            disabled={atMaxStock}
-                            onClick={() => updateQty(item.id, item.quantity + 1)}
-                            className="h-7 w-7 rounded-r-full font-bold hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            +
-                          </button>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center rounded-full border border-black/15 bg-white text-xs">
+                            <button
+                              disabled={isItemUpdating}
+                              onClick={() => updateQty(item.id, item.quantity - 1)}
+                              className="h-7 w-7 rounded-l-full font-bold hover:bg-black/5 disabled:opacity-40 transition-colors"
+                              aria-label="Decrease quantity"
+                            >
+                              –
+                            </button>
+                            <span className="w-8 text-center font-semibold text-black">
+                              {item.quantity}
+                            </span>
+                            <button
+                              disabled={atMaxStock || isItemUpdating}
+                              onClick={() => updateQty(item.id, item.quantity + 1)}
+                              className="h-7 w-7 rounded-r-full font-bold hover:bg-black/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              aria-label="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
+                          {isItemUpdating && (
+                            <PenLoader size="sm" label={t("புதுப்பிக்கப்படுகிறது", "Updating cart")} />
+                          )}
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-[15px] font-bold text-brand-red">
                             {formatRupees(lineTotalCents)}
                           </span>
                           <button
+                            disabled={isItemUpdating}
                             onClick={() => removeItem(item.id)}
-                            className="text-[12px] text-black/40 hover:text-brand-red transition-colors"
+                            className="text-[12px] text-black/40 hover:text-brand-red disabled:opacity-40 transition-colors"
                             aria-label="Remove item"
                           >
                             ×

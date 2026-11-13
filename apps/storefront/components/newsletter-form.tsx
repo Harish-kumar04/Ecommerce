@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { T } from "./i18n/t";
 import { useLanguage } from "./language-provider";
+import PenLoader from "./ui/pen-loader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -46,11 +47,16 @@ export default function NewsletterForm({ storeId }: { storeId?: string | null })
         className="h-12 flex-1 rounded-full border border-black/15 bg-white px-5 text-[15px] focus:border-brand-red focus:outline-none"
         required
       />
-      <button type="submit" disabled={state === "loading"} className="btn-red h-12 text-[15px] disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={state === "loading"}
+        aria-busy={state === "loading" || undefined}
+        className="btn-red h-12 text-[15px] disabled:opacity-75"
+      >
         {state === "done" ? (
           <T ta="பதிவு செய்யப்பட்டது ✓" en="Subscribed ✓" />
         ) : state === "loading" ? (
-          "…"
+          <PenLoader size="sm" tone="light" label={t("பதிவு செய்கிறது", "Subscribing")} />
         ) : (
           <T ta="பதிவு செய்க" en="Subscribe" />
         )}

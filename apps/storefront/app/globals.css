@@ -85,7 +85,54 @@ html:not([lang="en"]) .i18n-en {
   }
 }
 
+@keyframes pen-write {
+  0% {
+    stroke-dashoffset: 84;
+    opacity: 0.35;
+  }
+  55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -84;
+    opacity: 0.25;
+  }
+}
+
+@keyframes pen-glide {
+  0% {
+    transform: translate(-9px, 1px) rotate(-4deg);
+  }
+  50% {
+    transform: translate(18px, -2px) rotate(4deg);
+  }
+  100% {
+    transform: translate(-9px, 1px) rotate(-4deg);
+  }
+}
+
+.pen-ink {
+  stroke-dasharray: 84;
+  stroke-dashoffset: 84;
+  animation: pen-write 1.2s ease-in-out infinite;
+}
+
+.pen-nib {
+  transform-origin: 20px 20px;
+  animation: pen-glide 1.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .pen-ink {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+  .pen-nib {
+    animation: none !important;
+    transform: none !important;
+  }
   *,
   *::before,
   *::after {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { storefrontApi } from "@/lib/api";
 import AuthGate from "@/components/auth-gate";
+import PenLoader from "@/components/ui/pen-loader";
 
 /**
  * All-orders list for the signed-in customer. Mirrors the data on the
@@ -66,8 +67,9 @@ function OrdersList({ tenant }: { tenant: string }) {
       </header>
 
       {loading && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 text-[14px] text-gray-500">
-          Loading…
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100 bg-white py-12 text-[14px] text-gray-500">
+          <PenLoader size="md" label="Loading orders" />
+          <span>Loading your orders…</span>
         </div>
       )}
 
