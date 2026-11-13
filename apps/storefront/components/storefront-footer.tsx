@@ -79,24 +79,27 @@ export default function StorefrontFooter({
 
             <div className="lg:col-span-2">
               <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-[#FF6B68]">
-                <T ta="நூலகம்" en="Bookstore" />
+                <T ta="நூலகம் & பதிப்பகம்" en="Bookstore & Press" />
               </p>
               <ul className="space-y-1.5 text-[14.5px]">
                 <li><Link href={`${home}/books`} prefetch={false} className={linkCls}><T ta={`அனைத்து நூல்கள்${count}`} en={`All books${count}`} /></Link></li>
-                <li><Link href={`${home}/cart`} prefetch={false} className={linkCls}><T ta="கூடை" en="Cart" /></Link></li>
-                <li><Link href={`${home}/orders`} prefetch={false} className={linkCls}><T ta="எனது ஆர்டர்கள்" en="My orders" /></Link></li>
-                <li><Link href={`${home}/returns`} prefetch={false} className={linkCls}><T ta="மாற்று / திரும்பப் பெறுதல்" en="Returns & support" /></Link></li>
+                <li><Link href={`${home}/about`} prefetch={false} className={linkCls}><T ta="பதிப்பகம் பற்றி" en="About publisher" /></Link></li>
+                <li><Link href={`${home}/authors`} prefetch={false} className={linkCls}><T ta="ஆசிரியர்கள்" en="Authors" /></Link></li>
+                <li><Link href={`${home}/faq`} prefetch={false} className={linkCls}><T ta="வினா-விடை (FAQ)" en="FAQ" /></Link></li>
+                <li><Link href={`${home}/track`} prefetch={false} className={linkCls}><T ta="ஆர்டர் நிலை" en="Track order" /></Link></li>
               </ul>
             </div>
 
             <div className="lg:col-span-2">
               <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-[#FF6B68]">
-                <T ta="வாசகர் கணக்கு" en="Reader account" />
+                <T ta="கொள்கைகள் & கணக்கு" en="Policies & Account" />
               </p>
               <ul className="space-y-1.5 text-[14.5px]">
-                <li><Link href={`${home}/account`} prefetch={false} className={linkCls}><T ta="சுயவிவரம்" en="Profile" /></Link></li>
-                <li><Link href={`${home}/track`} prefetch={false} className={linkCls}><T ta="ஆர்டர் நிலை" en="Track order" /></Link></li>
-                <li><Link href={`${home}/account/consent`} prefetch={false} className={linkCls}><T ta="தனியுரிமை அமைப்புகள்" en="Privacy & consent" /></Link></li>
+                <li><Link href={`${home}/policies/shipping`} prefetch={false} className={linkCls}><T ta="விநியோகக் கொள்கை" en="Shipping policy" /></Link></li>
+                <li><Link href={`${home}/policies/returns`} prefetch={false} className={linkCls}><T ta="மாற்று & பணம் திரும்ப" en="Returns & refunds" /></Link></li>
+                <li><Link href={`${home}/policies/privacy`} prefetch={false} className={linkCls}><T ta="தனியுரிமைக் கொள்கை" en="Privacy policy" /></Link></li>
+                <li><Link href={`${home}/policies/terms`} prefetch={false} className={linkCls}><T ta="விதிமுறைகள்" en="Terms & conditions" /></Link></li>
+                <li><Link href={`${home}/account`} prefetch={false} className={linkCls}><T ta="வாசகர் கணக்கு" en="Reader account" /></Link></li>
               </ul>
             </div>
 
@@ -104,10 +107,16 @@ export default function StorefrontFooter({
               <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-[#FF6B68]">
                 <T ta="தொடர்புக்கு" en="Contact" />
               </p>
-              <ul className="space-y-2.5 text-[14.5px]">
+              <p className="mb-3 text-[13.5px] leading-relaxed text-white/80">
+                <T
+                  ta="அண்ணா அறிவாலய வளாகம், தேனாம்பேட்டை, சென்னை – 600018, தமிழ்நாடு"
+                  en="Anna Arivalayam Campus, Teynampet, Chennai – 600018, Tamil Nadu, India"
+                />
+              </p>
+              <ul className="space-y-2 text-[14.5px]">
                 <li>
                   <a href={whatsappHref(social)} target="_blank" rel="noopener noreferrer" className={`gap-2.5 ${linkCls}`}>
-                    <WhatsAppIcon className="h-4 w-4 flex-shrink-0 text-[#FF6B68]" /> WhatsApp: {social.whatsappDisplay}
+                    <WhatsAppIcon className="h-4 w-4 flex-shrink-0 text-[#FF6B68]" /> +91 {social.whatsappDisplay}
                   </a>
                 </li>
                 <li>

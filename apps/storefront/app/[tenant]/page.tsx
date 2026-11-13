@@ -8,6 +8,7 @@ import CategoryTiles from "@/components/home/category-tiles";
 import TabbedBooks from "@/components/home/tabbed-books";
 import PublisherStory from "@/components/home/publisher-story";
 import Testimonials from "@/components/home/testimonials";
+import FaqSection from "@/components/home/faq-section";
 import { NewsletterSection } from "@/components/home/why-newsletter";
 import {
   DiagonalStripeDivider,
@@ -30,6 +31,7 @@ import {
   resolveLink,
 } from "@/lib/site-defaults";
 import { buildHomeJsonLd } from "@/lib/seo-schema";
+import { STORE_FAQS, buildFaqJsonLd } from "@/lib/aeo-data";
 
 // ISR: static HTML, refreshed in the background every 60 seconds.
 export const revalidate = 60;
@@ -210,13 +212,22 @@ export default async function TenantHomePage({ params }: { params: { tenant: str
       {/* 7. Reader Testimonials (#FFFFFF) */}
       <Testimonials />
 
-      {/* 8. Newsletter with Visible Inline Success (#FAFAFA) */}
+      {/* 8. Crawlable FAQ Section + FAQPage JSON-LD (AEO / GEO) */}
+      <FaqSection tenant={tenant} />
+
+      {/* 9. Newsletter with Visible Inline Success (#FAFAFA) */}
       <NewsletterSection storeId={store?.id} />
 
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildFaqJsonLd(STORE_FAQS, `${SITE_URL}/${tenant}`)),
+        }}
       />
     </>
   );

@@ -163,14 +163,30 @@ export default function BookDetailView({
                 <BiSubName value={product.name} />
               </p>
             )}
-            {author && (
-              <p className="mt-2 text-[15px] font-semibold text-black/85">
-                <span className="font-normal text-black/65">
-                  <T ta="ஆசிரியர்:" en="Author:" />
-                </span>{" "}
-                {author}
-              </p>
-            )}
+            <p className="mt-2 text-[15px] font-semibold text-black/85">
+              <span className="font-normal text-black/65">
+                <T ta="ஆசிரியர் / பதிப்பகம்:" en="Author / Publisher:" />
+              </span>{" "}
+              <Link
+                href={
+                  /kalaignar|karunanidhi|கலைஞர்/i.test(`${product.name || ""} ${author || ""}`)
+                    ? `/${tenant}/authors/muthamilarignar-kalaignar`
+                    : `/${tenant}/about`
+                }
+                prefetch={false}
+                className="underline decoration-black/25 underline-offset-4 hover:text-brand-red-dark"
+              >
+                {author || "முத்தமிழறிஞர் பதிப்பகம் / Muthamilarignar Pathipagam"}
+              </Link>
+            </p>
+
+            {/* Factual AI-Quotable Opening Summary (crawlable visible text) */}
+            <p className="mt-3 rounded-xl border border-black/[0.08] bg-[#FAFAFA] px-4 py-3 text-[13.5px] leading-relaxed text-black/80">
+              <T
+                ta={`${nameTa} என்பது ${author || "முத்தமிழறிஞர் பதிப்பகம்"} எழுதி/தொகுத்து முத்தமிழறிஞர் பதிப்பகம் வெளியிட்டுள்ள ${language} (${binding}${pages ? `, ${pages} பக்கங்கள்` : ""}) நூலாகும். ${(taDesc || "").split(".")[0] ? `${(taDesc || "").split(".")[0]}. ` : ""}இந்நூலின் தற்போதைய விலை ${formatPrice(price)} (0% GST, இந்தியா முழுவதும் விநியோகம் & COD வசதி).`}
+                en={`${hasDistinctSubName ? `${nameEn} (${nameTa})` : nameTa} is a ${language} ${binding.toLowerCase()} edition${pages ? ` (${pages} pages)` : ""} ${author ? `by ${author}, ` : ""}published by Muthamilarignar Pathipagam, Chennai. ${(enDesc || taDesc || "").split(".")[0] ? `${(enDesc || taDesc || "").split(".")[0]}. ` : ""}Priced at ${formatPrice(price)} INR (0% GST on printed books), available with pan-India delivery and Cash on Delivery.`}
+              />
+            </p>
 
             {/* Price, % OFF & Stock Block */}
             <div className="mt-5 flex flex-wrap items-baseline gap-3">

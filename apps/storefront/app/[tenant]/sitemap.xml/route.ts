@@ -4,6 +4,7 @@ import {
   getCategoriesWithFallback,
 } from "@/lib/catalog-fallback";
 import { SITE_URL } from "@/lib/site-defaults";
+import { AUTHORS, POLICY_LAST_UPDATED_ISO } from "@/lib/aeo-data";
 
 function xmlEscape(value: string): string {
   return value
@@ -32,10 +33,26 @@ export async function GET(
     ? []
     : (booksRes.books as any[]).filter((b) => b?.id || b?.slug);
   const nowIso = new Date().toISOString();
+  const policyIso = new Date(POLICY_LAST_UPDATED_ISO).toISOString();
 
   const entries: Array<{ loc: string; lastmod: string; changefreq: string; priority: string }> = [
     { loc: base, lastmod: nowIso, changefreq: "daily", priority: "1.0" },
     { loc: `${base}/books`, lastmod: nowIso, changefreq: "daily", priority: "0.9" },
+    { loc: `${base}/about`, lastmod: policyIso, changefreq: "monthly", priority: "0.7" },
+    { loc: `${base}/authors`, lastmod: policyIso, changefreq: "monthly", priority: "0.7" },
+    ...AUTHORS.map((a) => ({
+      loc: `${base}/authors/${a.slug}`,
+      lastmod: policyIso,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    { loc: `${base}/faq`, lastmod: policyIso, changefreq: "monthly", priority: "0.7" },
+    ...(["shipping", "returns", "privacy", "terms"] as const).map((slug) => ({
+      loc: `${base}/policies/${slug}`,
+      lastmod: policyIso,
+      changefreq: "yearly",
+      priority: "0.5",
+    })),
     ...(categories as any[])
       .filter((c) => c?.slug)
       .map((c) => ({

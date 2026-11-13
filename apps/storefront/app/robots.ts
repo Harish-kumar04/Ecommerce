@@ -16,6 +16,8 @@ const PRIVATE_PATHS = [
   "/_next/",
 ];
 
+const AI_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"];
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -24,6 +26,11 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: PRIVATE_PATHS,
       },
+      ...AI_CRAWLERS.map((agent) => ({
+        userAgent: agent,
+        allow: ["/", "/llms.txt"],
+        disallow: PRIVATE_PATHS,
+      })),
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

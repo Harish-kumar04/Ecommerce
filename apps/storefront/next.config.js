@@ -91,6 +91,31 @@ module.exports = {
         destination: `/${defaultTenant}/categories/:slug`,
         permanent: true,
       },
+      {
+        source: "/about",
+        destination: `/${defaultTenant}/about`,
+        permanent: true,
+      },
+      {
+        source: "/faq",
+        destination: `/${defaultTenant}/faq`,
+        permanent: true,
+      },
+      {
+        source: "/authors",
+        destination: `/${defaultTenant}/authors`,
+        permanent: true,
+      },
+      {
+        source: "/authors/:slug",
+        destination: `/${defaultTenant}/authors/:slug`,
+        permanent: true,
+      },
+      {
+        source: "/policies/:slug",
+        destination: `/${defaultTenant}/policies/:slug`,
+        permanent: true,
+      },
     ];
   },
 };
