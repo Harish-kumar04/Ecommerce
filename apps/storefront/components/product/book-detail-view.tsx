@@ -121,27 +121,32 @@ export default function BookDetailView({
             {allImages.length > 1 ? (
               <BookGalleryIsland images={allImages} alt={alt} discountPct={discountPct} />
             ) : (
-              <div className="relative mx-auto aspect-[3/4] w-full max-w-[300px] sm:max-w-md overflow-hidden rounded-2xl border border-black/[0.08] bg-[#FAFAFA] shadow-card">
-                {discountPct > 0 && (
-                  <span className="absolute left-4 top-4 z-10 rounded-full bg-[#D11D1A] px-3 py-1 text-[11.5px] font-extrabold text-white shadow-sm">
-                    {discountPct}% OFF
-                  </span>
-                )}
-                {primaryCover ? (
-                  <>
+              <div className="mx-auto w-full max-w-[300px] sm:max-w-md">
+                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-black/[0.08] bg-[#FAFAFA] shadow-card">
+                  {discountPct > 0 && (
+                    <span className="pointer-events-none absolute left-4 top-4 z-10 rounded-full bg-[#D11D1A] px-3 py-1 text-[11.5px] font-extrabold text-white shadow-sm">
+                      {discountPct}% OFF
+                    </span>
+                  )}
+                  {primaryCover ? (
                     <Image
                       src={primaryCover}
                       alt={alt}
-                      fill
+                      width={360}
+                      height={480}
                       priority
                       sizes="(max-width: 640px) 280px, 420px"
-                      className="object-contain p-5 sm:p-6"
+                      className="h-full w-full object-contain p-5 sm:p-6"
                     />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-black/55">
+                      <T ta="படம் இல்லை" en="No image" />
+                    </div>
+                  )}
+                </div>
+                {primaryCover && (
+                  <div className="mt-3 flex justify-center">
                     <CoverLightboxTrigger images={[primaryCover]} alt={alt} />
-                  </>
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-black/55">
-                    <T ta="படம் இல்லை" en="No image" />
                   </div>
                 )}
               </div>

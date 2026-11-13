@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SITE_URL } from "@/lib/site-defaults";
-import { buildLlmsMarkdown } from "@/app/llms.txt/route";
+import { buildLlmsMarkdown } from "@/lib/llms-txt";
 
 export async function GET(
   req: NextRequest,

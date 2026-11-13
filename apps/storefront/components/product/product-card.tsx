@@ -94,23 +94,23 @@ export default function ProductCard({
   return (
     <article className="card-glow group relative flex flex-col overflow-hidden bg-white">
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#FAFAFA]">
+        {/* Top-left discount / out-of-stock badge */}
+        {!inStock ? (
+          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/85 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            <T ta="கையிருப்பில் இல்லை" en="Out of stock" />
+          </span>
+        ) : onSale ? (
+          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-[#D11D1A] px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white shadow-sm">
+            {discountPct}% OFF
+          </span>
+        ) : null}
+
         <Link
           href={bookHref}
           prefetch={false}
           aria-label={alt}
           className="block h-full w-full"
         >
-          {/* Top-left discount / out-of-stock badge */}
-          {!inStock ? (
-            <span className="absolute left-3 top-3 z-10 rounded-full bg-black/85 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-              <T ta="கையிருப்பில் இல்லை" en="Out of stock" />
-            </span>
-          ) : onSale ? (
-            <span className="absolute left-3 top-3 z-10 rounded-full bg-[#D11D1A] px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white shadow-sm">
-              {discountPct}% OFF
-            </span>
-          ) : null}
-
           {rawImg ? (
             <Image
               src={rawImg}

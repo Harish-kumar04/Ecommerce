@@ -161,14 +161,13 @@ export function CoverLightboxTrigger({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={t("அட்டைப் படத்தைப் பெரிதாக்கிப் பார்க்க", "Zoom book cover")}
-        className="absolute bottom-3 right-3 z-20 inline-flex h-11 items-center gap-1.5 rounded-full border border-black/15 bg-white/95 px-3.5 text-[12px] font-bold text-black shadow-md transition-colors hover:border-brand-red-dark hover:text-brand-red-dark"
+        className="inline-flex h-11 items-center gap-1.5 rounded-full border border-black/15 bg-white px-4 text-[12.5px] font-bold text-black shadow-sm transition-colors hover:border-brand-red-dark hover:text-brand-red-dark"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="h-4 w-4">
           <circle cx="11" cy="11" r="8" />
           <path strokeLinecap="round" d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
         </svg>
-        <span>{t("பெரிதாக்கு", "Zoom")}</span>
+        <span>{t("அட்டைப் படத்தைப் பெரிதாக்கு", "Zoom cover")}</span>
       </button>
       {open && (
         <LightboxModal images={images} initialIndex={0} alt={alt} onClose={() => setOpen(false)} />

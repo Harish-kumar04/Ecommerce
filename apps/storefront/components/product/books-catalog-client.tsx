@@ -332,9 +332,12 @@ export default function BooksCatalogClient({
         </div>
       </div>
 
-      <h2 className="sr-only" role="status" aria-live="polite">
-        {t(`${filtered.length} நூல்கள்`, `${filtered.length} books`)}
+      <h2 className="sr-only">
+        {t("நூல் பட்டியல்", "Books catalog")}
       </h2>
+      <p className="sr-only" role="status" aria-live="polite">
+        {t(`${filtered.length} நூல்கள்`, `${filtered.length} books`)}
+      </p>
 
       {/* Book Grid or Empty State */}
       {filtered.length === 0 ? (

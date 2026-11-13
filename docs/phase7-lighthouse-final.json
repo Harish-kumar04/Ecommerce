@@ -1,0 +1,332 @@
+{
+  "measured_at": "2026-11-13T13:35:41+0530",
+  "cod_e2e_order_id": "fc4103d2-98d2-4b6f-a52d-933c9a3e3404",
+  "seo_aeo_checks": {
+    "/demo-store": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 2
+    },
+    "/demo-store/books": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/books/doctor-kalaignar": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/about": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/authors/muthamilarignar-kalaignar": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/faq": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 2
+    },
+    "/demo-store/policies/shipping": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/policies/returns": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/policies/privacy": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/demo-store/policies/terms": {
+      "status": 200,
+      "h1_count": 1,
+      "json_ld_blocks": 1
+    },
+    "/llms.txt": {
+      "status": 200,
+      "bytes": 7571
+    },
+    "/robots.txt": {
+      "status": 200,
+      "ai_bots_allowed": true
+    },
+    "/sitemap.xml": {
+      "status": 200,
+      "url_count": 43
+    }
+  },
+  "next_build_bundles": {
+    "/": {
+      "size": "165 B",
+      "first_load_js": "87.7 kB"
+    },
+    "/_not-found": {
+      "size": "876 B",
+      "first_load_js": "88.4 kB"
+    },
+    "/[tenant]": {
+      "size": "2.8 kB",
+      "first_load_js": "105 kB"
+    },
+    "/[tenant]/about": {
+      "size": "398 B",
+      "first_load_js": "96.6 kB"
+    },
+    "/[tenant]/account": {
+      "size": "6 kB",
+      "first_load_js": "106 kB"
+    },
+    "/[tenant]/account/consent": {
+      "size": "2.44 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/authors": {
+      "size": "184 B",
+      "first_load_js": "96.4 kB"
+    },
+    "/[tenant]/authors/[slug]": {
+      "size": "197 B",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/books": {
+      "size": "150 B",
+      "first_load_js": "112 kB"
+    },
+    "/[tenant]/books/[slug]": {
+      "size": "150 B",
+      "first_load_js": "112 kB"
+    },
+    "/[tenant]/cart": {
+      "size": "8.28 kB",
+      "first_load_js": "111 kB"
+    },
+    "/[tenant]/categories/[slug]": {
+      "size": "197 B",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/checkout": {
+      "size": "12.7 kB",
+      "first_load_js": "115 kB"
+    },
+    "/[tenant]/faq": {
+      "size": "184 B",
+      "first_load_js": "96.4 kB"
+    },
+    "/[tenant]/forgot-password": {
+      "size": "1.04 kB",
+      "first_load_js": "88.5 kB"
+    },
+    "/[tenant]/llms.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/login": {
+      "size": "2.42 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/orders": {
+      "size": "2.7 kB",
+      "first_load_js": "103 kB"
+    },
+    "/[tenant]/orders/[id]": {
+      "size": "6.31 kB",
+      "first_load_js": "109 kB"
+    },
+    "/[tenant]/policies/[slug]": {
+      "size": "184 B",
+      "first_load_js": "96.4 kB"
+    },
+    "/[tenant]/products": {
+      "size": "150 B",
+      "first_load_js": "112 kB"
+    },
+    "/[tenant]/products/[id]": {
+      "size": "150 B",
+      "first_load_js": "112 kB"
+    },
+    "/[tenant]/reset-password": {
+      "size": "1.17 kB",
+      "first_load_js": "88.7 kB"
+    },
+    "/[tenant]/returns": {
+      "size": "2.24 kB",
+      "first_load_js": "102 kB"
+    },
+    "/[tenant]/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/signup": {
+      "size": "1.66 kB",
+      "first_load_js": "97.8 kB"
+    },
+    "/[tenant]/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/[tenant]/track": {
+      "size": "1.85 kB",
+      "first_load_js": "102 kB"
+    },
+    "/api/cart-summary": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/cover": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/health/[[...path]]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/revalidate": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/api/v1/[...path]": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/llms.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/robots.txt": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    },
+    "/sitemap.xml": {
+      "size": "0 B",
+      "first_load_js": "0 B"
+    }
+  },
+  "lighthouse": {
+    "home": {
+      "url": "http://127.0.0.1:3197/demo-store",
+      "mobile": {
+        "performance_score": 98,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 1175.5,
+        "inp_proxy_max_fid_ms": 266.0,
+        "cls": 0.0001,
+        "tbt_ms": 141.5,
+        "ttfb_ms": 22,
+        "total_js_kb": 140.3,
+        "image_kb": 83.7,
+        "total_transfer_kb": 561.0
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 314.4,
+        "inp_proxy_max_fid_ms": 68,
+        "cls": 0.0001,
+        "tbt_ms": 0,
+        "ttfb_ms": 19,
+        "total_js_kb": 140.3,
+        "image_kb": 97.3,
+        "total_transfer_kb": 574.6
+      }
+    },
+    "books_list": {
+      "url": "http://127.0.0.1:3197/demo-store/books",
+      "mobile": {
+        "performance_score": 99,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 1204.4,
+        "inp_proxy_max_fid_ms": 432,
+        "cls": 0.0001,
+        "tbt_ms": 85.5,
+        "ttfb_ms": 30,
+        "total_js_kb": 137.6,
+        "image_kb": 173.0,
+        "total_transfer_kb": 594.8
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 747.8,
+        "inp_proxy_max_fid_ms": 67,
+        "cls": 0.0004,
+        "tbt_ms": 0,
+        "ttfb_ms": 23,
+        "total_js_kb": 137.6,
+        "image_kb": 269.3,
+        "total_transfer_kb": 690.6
+      }
+    },
+    "book_detail": {
+      "url": "http://127.0.0.1:3197/demo-store/books/doctor-kalaignar",
+      "mobile": {
+        "performance_score": 92,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 3312.9,
+        "inp_proxy_max_fid_ms": 77,
+        "cls": 0.0003,
+        "tbt_ms": 45,
+        "ttfb_ms": 35,
+        "total_js_kb": 135.9,
+        "image_kb": 12.4,
+        "total_transfer_kb": 431.1
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "seo_score": 100,
+        "lcp_ms": 287.5,
+        "inp_proxy_max_fid_ms": 28,
+        "cls": 0.0045,
+        "tbt_ms": 0,
+        "ttfb_ms": 8,
+        "total_js_kb": 135.9,
+        "image_kb": 64.7,
+        "total_transfer_kb": 483.4
+      }
+    },
+    "cart": {
+      "url": "http://127.0.0.1:3197/demo-store/cart",
+      "mobile": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "seo_score": 66,
+        "lcp_ms": 1050.7,
+        "inp_proxy_max_fid_ms": 289,
+        "cls": 0.0172,
+        "tbt_ms": 22.5,
+        "ttfb_ms": 53,
+        "total_js_kb": 142.0,
+        "image_kb": 4.9,
+        "total_transfer_kb": 420.3
+      },
+      "desktop": {
+        "performance_score": 100,
+        "accessibility_score": 100,
+        "seo_score": 66,
+        "lcp_ms": 285.3,
+        "inp_proxy_max_fid_ms": 21,
+        "cls": 0.0274,
+        "tbt_ms": 0,
+        "ttfb_ms": 43,
+        "total_js_kb": 142.0,
+        "image_kb": 3.3,
+        "total_transfer_kb": 418.7
+      }
+    }
+  }
+}
