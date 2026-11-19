@@ -1,16 +1,15 @@
 import Link from "next/link";
-import Img from "@/components/ui/img";
-import { BiName, T } from "@/components/i18n/t";
+import { T } from "@/components/i18n/t";
 import { ArrowRightIcon } from "@/components/brand/icons";
 import { HeroRedArch, SunburstBackdrop } from "@/components/brand/patterns";
+import HeroBookCarousel, { type HeroCarouselBook } from "@/components/home/hero-book-carousel";
 import type { CardProduct } from "@/components/product/product-card";
-import { splitBilingual } from "@/lib/i18n";
 
 /**
- * Original brand landing hero (Server Component, zero client JS):
+ * Original brand landing hero (Server Component; only the carousel is a client island):
  * - Left: Publisher pill, bold bilingual H1, concise subtext, two >=48px pill CTAs ("Browse books", "Offers")
- * - Right: 3 tilted real catalog book covers over a Revolutionary Red arch + 5% sunburst,
- *   with floating badges fed strictly from real catalog data
+ * - Right: live featured-books coverflow carousel over a Revolutionary Red arch + 5% sunburst,
+ *   with floating badges that follow the front book (real catalog data only)
  * - Bottom: Bold 4-column stats row fed strictly from real store/catalog numbers
  */
 export default function BrandHero({
@@ -25,36 +24,24 @@ export default function BrandHero({
   categoryCount: number;
 }) {
   const seenHeroCovers = new Set<string>();
-  const covers = heroBooks
-    .filter((b) => {
-      if (!b.image_url) return false;
-      if (seenHeroCovers.has(b.image_url)) return false;
-      seenHeroCovers.add(b.image_url);
-      return true;
-    })
-    .slice(0, 3);
-  const displaySlots = covers.length > 0 ? covers : heroBooks.slice(0, 3);
-  const lcpIndex = covers.length >= 2 ? 1 : 0;
-  const leadBook = covers[1] || covers[0] || heroBooks[0];
-  const saleBook = heroBooks.find(
-    (b) => b.sale_price_cents && b.price_cents > 0 && b.sale_price_cents < b.price_cents,
-  );
-  const maxDiscountPct = saleBook
-    ? Math.max(
-        1,
-        Math.round(
-          ((saleBook.price_cents - (saleBook.sale_price_cents as number)) / saleBook.price_cents) *
-            100,
-        ),
-      )
-    : 0;
-  const ratedBook = heroBooks.find((b) => b.rating_avg && b.rating_avg > 0);
-
-  const tilts = [
-    "-rotate-6 translate-y-4 sm:translate-y-5 z-10",
-    "z-20 -translate-y-2 scale-[1.06]",
-    "rotate-6 translate-y-4 sm:translate-y-5 z-10",
-  ];
+  const covers = heroBooks.filter((b) => {
+    if (!b.image_url) return false;
+    if (seenHeroCovers.has(b.image_url)) return false;
+    seenHeroCovers.add(b.image_url);
+    return true;
+  });
+  // Same featured-books source as before; slimmed to what the client island needs.
+  const carouselBooks: HeroCarouselBook[] = (covers.length > 0 ? covers : heroBooks)
+    .slice(0, 8)
+    .map((b) => ({
+      id: b.id,
+      slug: b.slug ?? null,
+      name: b.name,
+      image_url: b.image_url ?? null,
+      price_cents: b.price_cents,
+      sale_price_cents: b.sale_price_cents ?? null,
+      rating_avg: b.rating_avg ?? null,
+    }));
 
   const stats = [
     {
@@ -139,90 +126,11 @@ export default function BrandHero({
               {/* Red Semicircle Arch Backdrop */}
               <HeroRedArch className="absolute inset-x-0 bottom-0 mx-auto h-[84%] w-full max-w-[460px]" />
 
-              {/* Floating Badge 1 (Top-Left): Best Seller / Featured Real Book */}
-              {leadBook && (
-                <Link
-                  href={`/${tenant}/books/${encodeURIComponent(leadBook.slug || leadBook.id)}`}
-                  prefetch={false}
-                  className="absolute left-0 top-2 z-30 flex max-w-[200px] items-center gap-2 rounded-2xl border border-black/10 bg-white px-3 py-2 shadow-lg transition-transform hover:-translate-y-0.5 sm:left-2 sm:top-4 sm:px-3.5 sm:py-2.5"
-                >
-                  <span className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#D11D1A] text-white">
-                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="h-4 w-4">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[10.5px] font-extrabold uppercase tracking-wider text-brand-red-dark">
-                      <T ta="சிறந்த வெளியீடு" en="Best Seller" />
-                    </p>
-                    <p className="truncate text-[12px] font-bold text-black">
-                      <BiName value={leadBook.name} />
-                    </p>
-                  </div>
-                </Link>
-              )}
-
-              {/* Floating Badge 2 (Bottom-Right): Real Rating OR Real Sale % OR Verified Official Badge */}
-              <div className="absolute -bottom-3 right-1 z-30 flex items-center gap-2 rounded-full border border-black/10 bg-white px-3.5 py-2 shadow-lg sm:right-3 sm:px-4">
-                <div className="flex items-center text-brand-red" aria-hidden="true">
-                  {[0, 1, 2, 3, 4].map((star) => (
-                    <svg key={star} viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <span className="text-[12px] font-extrabold text-black">
-                  {ratedBook?.rating_avg ? (
-                    `${ratedBook.rating_avg.toFixed(1)} / 5`
-                  ) : maxDiscountPct > 0 ? (
-                    <T ta={`${maxDiscountPct}% வரை சலுகை`} en={`Up to ${maxDiscountPct}% OFF`} />
-                  ) : (
-                    <T ta="அசல் பதிப்பு" en="100% Authentic" />
-                  )}
-                </span>
-              </div>
-
-              {/* 3 Tilted Book Slots (single center LCP image priority; neutral No cover card if none uploaded) */}
-              {displaySlots.length > 0 ? (
-                <div className="relative z-10 flex items-end justify-center pb-4 sm:pb-6">
-                  {displaySlots.map((book, idx) => {
-                    const isLcpHero = covers.length > 0 && idx === lcpIndex;
-                    const alt = splitBilingual(book.name, "|").join(" — ");
-                    return (
-                      <Link
-                        key={book.id}
-                        href={`/${tenant}/books/${encodeURIComponent(book.slug || book.id)}`}
-                        prefetch={false}
-                        aria-label={alt}
-                        className={`relative -mx-2.5 aspect-[3/4] w-[108px] overflow-hidden rounded-xl border-2 border-white bg-[#F4F4F5] shadow-2xl transition-transform duration-300 hover:z-30 hover:scale-110 sm:-mx-3.5 sm:w-[152px] lg:w-[164px] ${
-                          tilts[idx] || ""
-                        }`}
-                      >
-                        {book.image_url ? (
-                          <Img
-                            src={book.image_url}
-                            alt={alt}
-                            fill
-                            priority={isLcpHero}
-                            sizes="(max-width: 640px) 115px, 170px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-2.5 text-center">
-                            <span className="line-clamp-3 text-[11px] font-bold leading-tight text-black/80 sm:text-[12.5px]">
-                              <BiName value={book.name} />
-                            </span>
-                            <span className="rounded-full bg-black/[0.06] px-2 py-0.5 text-[10px] font-medium text-black/55">
-                              <T ta="படம் இல்லை" en="No cover" />
-                            </span>
-                          </div>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
+              {/* Live featured-books carousel (client island; chips + caption follow the front book) */}
+              {carouselBooks.length > 0 ? (
+                <HeroBookCarousel tenant={tenant} books={carouselBooks} />
               ) : (
-                <div className="relative z-10 flex h-56 w-44 items-center justify-center rounded-2xl border-2 border-white bg-[#F4F4F5] p-4 text-center text-sm font-bold text-black/60 shadow-xl">
+                <div className="relative z-10 mb-4 flex h-56 w-44 items-center justify-center rounded-2xl border-2 border-white bg-[#F4F4F5] p-4 text-center text-sm font-bold text-black/60 shadow-xl">
                   <T ta="படம் இல்லை" en="No cover" />
                 </div>
               )}

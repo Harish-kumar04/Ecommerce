@@ -173,3 +173,53 @@ html:not([lang="en"]) .i18n-en {
     scroll-behavior: auto !important;
   }
 }
+
+/* Hero featured-books carousel (transform + opacity only) */
+.hero-cf-card {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  transition:
+    transform 720ms cubic-bezier(0.34, 1.28, 0.5, 1),
+    opacity 520ms ease;
+}
+.hero-cf-layer {
+  transition: opacity 350ms ease;
+}
+@keyframes hero-cf-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+@keyframes hero-cf-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleX(0.9);
+    opacity: 0.42;
+  }
+}
+.hero-cf-float {
+  animation: hero-cf-float 3.2s ease-in-out infinite;
+}
+.hero-cf-shadow {
+  animation: hero-cf-shadow 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-cf-card,
+  .hero-cf-layer {
+    transform: none !important;
+    transition: opacity 300ms ease !important;
+  }
+  .hero-cf-float,
+  .hero-cf-shadow {
+    animation: none !important;
+  }
+}
